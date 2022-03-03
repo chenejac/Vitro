@@ -1,10 +1,10 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi;
 
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.Resource;
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceKey;
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.DefaultResource;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.DefaultResourceAPI;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceAPI;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceAPIKey;
 
-public class ResourcePool extends VersionableAbstractPool<ResourceKey, Resource, ResourcePool> {
+public class ResourcePool extends VersionableAbstractPool<ResourceAPIKey, ResourceAPI, ResourcePool> {
 
 	private static ResourcePool INSTANCE = new ResourcePool();
 
@@ -18,13 +18,13 @@ public class ResourcePool extends VersionableAbstractPool<ResourceKey, Resource,
 	}
 
 	@Override
-	public Resource getDefault() {
-		return new DefaultResource();
+	public ResourceAPI getDefault() {
+		return new DefaultResourceAPI();
 	}
 
 	@Override
-	public Class<Resource> getType() {
-		return Resource.class;
+	public Class<ResourceAPI> getType() {
+		return ResourceAPI.class;
 	}
 
 }

@@ -31,7 +31,7 @@ public class OperationalStep implements Step{
 		}
 	}
 	
-	@Property(uri = "https://vivoweb.org/ontology/vitro-dynamic-api#next", minOccurs = 0, maxOccurs = 1)
+	@Property(uri = "https://vivoweb.org/ontology/vitro-dynamic-api#hasNextStep", minOccurs = 0, maxOccurs = 1)
 	public void setNextStep(OperationalStep step) {
 		this.nextStep = step;
 	}	 

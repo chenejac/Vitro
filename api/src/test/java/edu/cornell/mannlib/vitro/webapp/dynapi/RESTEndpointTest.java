@@ -15,6 +15,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceAPI;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,8 +27,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.Action;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.OperationResult;
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.Resource;
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceKey;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceAPIKey;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RESTEndpointTest {
@@ -52,7 +52,7 @@ public class RESTEndpointTest {
 	private ActionPool actionPool;
 
 	@Mock
-	private Resource resource;
+	private ResourceAPI resourceAPI;
 
 	@Spy
 	private Action action;
@@ -69,7 +69,7 @@ public class RESTEndpointTest {
 		actionPoolStatic = mockStatic(ActionPool.class);
 
 		when(ResourcePool.getInstance()).thenReturn(resourcePool);
-		when(resourcePool.get(any(ResourceKey.class))).thenReturn(resource);
+		when(resourcePool.get(any(ResourceAPIKey.class))).thenReturn(resourceAPI);
 
 		when(ActionPool.getInstance()).thenReturn(actionPool);
 		when(actionPool.get(any(String.class))).thenReturn(action);
@@ -103,14 +103,14 @@ public class RESTEndpointTest {
 
 		when(action.run(any(OperationData.class))).thenReturn(result);
 
-		when(resource.getCustomRestActionByName("dedupe")).thenReturn("dedupe");
-		doNothing().when(resource).removeClient();
+		when(resourceAPI.getCustomRestActionByName("dedupe")).thenReturn("dedupe");
+		doNothing().when(resourceAPI).removeClient();
 
 		restEndpoint.doPost(request, response);
 
-		verify(resource, times(0)).getActionNameByMethod(any());
-		verify(resource, times(1)).getCustomRestActionByName(any());
-		verify(resource, times(1)).removeClient();
+		verify(resourceAPI, times(0)).getActionNameByMethod(any());
+		verify(resourceAPI, times(1)).getCustomRestActionByName(any());
+		verify(resourceAPI, times(1)).removeClient();
 		verify(action, times(1)).run(any());
 		verify(action, times(1)).removeClient();
 		verify(response, times(1)).setStatus(HttpServletResponse.SC_OK);
@@ -188,14 +188,14 @@ public class RESTEndpointTest {
 
 		when(action.run(any(OperationData.class))).thenReturn(result);
 
-		when(resource.getActionNameByMethod(method)).thenReturn(actionName);
-		doNothing().when(resource).removeClient();
+		when(resourceAPI.getActionNameByMethod(method)).thenReturn(actionName);
+		doNothing().when(resourceAPI).removeClient();
 	}
 
 	private void verifyMocks(int count, int status) {
-		verify(resource, times(count)).getActionNameByMethod(any());
-		verify(resource, times(0)).getCustomRestActionByName(any());
-		verify(resource, times(count)).removeClient();
+		verify(resourceAPI, times(count)).getActionNameByMethod(any());
+		verify(resourceAPI, times(0)).getCustomRestActionByName(any());
+		verify(resourceAPI, times(count)).removeClient();
 		verify(action, times(count)).run(any());
 		verify(action, times(count)).removeClient();
 		verify(response, times(1)).setStatus(status);

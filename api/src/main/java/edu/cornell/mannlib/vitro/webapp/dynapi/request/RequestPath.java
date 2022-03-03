@@ -31,19 +31,23 @@ public class RequestPath {
         String contextPath = request != null && request.getContextPath() != null
                 ? request.getContextPath()
                 : EMPTY;
+        String servletPath = request != null && request.getServletPath() != null
+                ? request.getServletPath()
+                : EMPTY;
         String pathInfo = request != null && request.getPathInfo() != null
                 ? request.getPathInfo()
                 : EMPTY;
 
         pathParts = pathInfo.split("/");
 
-        if (contextPath.toLowerCase().contains(RPC_BASE_PATH)) {
+
+        if (contextPath.toLowerCase().contains(RPC_BASE_PATH) || servletPath.toLowerCase().contains(RPC_BASE_PATH)) {
             type = RequestType.RPC;
             actionName = pathParts.length > 1 ? pathParts[1] : null;
             resourceVersion = null;
             resourceName = null;
             resourceId = null;
-        } else if (contextPath.toLowerCase().contains(REST_BASE_PATH)) {
+        } else if (contextPath.toLowerCase().contains(REST_BASE_PATH) || servletPath.toLowerCase().contains(REST_BASE_PATH)) {
             type = RequestType.REST;
             resourceVersion = pathParts.length > 1 ? pathParts[1] : null;
             resourceName = pathParts.length > 2 ? pathParts[2] : null;

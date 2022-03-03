@@ -23,6 +23,21 @@ public class Parameters implements Removable {
 	public Parameter get(String name) {
 		return params.get(name);
 	}
+
+	public Parameter findParameter(String fieldName){
+		String[] fieldNameParts = fieldName.split("\\.");
+		Parameters parameters = this;
+		Parameter parameter = null;
+		for (String part:fieldNameParts) {
+			if (parameter != null && parameter.getType() instanceof ObjectParameterType)
+				parameters = ((ObjectParameterType)parameter.getType()).getInternalElements();
+			parameter = parameters.get(part);
+			if (parameter == null){
+				return null;
+			}
+		}
+		return parameter;
+	}
 	
 	@Override
 	public void dereference() {
