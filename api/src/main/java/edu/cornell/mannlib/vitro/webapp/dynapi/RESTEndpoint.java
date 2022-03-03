@@ -110,7 +110,7 @@ public class RESTEndpoint extends VitroHttpServlet {
 				actionPool.printKeys();
 			}
 			Action action = actionPool.get(actionName);
-			OperationData input = new OperationData(request, action);
+			OperationData input = new OperationData(request);
 			try {
 				OperationResult result = action.run(input);
 				result.prepareResponse(response);

@@ -2,16 +2,13 @@ package edu.cornell.mannlib.vitro.webapp.dynapi;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.Action;
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.Parameter;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import edu.cornell.mannlib.vitro.webapp.dynapi.request.RequestPath;
-import edu.cornell.mannlib.vitro.webapp.searchengine.elasticsearch.JsonTree;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -24,13 +21,13 @@ public class OperationData {
 	private Map<String, IOData> ioDataMap;
 	private final ServletContext context;
 
-	public OperationData(HttpServletRequest request, Action action) {
+	public OperationData(HttpServletRequest request) {
 		params = request.getParameterMap();
 		context = request.getServletContext();
-		loadIODataMap(request, action);
+		loadIODataMap(request);
 	}
 
-	private void loadIODataMap(HttpServletRequest request, Action action){
+	private void loadIODataMap(HttpServletRequest request){
 		ioDataMap = new HashMap<String, IOData>();
 		try {
 			if(request.getReader() != null && request.getReader().lines()!=null){
@@ -41,12 +38,12 @@ public class OperationData {
 				while (fieldNames.hasNext()) {
 					String fieldName = fieldNames.next();
 					JsonNode value = actualObj.get(fieldName);
-					IOData ioData = IODataLoader.load(fieldName, value, action.getRequiredParams());
+					IOData ioData = IODataLoader.load(value);
 					if (ioData != null)
 						ioDataMap.put(fieldName, ioData);
 				}
 			}
-		} catch (IOException e) {
+		} catch (IOException ignored) {
 
 		}
 
@@ -54,7 +51,7 @@ public class OperationData {
 			RequestPath requestPath = RequestPath.from(request);
 			String resourceId = requestPath.getResourceId();
 			if (resourceId != null) {
-				IOData resourceIdData = IODataLoader.load("id", resourceId, action.getRequiredParams());
+				IOData resourceIdData = IODataLoader.load(resourceId);
 				if (resourceIdData != null)
 					ioDataMap.put("id", resourceIdData);
 			}
@@ -65,12 +62,37 @@ public class OperationData {
 		return context;
 	}
 
+	private IOData getIOData(String paramName){
+		if (!paramName.contains(".")){
+			return ioDataMap.get(paramName);
+		} else {
+			String fieldNameFirstPart = paramName.substring(0, paramName.indexOf("."));
+			String fieldNameSecondPart = paramName.substring(paramName.indexOf(".")+1);
+			IOData ioData = ioDataMap.get(fieldNameFirstPart);
+			if (ioData != null)
+				return ioData.get(fieldNameSecondPart);
+			else
+				return null;
+		}
+	}
+
 	public boolean has(String paramName) {
-		return ioDataMap.containsKey(paramName);
+		return (getIOData(paramName)!=null);
 	}
 
 	public String[] get(String paramName) {
-		return params.get(paramName);
+		String[] retVal = new String[0];
+		IOData ioData= getIOData(paramName);
+		if (ioData != null){
+			List<String> listString = ioData.getAsString();
+			retVal = (listString != null)?listString.toArray(new String[0]):retVal;
+		}
+		return retVal;
+	}
+
+	public void add(String key, JsonNode node){
+		if (node.getNodeType().equals(JsonNodeType.STRING))
+			ioDataMap.put(key, new IOPrimitiveData(node.textValue()));
 	}
 
 }

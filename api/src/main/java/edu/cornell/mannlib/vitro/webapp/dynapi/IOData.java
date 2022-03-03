@@ -1,6 +1,12 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi;
 
-public abstract class IOData {
+import java.util.List;
 
-    public abstract String[] getAsString();
+public interface IOData {
+
+    List<String> getAsString();
+
+    IOData get(String fieldName);
+
+    String toJsonString();
 }

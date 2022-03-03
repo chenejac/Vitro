@@ -1,5 +1,7 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi.components;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.List;
@@ -67,6 +69,7 @@ public class SPARQLQuery implements Operation {
 			return new OperationResult(500);
 		}
 		int resultCode = 200;
+		OperationResult operationResult = new OperationResult(resultCode);
 		Model queryModel = ModelAccess.on(input.getContext()).getOntModel(modelComponent.getName());
 		ParameterizedSparqlString pss = new ParameterizedSparqlString();
 		for (String paramName : requiredParams.getNames()) {
@@ -81,13 +84,14 @@ public class SPARQLQuery implements Operation {
 				int i = 1;
 				List<String> vars = results.getResultVars();
 				log.debug("Query vars: " + String.join(", ", vars));
-
 				while (results.hasNext()) {
 					QuerySolution solution = results.nextSolution();
 					log.debug("Query solution " + i++);
 					for (String var :vars) {
 						if (solution.contains(var)) {
 							log.debug(var + " : " + solution.get(var));
+							JsonNode jsonNode = new TextNode(solution.get(var).toString());
+							operationResult.addResult(var, jsonNode);
 						}
 					}
 				}
@@ -95,18 +99,18 @@ public class SPARQLQuery implements Operation {
 			} catch(Exception e) {
 				log.error(e.getLocalizedMessage());
 				e.printStackTrace();
-				resultCode = 500;
+				operationResult = new OperationResult(500);
 			}finally {
 				qexec.close();
 			}
 		} catch(Exception e) {
 			log.error(e.getLocalizedMessage());
 			e.printStackTrace();
-			resultCode = 500;
+			operationResult = new OperationResult(500);
 		} finally {
 			queryModel.leaveCriticalSection();
 		}
-		return new OperationResult(resultCode);
+		return operationResult;
 	}
 
 	private boolean isInputValid(OperationData input) {
