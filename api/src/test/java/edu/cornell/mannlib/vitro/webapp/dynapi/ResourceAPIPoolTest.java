@@ -25,16 +25,16 @@ public class ResourceAPIPoolTest extends ServletContextTest {
     public void reset() {
         setup();
 
-        ResourcePool resourcePool = ResourcePool.getInstance();
-        resourcePool.init(servletContext);
-        resourcePool.reload();
+        ResourceAPIPool resourceAPIPool = ResourceAPIPool.getInstance();
+        resourceAPIPool.init(servletContext);
+        resourceAPIPool.reload();
 
         ActionPool actionPool = ActionPool.getInstance();
         actionPool.init(servletContext);
         actionPool.reload();
 
-        assertEquals(0, resourcePool.count());
-        assertEquals(0, resourcePool.obsoleteCount());
+        assertEquals(0, resourceAPIPool.count());
+        assertEquals(0, resourceAPIPool.obsoleteCount());
 
         assertEquals(0, actionPool.count());
         assertEquals(0, actionPool.obsoleteCount());
@@ -42,43 +42,43 @@ public class ResourceAPIPoolTest extends ServletContextTest {
 
     @Test
     public void testGetInstance() {
-        ResourcePool resourcePool = ResourcePool.getInstance();
-        assertNotNull(resourcePool);
-        assertEquals(resourcePool, ResourcePool.getInstance());
+        ResourceAPIPool resourceAPIPool = ResourceAPIPool.getInstance();
+        assertNotNull(resourceAPIPool);
+        assertEquals(resourceAPIPool, ResourceAPIPool.getInstance());
     }
 
     @Test
     public void testGetBeforeInit() {
-        ResourcePool resourcePool = ResourcePool.getInstance();
-        assertTrue(resourcePool.get(TEST_RESOURCE_KEY) instanceof DefaultResourceAPI);
+        ResourceAPIPool resourceAPIPool = ResourceAPIPool.getInstance();
+        assertTrue(resourceAPIPool.get(TEST_RESOURCE_KEY) instanceof DefaultResourceAPI);
     }
 
     @Test
     public void testPrintKeysBeforeInit() {
-        ResourcePool resourcePool = ResourcePool.getInstance();
-        resourcePool.printKeys();
+        ResourceAPIPool resourceAPIPool = ResourceAPIPool.getInstance();
+        resourceAPIPool.printKeys();
         // nothing to assert
     }
 
     @Test
     public void testReloadBeforeInit() throws IOException {
-        ResourcePool resourcePool = ResourcePool.getInstance();
-        resourcePool.reload();
+        ResourceAPIPool resourceAPIPool = ResourceAPIPool.getInstance();
+        resourceAPIPool.reload();
         // not sure what to assert
     }
 
     @Test
     public void testInit() throws IOException {
-        ResourcePool resourcePool = initWithDefaultModel();
-        assertEquals(1, resourcePool.count());
-        assertEquals(0, resourcePool.obsoleteCount());
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
+        assertEquals(1, resourceAPIPool.count());
+        assertEquals(0, resourceAPIPool.obsoleteCount());
 
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(TEST_RESOURCE_KEY));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(TEST_RESOURCE_KEY));
     }
 
     @Test
     public void testVersioning() throws IOException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
         ResourceAPIKey resouce_v0 = ResourceAPIKey.of("test_resource", "0");
         ResourceAPIKey resource_v1 = ResourceAPIKey.of("test_resource", "1");
@@ -115,206 +115,206 @@ public class ResourceAPIPoolTest extends ServletContextTest {
 
 
         // base test for test_resource
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(resouce_v0));
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(resource_v1));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(resouce_v0));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(resource_v1));
         // base test for test_document
-        assertTrue(resourcePool.get(document_v0) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(document_v1) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(document_v0) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(document_v1) instanceof DefaultResourceAPI);
         // demonstrate no person resources in resource pool
-        assertTrue(resourcePool.get(person_v0) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v1) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v1_0) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v1_1) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v1_1_0) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v1_2) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v2) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v3) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v4) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v4_2) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v4_3) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v4_3_6) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v4_3_7) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v4_3_8) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v4_4) instanceof DefaultResourceAPI);
-        assertTrue(resourcePool.get(person_v5) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v0) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v1) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v1_0) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v1_1) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v1_1_0) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v1_2) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v2) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v3) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4_2) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4_3) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4_3_6) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4_3_7) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4_3_8) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4_4) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v5) instanceof DefaultResourceAPI);
 
         loadTestModel();
-        resourcePool.reload();
+        resourceAPIPool.reload();
         // base test for test_resource
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(resouce_v0));
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(resource_v1));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(resouce_v0));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(resource_v1));
         // base test for test_document
-        assertTrue(resourcePool.get(document_v0) instanceof DefaultResourceAPI);
-        assertResource(expectedDocument_v1_0_0, testDocumentActionName, resourcePool.get(document_v1));
+        assertTrue(resourceAPIPool.get(document_v0) instanceof DefaultResourceAPI);
+        assertResource(expectedDocument_v1_0_0, testDocumentActionName, resourceAPIPool.get(document_v1));
 
         // no person version 0 in pool
-        assertTrue(resourcePool.get(person_v0) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v0) instanceof DefaultResourceAPI);
         // person resource version 1.0.0 has no max version, any major version request greater than 1 should return version 1.0.0
-        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1));
-        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v2));
-        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v3));
-        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v4));
-        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v5));
+        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1));
+        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v2));
+        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v3));
+        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v4));
+        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v5));
 
 
         loadPersonVersion1_1Model();
-        resourcePool.reload();
+        resourceAPIPool.reload();
         // base test for test_resource
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(resouce_v0));
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(resource_v1));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(resouce_v0));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(resource_v1));
         // base test for test_document
-        assertTrue(resourcePool.get(document_v0) instanceof DefaultResourceAPI);
-        assertResource(expectedDocument_v1_0_0, testDocumentActionName, resourcePool.get(document_v1));
+        assertTrue(resourceAPIPool.get(document_v0) instanceof DefaultResourceAPI);
+        assertResource(expectedDocument_v1_0_0, testDocumentActionName, resourceAPIPool.get(document_v1));
 
         // no person version 0 in pool
-        assertTrue(resourcePool.get(person_v0) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v0) instanceof DefaultResourceAPI);
         // still able to get person version 1.0.0
-        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_0));
-        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_0_0));
+        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_0));
+        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_0_0));
 
         // able to get person version 1.1.0 from varying levels of specificity
-        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1));
-        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_1));
-        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_1_0));
+        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1));
+        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_1));
+        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_1_0));
 
         // person version 1 does not have specific minor version 2
-        assertTrue(resourcePool.get(person_v1_2) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v1_2) instanceof DefaultResourceAPI);
 
         // person resource version 1.1.0 has no max version, any major version request greater than 1 should return version 1.1.0
-        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v2));
-        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v3));
-        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v4));
-        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v5));
+        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v2));
+        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v3));
+        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v4));
+        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v5));
 
 
         loadPersonVersion2Model();
-        resourcePool.reload();
+        resourceAPIPool.reload();
         // base test for test_resource
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(resouce_v0));
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(resource_v1));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(resouce_v0));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(resource_v1));
         // base test for test_document
-        assertTrue(resourcePool.get(document_v0) instanceof DefaultResourceAPI);
-        assertResource(expectedDocument_v1_0_0, testDocumentActionName, resourcePool.get(document_v1));
+        assertTrue(resourceAPIPool.get(document_v0) instanceof DefaultResourceAPI);
+        assertResource(expectedDocument_v1_0_0, testDocumentActionName, resourceAPIPool.get(document_v1));
 
          // no person version 0 in pool
-         assertTrue(resourcePool.get(person_v0) instanceof DefaultResourceAPI);
+         assertTrue(resourceAPIPool.get(person_v0) instanceof DefaultResourceAPI);
          // still able to get person version 1.0.0
-         assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_0));
-         assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_0_0));
+         assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_0));
+         assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_0_0));
  
          // able to get person version 1.1.0 from varying levels of specificity
-         assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1));
-         assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_1));
-         assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_1_0));
+         assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1));
+         assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_1));
+         assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_1_0));
  
          // person version 1 does not have specific minor version 2
-         assertTrue(resourcePool.get(person_v1_2) instanceof DefaultResourceAPI);
+         assertTrue(resourceAPIPool.get(person_v1_2) instanceof DefaultResourceAPI);
 
          // able to get person version 2.0.0
-         assertResource(expectedPerson_v2_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v2));
+         assertResource(expectedPerson_v2_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v2));
 
          // person resource version 2.0.0 has no max version, any major version request greater than 2 should return version 2.0.0
-         assertResource(expectedPerson_v2_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v3));
-         assertResource(expectedPerson_v2_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v4));
-         assertResource(expectedPerson_v2_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v5));
+         assertResource(expectedPerson_v2_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v3));
+         assertResource(expectedPerson_v2_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v4));
+         assertResource(expectedPerson_v2_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v5));
 
 
         loadPersonVersion4_3_7Model();
-        resourcePool.reload();
+        resourceAPIPool.reload();
         // base test for test_resource
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(resouce_v0));
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(resource_v1));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(resouce_v0));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(resource_v1));
         // base test for test_document
-        assertTrue(resourcePool.get(document_v0) instanceof DefaultResourceAPI);
-        assertResource(expectedDocument_v1_0_0, testDocumentActionName, resourcePool.get(document_v1));
+        assertTrue(resourceAPIPool.get(document_v0) instanceof DefaultResourceAPI);
+        assertResource(expectedDocument_v1_0_0, testDocumentActionName, resourceAPIPool.get(document_v1));
 
 
         // no person version 0 in pool
-        assertTrue(resourcePool.get(person_v0) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v0) instanceof DefaultResourceAPI);
         // still able to get person version 1.0.0
-        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_0));
-        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_0_0));
+        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_0));
+        assertResource(expectedPerson_v1_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_0_0));
 
         // able to get person version 1.1.0 from varying levels of specificity
-        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1));
-        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_1));
-        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v1_1_0));
+        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1));
+        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_1));
+        assertResource(expectedPerson_v1_1_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v1_1_0));
 
         // person version 1 does not have specific minor version 2
-        assertTrue(resourcePool.get(person_v1_2) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v1_2) instanceof DefaultResourceAPI);
 
         // still able to get person version 2.0.0
-        assertResource(expectedPerson_v2_0_0, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v2));
+        assertResource(expectedPerson_v2_0_0, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v2));
 
         // skipped a version from 2.0.0 to 4.3.7 and 2.0.0 has max of 2.0.0
-        assertTrue(resourcePool.get(person_v3) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v3) instanceof DefaultResourceAPI);
 
         // no version 4.2 exists
-        assertTrue(resourcePool.get(person_v4_2) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4_2) instanceof DefaultResourceAPI);
         // version 4.3.6 does not exist
-        assertTrue(resourcePool.get(person_v4_3_6) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4_3_6) instanceof DefaultResourceAPI);
         // version 4.3.8 does not exist
-        assertTrue(resourcePool.get(person_v4_3_8) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4_3_8) instanceof DefaultResourceAPI);
 
         // no version 4.4 exists
-        assertTrue(resourcePool.get(person_v4_4) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(person_v4_4) instanceof DefaultResourceAPI);
 
         // able to get person version 4.3.7 at varying levels of specificity
-        assertResource(expectedPerson_v4_3_7, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v4));
-        assertResource(expectedPerson_v4_3_7, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v4_3));
-        assertResource(expectedPerson_v4_3_7, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v4_3_7));
+        assertResource(expectedPerson_v4_3_7, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v4));
+        assertResource(expectedPerson_v4_3_7, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v4_3));
+        assertResource(expectedPerson_v4_3_7, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v4_3_7));
 
         // person resource version 4.3.7 has no max version, any major version request greater than 4 should return version 2.0.0
-        assertResource(expectedPerson_v4_3_7, TEST_PERSON_ACTION_NAME, resourcePool.get(person_v5));
+        assertResource(expectedPerson_v4_3_7, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(person_v5));
     }
 
     @Test
     public void testPrintKeys() throws IOException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
-        resourcePool.printKeys();
+        resourceAPIPool.printKeys();
         // nothing to assert
     }
 
     @Test
     public void testAdd() throws IOException, ConfigurationBeanLoaderException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
         loadTestModel();
 
         ResourceAPI resourceAPI = loader.loadInstance(TEST_PERSON_RESOURCE_URI, ResourceAPI.class);
 
-        resourcePool.add(TEST_PERSON_RESOURCE_URI, resourceAPI);
+        resourceAPIPool.add(TEST_PERSON_RESOURCE_URI, resourceAPI);
 
-        assertEquals(0, resourcePool.obsoleteCount());
+        assertEquals(0, resourceAPIPool.obsoleteCount());
 
-        assertResource(TEST_PERSON_RESOURCE_KEY, TEST_PERSON_ACTION_NAME, resourcePool.get(TEST_PERSON_RESOURCE_KEY));
+        assertResource(TEST_PERSON_RESOURCE_KEY, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY));
     }
 
     @Test
     public void testAddHasClient() throws IOException, ConfigurationBeanLoaderException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
         loadTestModel();
 
-        resourcePool.reload();
+        resourceAPIPool.reload();
 
         ResourceAPI resourceAPI = loader.loadInstance(TEST_PERSON_RESOURCE_URI, ResourceAPI.class);
 
-        assertEquals(0, resourcePool.obsoleteCount());
+        assertEquals(0, resourceAPIPool.obsoleteCount());
 
-        ResourceAPI resourceAPIHasClient = resourcePool.get(TEST_PERSON_RESOURCE_KEY);
+        ResourceAPI resourceAPIHasClient = resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY);
 
-        resourcePool.add(TEST_PERSON_RESOURCE_URI, resourceAPI);
+        resourceAPIPool.add(TEST_PERSON_RESOURCE_URI, resourceAPI);
 
-        assertEquals(1, resourcePool.obsoleteCount());
+        assertEquals(1, resourceAPIPool.obsoleteCount());
 
         resourceAPIHasClient.removeClient();
     }
 
     @Test(expected = RuntimeException.class)
     public void testAddWithoutModelLoaded() throws IOException, ConfigurationBeanLoaderException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
         loadTestModel();
 
@@ -322,20 +322,20 @@ public class ResourceAPIPoolTest extends ServletContextTest {
 
         reset();
 
-        assertTrue(resourcePool.get(TEST_PERSON_RESOURCE_KEY) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY) instanceof DefaultResourceAPI);
 
-        resourcePool.add(TEST_PERSON_RESOURCE_URI, resourceAPI);
+        resourceAPIPool.add(TEST_PERSON_RESOURCE_URI, resourceAPI);
     }
 
     @Test
     public void testRemove() throws IOException, ConfigurationBeanLoaderException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
         loadTestModel();
 
-        resourcePool.reload();
+        resourceAPIPool.reload();
 
-        ResourceAPI resourceAPI = resourcePool.get(TEST_PERSON_RESOURCE_KEY);
+        ResourceAPI resourceAPI = resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY);
 
         assertFalse(resourceAPI instanceof DefaultResourceAPI);
 
@@ -343,108 +343,108 @@ public class ResourceAPIPoolTest extends ServletContextTest {
 
         reset();
 
-        resourcePool.remove(TEST_PERSON_RESOURCE_URI, TEST_PERSON_RESOURCE_KEY);
+        resourceAPIPool.remove(TEST_PERSON_RESOURCE_URI, TEST_PERSON_RESOURCE_KEY);
 
-        assertEquals(0, resourcePool.obsoleteCount());
+        assertEquals(0, resourceAPIPool.obsoleteCount());
 
-        assertTrue(resourcePool.get(TEST_PERSON_RESOURCE_KEY) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY) instanceof DefaultResourceAPI);
     }
 
     @Test
     public void testRemoveHasClient() throws IOException, ConfigurationBeanLoaderException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
         loadTestModel();
 
-        resourcePool.reload();
+        resourceAPIPool.reload();
 
-        ResourceAPI resourceAPIHasClient = resourcePool.get(TEST_PERSON_RESOURCE_KEY);
+        ResourceAPI resourceAPIHasClient = resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY);
 
         assertFalse(resourceAPIHasClient instanceof DefaultResourceAPI);
 
         setup();
 
-        resourcePool.init(servletContext);
+        resourceAPIPool.init(servletContext);
 
-        resourcePool.remove(TEST_PERSON_RESOURCE_URI, TEST_PERSON_RESOURCE_KEY);
+        resourceAPIPool.remove(TEST_PERSON_RESOURCE_URI, TEST_PERSON_RESOURCE_KEY);
 
-        assertEquals(1, resourcePool.obsoleteCount());
+        assertEquals(1, resourceAPIPool.obsoleteCount());
 
-        assertTrue(resourcePool.get(TEST_PERSON_RESOURCE_KEY) instanceof DefaultResourceAPI);
+        assertTrue(resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY) instanceof DefaultResourceAPI);
 
         resourceAPIHasClient.removeClient();
     }
 
     @Test(expected = RuntimeException.class)
     public void testRemoveWithModelLoaded() throws IOException, ConfigurationBeanLoaderException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
         loadTestModel();
 
-        resourcePool.reload();
+        resourceAPIPool.reload();
 
-        resourcePool.remove(TEST_PERSON_RESOURCE_URI, TEST_PERSON_RESOURCE_KEY);
+        resourceAPIPool.remove(TEST_PERSON_RESOURCE_URI, TEST_PERSON_RESOURCE_KEY);
     }
 
     @Test
     public void testReloadSingle() throws IOException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
         loadTestModel();
 
-        ResourceAPI resourceAPI = resourcePool.get(TEST_PERSON_RESOURCE_KEY);
+        ResourceAPI resourceAPI = resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY);
 
         assertTrue(resourceAPI instanceof DefaultResourceAPI);
 
-        resourcePool.reload(TEST_PERSON_RESOURCE_URI);
+        resourceAPIPool.reload(TEST_PERSON_RESOURCE_URI);
 
-        assertResource(TEST_PERSON_RESOURCE_KEY, TEST_PERSON_ACTION_NAME, resourcePool.get(TEST_PERSON_RESOURCE_KEY));
+        assertResource(TEST_PERSON_RESOURCE_KEY, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY));
     }
 
     @Test
     public void testReload() throws IOException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(TEST_RESOURCE_KEY));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(TEST_RESOURCE_KEY));
 
         loadTestModel();
 
-        resourcePool.reload();
+        resourceAPIPool.reload();
 
-        assertEquals(8, resourcePool.count());
-        assertEquals(0, resourcePool.obsoleteCount());
+        assertEquals(8, resourceAPIPool.count());
+        assertEquals(0, resourceAPIPool.obsoleteCount());
 
-        assertResource(TEST_PERSON_RESOURCE_KEY, TEST_PERSON_ACTION_NAME, resourcePool.get(TEST_PERSON_RESOURCE_KEY));
+        assertResource(TEST_PERSON_RESOURCE_KEY, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY));
     }
 
     @Test
     public void testReloadThreadSafety() throws IOException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(TEST_RESOURCE_KEY));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(TEST_RESOURCE_KEY));
 
         loadTestModel();
 
-        CompletableFuture<Void> reloadFuture = CompletableFuture.runAsync(() -> resourcePool.reload());
+        CompletableFuture<Void> reloadFuture = CompletableFuture.runAsync(() -> resourceAPIPool.reload());
 
         while (!reloadFuture.isDone()) {
-            assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(TEST_RESOURCE_KEY));
+            assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(TEST_RESOURCE_KEY));
         }
 
-        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourcePool.get(TEST_RESOURCE_KEY));
+        assertResource(TEST_RESOURCE_KEY, TEST_ACTION_NAME, resourceAPIPool.get(TEST_RESOURCE_KEY));
 
-        assertResource(TEST_PERSON_RESOURCE_KEY, TEST_PERSON_ACTION_NAME, resourcePool.get(TEST_PERSON_RESOURCE_KEY));
+        assertResource(TEST_PERSON_RESOURCE_KEY, TEST_PERSON_ACTION_NAME, resourceAPIPool.get(TEST_PERSON_RESOURCE_KEY));
     }
 
     @Test
     public void testRealodOfResourceHasClient() throws IOException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
         loadTestModel();
 
-        ResourceAPI resourceAPI = resourcePool.get(TEST_RESOURCE_KEY);
+        ResourceAPI resourceAPI = resourceAPIPool.get(TEST_RESOURCE_KEY);
 
-        CompletableFuture<Void> reloadFuture = CompletableFuture.runAsync(() -> resourcePool.reload());
+        CompletableFuture<Void> reloadFuture = CompletableFuture.runAsync(() -> resourceAPIPool.reload());
 
         while (!reloadFuture.isDone()) {
             assertEquals(TEST_RESOURCE_KEY, resourceAPI.getKey());
@@ -455,33 +455,33 @@ public class ResourceAPIPoolTest extends ServletContextTest {
 
     @Test
     public void testClientsManagement() throws IOException, InterruptedException {
-        ResourcePool resourcePool = initWithDefaultModel();
+        ResourceAPIPool resourceAPIPool = initWithDefaultModel();
 
-        resourcePool.reload();
+        resourceAPIPool.reload();
 
-        long initalCount = resourcePool.obsoleteCount();
-        ResourceAPI resourceAPI = resourcePool.get(TEST_RESOURCE_KEY);
+        long initalCount = resourceAPIPool.obsoleteCount();
+        ResourceAPI resourceAPI = resourceAPIPool.get(TEST_RESOURCE_KEY);
 
         resourceAPI.removeClient();
 
         assertFalse(resourceAPI.hasClients());
 
-        Thread t1 = getResourceInThread(resourcePool, TEST_RESOURCE_KEY);
+        Thread t1 = getResourceInThread(resourceAPIPool, TEST_RESOURCE_KEY);
 
         t1.join();
 
         assertTrue(resourceAPI.hasClients());
 
-        resourcePool.reload();
+        resourceAPIPool.reload();
 
-        assertEquals(initalCount, resourcePool.obsoleteCount());
+        assertEquals(initalCount, resourceAPIPool.obsoleteCount());
     }
 
-    private Thread getResourceInThread(ResourcePool resourcePool, ResourceAPIKey resourceAPIKey) {
+    private Thread getResourceInThread(ResourceAPIPool resourceAPIPool, ResourceAPIKey resourceAPIKey) {
         Runnable client = new Runnable() {
             @Override
             public void run() {
-                ResourceAPI resourceAPI = resourcePool.get(resourceAPIKey);
+                ResourceAPI resourceAPI = resourceAPIPool.get(resourceAPIKey);
                 assertEquals(resourceAPIKey, resourceAPI.getKey());
                 assertTrue(resourceAPI.hasClients());
             }
@@ -491,10 +491,10 @@ public class ResourceAPIPoolTest extends ServletContextTest {
         return thread;
     }
 
-    private ResourcePool initWithDefaultModel() throws IOException {
+    private ResourceAPIPool initWithDefaultModel() throws IOException {
         loadDefaultModel();
 
-        ResourcePool resourcePool = ResourcePool.getInstance();
+        ResourceAPIPool resourcePool = ResourceAPIPool.getInstance();
         resourcePool.init(servletContext);
 
         ActionPool actionPool = ActionPool.getInstance();

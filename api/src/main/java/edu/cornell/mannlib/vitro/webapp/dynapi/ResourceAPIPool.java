@@ -4,16 +4,16 @@ import edu.cornell.mannlib.vitro.webapp.dynapi.components.DefaultResourceAPI;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceAPI;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceAPIKey;
 
-public class ResourcePool extends VersionableAbstractPool<ResourceAPIKey, ResourceAPI, ResourcePool> {
+public class ResourceAPIPool extends VersionableAbstractPool<ResourceAPIKey, ResourceAPI, ResourceAPIPool> {
 
-	private static ResourcePool INSTANCE = new ResourcePool();
+	private static ResourceAPIPool INSTANCE = new ResourceAPIPool();
 
-	public static ResourcePool getInstance() {
+	public static ResourceAPIPool getInstance() {
 		return INSTANCE;
 	}
 
 	@Override
-	public ResourcePool getPool() {
+	public ResourceAPIPool getPool() {
 		return getInstance();
 	}
 

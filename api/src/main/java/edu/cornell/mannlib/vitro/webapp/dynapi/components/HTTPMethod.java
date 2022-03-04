@@ -8,7 +8,7 @@ import edu.cornell.mannlib.vitro.webapp.utils.configuration.Property;
 public class HTTPMethod {
 	
  	private static final Log log = LogFactory.getLog(HTTPMethod.class);
-	String name;
+	private String name;
 
 	public String getName() {
 		return name;
