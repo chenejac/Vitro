@@ -2,7 +2,7 @@ package edu.cornell.mannlib.vitro.webapp.dynapi.components;
 
 import java.util.Set;
 
-import edu.cornell.mannlib.vitro.webapp.dynapi.OperationData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.OperationData;
 
 public class ConditionalStep implements Step {
 

@@ -18,6 +18,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.OperationData;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

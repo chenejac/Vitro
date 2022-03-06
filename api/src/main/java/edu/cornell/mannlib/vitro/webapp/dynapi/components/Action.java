@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletResponse;
 
-import edu.cornell.mannlib.vitro.webapp.dynapi.OperationData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.OperationData;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.Property;
 
 public class Action implements Poolable<String>, Operation, Link {

@@ -6,6 +6,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.OperationData;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

@@ -1,7 +1,7 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi.components;
 
 import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
-import edu.cornell.mannlib.vitro.webapp.dynapi.OperationData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.OperationData;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngine;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchQuery;

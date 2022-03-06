@@ -9,6 +9,7 @@ import edu.cornell.mannlib.vitro.webapp.application.ApplicationImpl;
 import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.Parameter;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.SolrQuery;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.OperationData;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngine;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchQuery;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.ConfigurationBeanLoaderException;

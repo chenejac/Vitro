@@ -6,7 +6,7 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import edu.cornell.mannlib.vitro.webapp.dynapi.OperationData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.OperationData;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.Property;
 
 public class OperationalStep implements Step{
