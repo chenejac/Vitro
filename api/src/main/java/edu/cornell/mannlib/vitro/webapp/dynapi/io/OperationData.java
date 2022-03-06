@@ -94,5 +94,4 @@ public class OperationData {
 		if (node.getNodeType().equals(JsonNodeType.STRING))
 			ioDataMap.put(key, new IOPrimitiveData(node.textValue()));
 	}
-
 }
