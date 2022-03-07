@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.Property;
 
-public class Resource implements Versionable<ResourceKey> {
+public class ResourceAPI implements Versionable<ResourceAPIKey> {
 
 	private String name;
 	private String versionMin;
@@ -53,8 +53,8 @@ public class Resource implements Versionable<ResourceKey> {
 	}
 
 	@Override
-	public ResourceKey getKey() {
-		return ResourceKey.of(name, versionMin);
+	public ResourceAPIKey getKey() {
+		return ResourceAPIKey.of(name, versionMin);
 	}
 
 	@Override

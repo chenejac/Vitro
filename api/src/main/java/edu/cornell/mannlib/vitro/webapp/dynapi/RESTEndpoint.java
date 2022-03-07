@@ -16,8 +16,8 @@ import org.apache.commons.logging.LogFactory;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroHttpServlet;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.Action;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.OperationResult;
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.Resource;
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceKey;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceAPI;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceAPIKey;
 import edu.cornell.mannlib.vitro.webapp.dynapi.request.RequestPath;
 
 @WebServlet(name = "RESTEndpoint", urlPatterns = { REST_BASE_PATH + "/*" })
@@ -25,7 +25,7 @@ public class RESTEndpoint extends VitroHttpServlet {
 
 	private static final Log log = LogFactory.getLog(RESTEndpoint.class);
 
-	private ResourcePool resourcePool = ResourcePool.getInstance();
+	private ResourceAPIPool resourceAPIPool = ResourceAPIPool.getInstance();
 	private ActionPool actionPool = ActionPool.getInstance();
 
 	@Override
@@ -65,12 +65,12 @@ public class RESTEndpoint extends VitroHttpServlet {
 		RequestPath requestPath = RequestPath.from(request);
 
 		if (requestPath.isValid()) {
-			ResourceKey resourceKey = ResourceKey.of(requestPath.getResourceName(), requestPath.getResourceVersion());
+			ResourceAPIKey resourceAPIKey = ResourceAPIKey.of(requestPath.getResourceName(), requestPath.getResourceVersion());
 
 			if (log.isDebugEnabled()) {
-				resourcePool.printKeys();
+				resourceAPIPool.printKeys();
 			}
-			Resource resource = resourcePool.get(resourceKey);
+			ResourceAPI resourceAPI = resourceAPIPool.get(resourceAPIKey);
 			String method = request.getMethod();
 
 			String actionName = null;
@@ -80,29 +80,29 @@ public class RESTEndpoint extends VitroHttpServlet {
 					String customRestActionName = requestPath.getActionName();
 
 					try {
-						actionName = resource.getCustomRestActionByName(customRestActionName);
+						actionName = resourceAPI.getCustomRestActionByName(customRestActionName);
 					} catch (UnsupportedOperationException e) {
 						log.error(format("Custom REST action %s not implemented for resource %s", customRestActionName,
-								resource.getKey()), e);
+								resourceAPI.getKey()), e);
 						OperationResult.notImplemented().prepareResponse(response);
 						return;
 					} finally {
-						resource.removeClient();
+						resourceAPI.removeClient();
 					}
 				} else {
 					OperationResult.notImplemented().prepareResponse(response);
-					resource.removeClient();
+					resourceAPI.removeClient();
 					return;
 				}
 			} else {
 				try {
-					actionName = resource.getActionNameByMethod(method);
+					actionName = resourceAPI.getActionNameByMethod(method);
 				} catch (UnsupportedOperationException e) {
-					log.error(format("Method %s not implemented for resource %s", method, resource.getKey()), e);
+					log.error(format("Method %s not implemented for resource %s", method, resourceAPI.getKey()), e);
 					OperationResult.notImplemented().prepareResponse(response);
 					return;
 				} finally {
-					resource.removeClient();
+					resourceAPI.removeClient();
 				}
 			}
 
