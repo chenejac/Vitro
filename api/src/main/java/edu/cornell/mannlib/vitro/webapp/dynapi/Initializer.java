@@ -7,9 +7,9 @@ import javax.servlet.ServletContextListener;
 public class Initializer implements ServletContextListener {
 	public Initializer() {}
 
-	private void initializeResourcePool(ServletContext ctx) {
-		ResourcePool resourcePool = ResourcePool.getInstance();
-		resourcePool.init(ctx);		
+	private void initializeResourceAPIPool(ServletContext ctx) {
+		ResourceAPIPool resourceAPIPool = ResourceAPIPool.getInstance();
+		resourceAPIPool.init(ctx);
 	}
 
 	private void initializeActionPool(ServletContext ctx) {
@@ -21,7 +21,7 @@ public class Initializer implements ServletContextListener {
 	public void contextInitialized(ServletContextEvent sce) {
 		ServletContext ctx = sce.getServletContext();
 		initializeActionPool(ctx);
-		initializeResourcePool(ctx);		
+		initializeResourceAPIPool(ctx);
 	}
 
 	@Override
