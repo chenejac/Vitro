@@ -83,13 +83,13 @@ public class ObjectData extends ContainerData<Map<String, Data>> {
 
     @Override
     public boolean checkType(ParameterType parameterType) {
-        boolean retVal = parameterType.getRDFDataType().toString().equals(getRDFDataType().toString());
-        if (retVal){
-            for (String name : ((ObjectParameterType)parameterType).getInternalElements().getNames()){
-                Data element = container.get(name);
-                ParameterType internalParameterType = ((ObjectParameterType)parameterType).getInternalElements().get(name).getType();
-                if ( (element == null) || (! (element.checkType(internalParameterType))))
-                    retVal = false;
+        boolean retVal = true;
+        for (String name : ((ObjectParameterType)parameterType).getInternalElements().getNames()){
+            Data element = container.get(name);
+            ParameterType internalParameterType = ((ObjectParameterType)parameterType).getInternalElements().get(name).getType();
+            if ( (element == null) || (! (element.checkType(internalParameterType)))) {
+                retVal = false;
+                break;
             }
         }
         return retVal;

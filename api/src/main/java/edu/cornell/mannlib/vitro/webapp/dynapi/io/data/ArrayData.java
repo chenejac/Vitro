@@ -90,13 +90,13 @@ public class ArrayData extends ContainerData<List<Data>> {
 
     @Override
     public boolean checkType(ParameterType parameterType) {
-        boolean retVal = parameterType.getRDFDataType().toString().equals(getRDFDataType().toString());
-        if (retVal){
-            ParameterType internalParameterType = ((ArrayParameterType)parameterType).getElementsType();
-            for (Data element:container)
-                if ((element == null) || (! (element.checkType(internalParameterType))))
-                    retVal = false;
-        }
+        boolean retVal = true;
+        ParameterType internalParameterType = ((ArrayParameterType)parameterType).getElementsType();
+        for (Data element:container)
+            if ((element == null) || (! (element.checkType(internalParameterType)))) {
+                retVal = false;
+                break;
+            }
         return retVal;
     }
 

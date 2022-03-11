@@ -125,7 +125,7 @@ public class Action extends Operation implements Poolable<String>, Link {
             for (String name : providedParams.getNames()) {
                 Parameter param = providedParams.get(name);
                 Data outputValue = inputOutput.getData(name);
-                if (!param.isValid(name, outputValue)) {
+                if (!param.isValid(outputValue)) {
                     return false;
                 }
             }

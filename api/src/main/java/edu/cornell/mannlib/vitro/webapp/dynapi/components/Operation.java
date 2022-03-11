@@ -21,7 +21,7 @@ public abstract class Operation implements RunnableComponent, ParameterInfo {
                 }
                 Parameter param = requiredParams.get(name);
                 Data data = inputOutput.getData(name);
-                if (!param.isValid(name, data)) {
+                if (!param.isValid(data)) {
                     return false;
                 }
             }

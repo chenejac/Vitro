@@ -56,16 +56,21 @@ public class Parameter implements Removable {
         validators.add(validator);
     }
 
-    public boolean isValid(String name, Data data) {
+    public boolean isValid(Data data) {
+        return isValid(name, data, type);
+    }
+
+    private boolean isValid(String name, Data data, ParameterType parameterType) {
         boolean retVal = true;
-        if (data.checkType(type)) {
-            if (type instanceof PrimitiveParameterType) {
+        if (data.checkType(parameterType)) {
+            if (parameterType instanceof PrimitiveParameterType) {
                 retVal = validators.isAllValid(name, ((PrimitiveData<?>) data).getValue().toString());
-            } else if (type instanceof ArrayParameterType) {
+            } else if (parameterType instanceof ArrayParameterType) {
                 ArrayData arrayData = (ArrayData) data;
+                ParameterType internalParameterType = ((ArrayParameterType) type).getElementsType();
                 for (int i = 0; i < arrayData.getContainer().size(); i++) {
                     Data element = arrayData.getContainer().get(i);
-                    if (!(isValid(name + "[" + "]", element))) {
+                    if (!(isValid(name + "[" + "]", element, internalParameterType))) {
                         retVal = false;
                         break;
                     }
@@ -75,7 +80,7 @@ public class Parameter implements Removable {
                 for (String internalName : ((ObjectParameterType) type).getInternalElements().getNames()) {
                     Data element = objectData.getContainer().get(name);
                     Parameter internalParameter = ((ObjectParameterType) type).getInternalElements().get(name);
-                    if (!(internalParameter.isValid(name + "." + internalName, element))) {
+                    if (!(internalParameter.isValid(name + "." + internalName, element, internalParameter.getType()))) {
                         retVal = false;
                         break;
                     }
