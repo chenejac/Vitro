@@ -64,12 +64,11 @@ public class OperationData {
         return getData(paramName) != null;
     }
 
-    public String[] get(String paramName) {
-        String[] retVal = new String[0];
+    public String get(String paramName) {
+        String retVal = null;
         Data internalData = getData(paramName);
         if (internalData != null) {
-            List<String> listString = internalData.getAsString();
-            retVal = (listString != null) ? listString.toArray(new String[0]) : retVal;
+            retVal = internalData.toString();
         }
         return retVal;
     }

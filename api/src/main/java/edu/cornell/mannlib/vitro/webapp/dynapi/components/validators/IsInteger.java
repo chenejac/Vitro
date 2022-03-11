@@ -9,20 +9,20 @@ public class IsInteger extends IsNotBlank {
     private static final Log log = LogFactory.getLog(IsInteger.class);
 
     @Override
-    public boolean isValid(String name, String[] values) {
-        if (!super.isValid(name, values)) {
+    public boolean isValid(String name, String value) {
+        if (!super.isValid(name, value)) {
             return false;
         }
 
-        if (!isInteger(values[0])) {
+        if (!isInteger(value)) {
             return false;
         }
 
         return true;
     }
 
-    private boolean isInteger(String string) {
-        if (NumberUtils.isDigits(string)) {
+    private boolean isInteger(String value) {
+        if (NumberUtils.isDigits(value)) {
             return true;
         }
         log.debug("Value is not a number. Validation failed.");

@@ -1,5 +1,8 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi.io.data;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
+import org.apache.jena.datatypes.RDFDatatype;
+
 import java.util.List;
 
 public interface Data {
@@ -12,6 +15,8 @@ public interface Data {
     int IOBoolean = 5;
     int IOString = 6;
 
-    List<String> getAsString();
+    RDFDatatype getRDFDataType();
+
+    boolean checkType(ParameterType parameterType);
 
 }

@@ -1,5 +1,8 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi.io.data;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
+import org.apache.jena.datatypes.RDFDatatype;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,15 +23,12 @@ public abstract class PrimitiveData<T> implements Data {
     }
 
     @Override
-    public List<String> getAsString() {
-        List<java.lang.String> retVal = new ArrayList<String>();
-        retVal.add((value != null) ? value.toString() : "");
-        return retVal;
-    }
-
-    @Override
     public String toString() {
         return value.toString();
     }
 
+    @Override
+    public boolean checkType(ParameterType parameterType) {
+        return parameterType.getRDFDataType().toString().equals(getRDFDataType().toString());
+    }
 }

@@ -2,6 +2,10 @@ package edu.cornell.mannlib.vitro.webapp.dynapi.components;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ArrayParameterType;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ObjectParameterType;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.ArrayData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.Data;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.ObjectData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.PrimitiveData;
 import org.apache.jena.datatypes.RDFDatatype;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
@@ -52,8 +56,36 @@ public class Parameter implements Removable {
         validators.add(validator);
     }
 
-    public boolean isValid(String name, String[] values) {
-        return validators.isAllValid(name, values);
+    public boolean isValid(String name, Data data) {
+        boolean retVal = true;
+        if (data.checkType(type)) {
+            if (type instanceof PrimitiveParameterType) {
+                retVal = validators.isAllValid(name, ((PrimitiveData<?>) data).getValue().toString());
+            } else if (type instanceof ArrayParameterType) {
+                ArrayData arrayData = (ArrayData) data;
+                for (int i = 0; i < arrayData.getContainer().size(); i++) {
+                    Data element = arrayData.getContainer().get(i);
+                    if (!(isValid(name + "[" + "]", element))) {
+                        retVal = false;
+                        break;
+                    }
+                }
+            } else if (type instanceof ObjectParameterType) {
+                ObjectData objectData = (ObjectData) data;
+                for (String internalName : ((ObjectParameterType) type).getInternalElements().getNames()) {
+                    Data element = objectData.getContainer().get(name);
+                    Parameter internalParameter = ((ObjectParameterType) type).getInternalElements().get(name);
+                    if (!(internalParameter.isValid(name + "." + internalName, element))) {
+                        retVal = false;
+                        break;
+                    }
+                }
+            }
+        } else {
+            retVal = false;
+        }
+
+        return retVal;
     }
 
     public String computePrefix(String fieldName) {
