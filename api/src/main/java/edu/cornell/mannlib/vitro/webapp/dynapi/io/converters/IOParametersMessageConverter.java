@@ -7,20 +7,12 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.*;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.ArrayData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.BooleanData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.Data;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.DecimalData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.IntegerData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.ObjectData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.PrimitiveData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.StringData;
+public class IOParametersMessageConverter extends IOMessageConverter {
 
-public class IOParametersMessageConverter implements IOMessageConverter {
-
-    private static IOParametersMessageConverter INSTANCE = new IOParametersMessageConverter();
+    private static final IOParametersMessageConverter INSTANCE = new IOParametersMessageConverter();
 
     public static IOParametersMessageConverter getInstance() {
         return INSTANCE;
@@ -74,6 +66,9 @@ public class IOParametersMessageConverter implements IOMessageConverter {
             case Data.IOString:
                 retVal = new StringData(values[0]);
                 break;
+            case Data.IOAnyURI:
+                retVal = new AnyURIData(values[0]);
+                break;
         }
         return retVal;
     }
@@ -84,7 +79,7 @@ public class IOParametersMessageConverter implements IOMessageConverter {
             case Data.IOArray:
                 StringBuilder allValues = new StringBuilder();
                 for (Data arrayItem : ((ArrayData) data).getContainer()) {
-                    allValues.append(((PrimitiveData<?>) arrayItem).toString());
+                    allValues.append(arrayItem.toString());
                 }
                 retVal = allValues.toString();
                 break;
@@ -92,7 +87,8 @@ public class IOParametersMessageConverter implements IOMessageConverter {
             case Data.IODecimal:
             case Data.IOBoolean:
             case Data.IOString:
-                retVal = ((PrimitiveData<?>) data).toString();
+            case Data.IOAnyURI:
+                retVal = data.toString();
                 break;
         }
         return retVal;
@@ -109,23 +105,10 @@ public class IOParametersMessageConverter implements IOMessageConverter {
             return Data.IODecimal;
         else if ("true".equalsIgnoreCase(values[0]) || "false".equalsIgnoreCase(values[0]))
             return Data.IOBoolean;
+        else if (isURI(values[0]))
+            return Data.IOAnyURI;
         else
             return Data.IOString;
-    }
-
-    private int getDataType(Data data) {
-        if (data instanceof ArrayData)
-            return Data.IOArray;
-        else if (data instanceof IntegerData)
-            return Data.IOInteger;
-        else if (data instanceof DecimalData)
-            return Data.IODecimal;
-        else if (data instanceof BooleanData)
-            return Data.IOBoolean;
-        else if (data instanceof StringData)
-            return Data.IOString;
-        else
-            return Data.IOUnknown;
     }
 
 }

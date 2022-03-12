@@ -1,8 +1,5 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi.io.data;
 
-import org.apache.jena.datatypes.RDFDatatype;
-import org.apache.jena.datatypes.xsd.XSDDatatype;
-
 public class IntegerData extends PrimitiveData<Integer> {
 
     public IntegerData(Integer value) {
@@ -10,8 +7,8 @@ public class IntegerData extends PrimitiveData<Integer> {
     }
 
     @Override
-    public RDFDatatype getRDFDataType() {
-        return new XSDDatatype("integer");
+    public String getType() {
+        return "integer";
     }
 
 }

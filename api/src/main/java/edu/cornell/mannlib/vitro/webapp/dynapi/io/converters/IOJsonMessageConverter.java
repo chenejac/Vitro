@@ -19,17 +19,11 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.ArrayData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.BooleanData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.Data;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.DecimalData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.IntegerData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.ObjectData;
-import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.StringData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.*;
 
-public class IOJsonMessageConverter implements IOMessageConverter {
+public class IOJsonMessageConverter extends IOMessageConverter {
 
-    private static IOJsonMessageConverter INSTANCE = new IOJsonMessageConverter();
+    private static final IOJsonMessageConverter INSTANCE = new IOJsonMessageConverter();
 
     public static IOJsonMessageConverter getInstance() {
         return INSTANCE;
@@ -66,11 +60,9 @@ public class IOJsonMessageConverter implements IOMessageConverter {
         Iterator<String> fieldNames = ioDataMap.keySet().iterator();
         while (fieldNames.hasNext()) {
             String fieldName = fieldNames.next();
-            if (fieldName.equalsIgnoreCase("result")) {
-                JsonNode node = toJson(ioDataMap.get(fieldName));
-                if (node != null) {
-                    objectNode.set(fieldName, node);
-                }
+            JsonNode node = toJson(ioDataMap.get(fieldName));
+            if (node != null) {
+                objectNode.set(fieldName, node);
             }
         }
         return objectNode.toString();
@@ -116,6 +108,9 @@ public class IOJsonMessageConverter implements IOMessageConverter {
             case Data.IOString:
                 retVal = new StringData(node.asText());
                 break;
+            case Data.IOAnyURI:
+                retVal = new AnyURIData(node.asText());
+                break;
         }
         return retVal;
     }
@@ -155,6 +150,7 @@ public class IOJsonMessageConverter implements IOMessageConverter {
                 retVal = BooleanNode.valueOf(((BooleanData) data).getValue());
                 break;
             case Data.IOString:
+            case Data.IOAnyURI:
                 retVal = TextNode.valueOf(((StringData) data).getValue());
                 break;
         }
@@ -172,24 +168,9 @@ public class IOJsonMessageConverter implements IOMessageConverter {
             return Data.IODecimal;
         else if (node.isBoolean())
             return Data.IOBoolean;
+        else if (node.isTextual() && isURI(node.asText()))
+            return Data.IOAnyURI;
         else if (node.isTextual())
-            return Data.IOString;
-        else
-            return Data.IOUnknown;
-    }
-
-    private int getDataType(Data data) {
-        if (data instanceof ArrayData)
-            return Data.IOArray;
-        else if (data instanceof ObjectData)
-            return Data.IOObject;
-        else if (data instanceof IntegerData)
-            return Data.IOInteger;
-        else if (data instanceof DecimalData)
-            return Data.IODecimal;
-        else if (data instanceof BooleanData)
-            return Data.IOBoolean;
-        else if (data instanceof StringData)
             return Data.IOString;
         else
             return Data.IOUnknown;

@@ -49,6 +49,9 @@ public class SolrQueryTest extends ServletContextTest{
     private Parameter parameter1;
 
     @Mock
+    private Data data;
+
+    @Mock
     private OperationData input;
 
     @Mock
@@ -100,13 +103,13 @@ public class SolrQueryTest extends ServletContextTest{
         verify(input,times(1)).has("testParameter");
     }
 
-    @Test @Ignore
+    @Test
     public void requiredParameterPresentButInvalid(){
         when(parameter1.getName()).thenReturn("testParameter");
         when(parameter1.isValid(any(Data.class))).thenReturn(false);
         solrQuery.addRequiredParameter(parameter1);
         when(input.has("testParameter")).thenReturn(true);
-        when(input.get("testParameter")).thenReturn("testValue");
+        when(input.getData("testParameter")).thenReturn(data);
         assertTrue(solrQuery.run(input).hasError());
 
         verify(parameter1,times(1)).getName();
@@ -119,7 +122,7 @@ public class SolrQueryTest extends ServletContextTest{
         when(parameter1.isValid(any(Data.class))).thenReturn(true);
         solrQuery.addRequiredParameter(parameter1);
         when(input.has("testParameter")).thenReturn(true);
-        when(input.get("testParameter")).thenReturn("testValue");
+        when(input.getData("testParameter")).thenReturn(data);
         assertFalse(solrQuery.run(input).hasError());
 
         verify(parameter1,times(1)).getName();

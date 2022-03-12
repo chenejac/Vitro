@@ -4,11 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ArrayParameterType;
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ObjectParameterType;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.jena.datatypes.RDFDatatype;
-import org.apache.jena.datatypes.xsd.XSDDatatype;
 
 public class ArrayData extends ContainerData<List<Data>> {
 
@@ -84,19 +81,21 @@ public class ArrayData extends ContainerData<List<Data>> {
     }
 
     @Override
-    public RDFDatatype getRDFDataType() {
-        return new XSDDatatype("array");
+    public String getType() {
+        return "array";
     }
 
     @Override
     public boolean checkType(ParameterType parameterType) {
-        boolean retVal = true;
-        ParameterType internalParameterType = ((ArrayParameterType)parameterType).getElementsType();
-        for (Data element:container)
-            if ((element == null) || (! (element.checkType(internalParameterType)))) {
-                retVal = false;
-                break;
-            }
+        boolean retVal = (parameterType instanceof ArrayParameterType);
+        if (retVal) {
+            ParameterType internalParameterType = ((ArrayParameterType) parameterType).getElementsType();
+            for (Data element : container)
+                if ((element == null) || (!(element.checkType(internalParameterType)))) {
+                    retVal = false;
+                    break;
+                }
+        }
         return retVal;
     }
 

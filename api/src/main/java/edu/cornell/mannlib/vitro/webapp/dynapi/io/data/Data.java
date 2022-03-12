@@ -3,8 +3,6 @@ package edu.cornell.mannlib.vitro.webapp.dynapi.io.data;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
 import org.apache.jena.datatypes.RDFDatatype;
 
-import java.util.List;
-
 public interface Data {
 
     int IOUnknown = 0;
@@ -14,8 +12,9 @@ public interface Data {
     int IODecimal = 4;
     int IOBoolean = 5;
     int IOString = 6;
+    int IOAnyURI = 7;
 
-    RDFDatatype getRDFDataType();
+    String getType();
 
     boolean checkType(ParameterType parameterType);
 
