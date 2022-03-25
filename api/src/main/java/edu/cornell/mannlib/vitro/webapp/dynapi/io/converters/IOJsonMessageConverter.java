@@ -70,110 +70,74 @@ public class IOJsonMessageConverter extends IOMessageConverter {
 
     public Data fromJson(JsonNode node) {
         Data retVal = null;
-        switch (getDataType(node)) {
-            case Data.IOObject:
-                Map<String, Data> fields = new HashMap<String, Data>();
-                Iterator<String> fieldNames = node.fieldNames();
-                while (fieldNames.hasNext()) {
-                    String fieldName = fieldNames.next();
-                    JsonNode value = node.get(fieldName);
-                    Data data = fromJson(value);
-                    if (data != null) {
-                        fields.put(fieldName, data);
-                    }
+        if (node.isArray()) {
+            if (node instanceof ArrayNode) {
+                ArrayNode arrayNode = (ArrayNode) node;
+                List<Data> values = new ArrayList<Data>();
+                Iterator<JsonNode> itr = arrayNode.elements();
+                while (itr.hasNext()) {
+                    JsonNode next = itr.next();
+                    values.add(fromJson(next));
                 }
-                retVal = new ObjectData(fields);
-                break;
-            case Data.IOArray:
-                if (node instanceof ArrayNode) {
-                    ArrayNode arrayNode = (ArrayNode) node;
-                    List<Data> values = new ArrayList<Data>();
-                    Iterator<JsonNode> itr = arrayNode.elements();
-                    while (itr.hasNext()) {
-                        JsonNode next = itr.next();
-                        values.add(fromJson(next));
-                    }
-                    retVal = new ArrayData(values);
+                retVal = new ArrayData(values);
+            }
+        } else if (node.isObject()) {
+            Map<String, Data> fields = new HashMap<String, Data>();
+            Iterator<String> fieldNames = node.fieldNames();
+            while (fieldNames.hasNext()) {
+                String fieldName = fieldNames.next();
+                JsonNode value = node.get(fieldName);
+                Data data = fromJson(value);
+                if (data != null) {
+                    fields.put(fieldName, data);
                 }
-                break;
-            case Data.IOInteger:
-                retVal = new IntegerData(node.asInt());
-                break;
-            case Data.IODecimal:
-                retVal = new DecimalData(node.asDouble());
-                break;
-            case Data.IOBoolean:
-                retVal = new BooleanData(node.asBoolean());
-                break;
-            case Data.IOString:
-                retVal = new StringData(node.asText());
-                break;
-            case Data.IOAnyURI:
-                retVal = new AnyURIData(node.asText());
-                break;
-        }
+            }
+            retVal = new ObjectData(fields);
+        } else if (node.isInt())
+            retVal = new IntegerData(node.asInt());
+        else if (node.isDouble())
+            retVal = new DecimalData(node.asDouble());
+        else if (node.isBoolean())
+            retVal = new BooleanData(node.asBoolean());
+        else if (node.isTextual() && IOMessageConverterUtils.isURI(node.asText()))
+            retVal = new AnyURIData(node.asText());
+        else if (node.isTextual())
+            retVal = new StringData(node.asText());
         return retVal;
     }
 
     public JsonNode toJson(Data data) {
         JsonNode retVal = null;
-        switch (getDataType(data)) {
-            case Data.IOObject:
-                ObjectNode objectNode = mapper.createObjectNode();
-                Map<String, Data> fields = ((ObjectData) data).getContainer();
-                Iterator<String> fieldNames = fields.keySet().iterator();
-                while (fieldNames.hasNext()) {
-                    String fieldName = fieldNames.next();
-                    JsonNode node = toJson(fields.get(fieldName));
-                    if (node != null) {
-                        objectNode.set(fieldName, node);
-                    }
+        if (data instanceof ArrayData) {
+            ArrayNode arrayNode = mapper.createArrayNode();
+            List<Data> values = ((ArrayData) data).getContainer();
+            for (Data value : values) {
+                JsonNode node = toJson(value);
+                arrayNode.add(node);
+            }
+            retVal = arrayNode;
+        } else if (data instanceof ObjectData) {
+            ObjectNode objectNode = mapper.createObjectNode();
+            Map<String, Data> fields = ((ObjectData) data).getContainer();
+            Iterator<String> fieldNames = fields.keySet().iterator();
+            while (fieldNames.hasNext()) {
+                String fieldName = fieldNames.next();
+                JsonNode node = toJson(fields.get(fieldName));
+                if (node != null) {
+                    objectNode.set(fieldName, node);
                 }
-                retVal = objectNode;
-                break;
-            case Data.IOArray:
-                ArrayNode arrayNode = mapper.createArrayNode();
-                List<Data> values = ((ArrayData) data).getContainer();
-                for (Data value : values) {
-                    JsonNode node = toJson(value);
-                    arrayNode.add(node);
-                }
-                retVal = arrayNode;
-                break;
-            case Data.IOInteger:
-                retVal = IntNode.valueOf(((IntegerData) data).getValue());
-                break;
-            case Data.IODecimal:
-                retVal = DoubleNode.valueOf(((DecimalData) data).getValue());
-                break;
-            case Data.IOBoolean:
-                retVal = BooleanNode.valueOf(((BooleanData) data).getValue());
-                break;
-            case Data.IOString:
-            case Data.IOAnyURI:
-                retVal = TextNode.valueOf(((StringData) data).getValue());
-                break;
-        }
+            }
+            retVal = objectNode;
+        } else if (data instanceof IntegerData)
+            retVal = IntNode.valueOf(((IntegerData) data).getValue());
+        else if (data instanceof DecimalData)
+            retVal = DoubleNode.valueOf(((DecimalData) data).getValue());
+        else if (data instanceof BooleanData)
+            retVal = BooleanNode.valueOf(((BooleanData) data).getValue());
+        else if (data instanceof StringData)
+            retVal = TextNode.valueOf(((StringData) data).getValue());
         return retVal;
     }
 
-    private int getDataType(JsonNode node) {
-        if (node.isArray())
-            return Data.IOArray;
-        else if (node.isObject())
-            return Data.IOObject;
-        else if (node.isInt())
-            return Data.IOInteger;
-        else if (node.isDouble())
-            return Data.IODecimal;
-        else if (node.isBoolean())
-            return Data.IOBoolean;
-        else if (node.isTextual() && isURI(node.asText()))
-            return Data.IOAnyURI;
-        else if (node.isTextual())
-            return Data.IOString;
-        else
-            return Data.IOUnknown;
-    }
 
 }

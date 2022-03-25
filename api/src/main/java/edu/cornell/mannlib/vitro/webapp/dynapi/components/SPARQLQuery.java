@@ -2,6 +2,9 @@ package edu.cornell.mannlib.vitro.webapp.dynapi.components;
 
 import java.util.List;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.converters.IOMessageConverterUtils;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.PrimitiveData;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.jena.query.ParameterizedSparqlString;
@@ -89,7 +92,12 @@ public class SPARQLQuery extends Operation {
                     for (String var : vars) {
                         if (solution.contains(var)) {
                             log.debug(var + " : " + solution.get(var));
-                            inputOutput.add(computeProvidedFieldName(j + "." + var), new StringData(solution.get(var).toString()));
+                            String fieldName = computeProvidedFieldName(j + "." + var);
+                            Parameter parameter = getProvidedParams().get(fieldName);
+                            ParameterType type = (parameter != null) ? parameter.getType() : null;
+                            PrimitiveData data = IOMessageConverterUtils.getPrimitiveDataFromString(solution.get(var).toString(), type);
+                            if (data != null)
+                                inputOutput.add(fieldName, data);
                         }
                     }
                     j++;

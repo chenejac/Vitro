@@ -1,5 +1,13 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi.components;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ArrayParameterType;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ObjectParameterType;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.ContainerData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.Data;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +29,26 @@ public class Parameters implements Removable {
     }
 
     public Parameter get(String name) {
-        return params.get(name);
+        if (!name.contains(".")) {
+            return params.get(name);
+        } else {
+            String fieldNameFirstPart = name.substring(0, name.indexOf("."));
+            String fieldNameSecondPart = name.substring(name.indexOf(".") + 1);
+            Parameter parameter = params.get(fieldNameFirstPart);
+            if (parameter.getType() instanceof ObjectParameterType) {
+                return ((ObjectParameterType) parameter.getType()).getInternalElements().get(fieldNameSecondPart);
+            } else if (parameter.getType() instanceof ArrayParameterType) {
+                String fieldNameOtherPart = fieldNameSecondPart.substring(fieldNameSecondPart.indexOf(".") + 1);
+                if (StringUtils.isEmpty(fieldNameOtherPart))
+                    return parameter;
+                else {
+                    ParameterType internalArrayParameterType = ((ArrayParameterType) parameter.getType()).getElementsType();
+                    if (internalArrayParameterType instanceof ObjectParameterType)
+                        return ((ObjectParameterType) internalArrayParameterType).getInternalElements().get(fieldNameOtherPart);
+                }
+            }
+        }
+        return null;
     }
 
     @Override

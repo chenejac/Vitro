@@ -46,69 +46,31 @@ public class IOParametersMessageConverter extends IOMessageConverter {
 
     public Data fromRequest(String[] values) {
         Data retVal = null;
-        switch (getDataType(values)) {
-            case Data.IOArray:
-                List<Data> dataItems = new ArrayList<Data>();
-                for (String value : values) {
-                    dataItems.add(fromRequest(new String[] { value }));
-                }
-                retVal = new ArrayData(dataItems);
-                break;
-            case Data.IOInteger:
-                retVal = new IntegerData(Integer.parseInt(values[0]));
-                break;
-            case Data.IODecimal:
-                retVal = new DecimalData(Double.parseDouble(values[0]));
-                break;
-            case Data.IOBoolean:
-                retVal = new BooleanData(Boolean.parseBoolean(values[0]));
-                break;
-            case Data.IOString:
-                retVal = new StringData(values[0]);
-                break;
-            case Data.IOAnyURI:
-                retVal = new AnyURIData(values[0]);
-                break;
-        }
+        if ((values == null) || (values.length == 0))
+            return null;
+        else if (values.length > 1) {
+            List<Data> dataItems = new ArrayList<Data>();
+            for (String value : values) {
+                dataItems.add(fromRequest(new String[] { value }));
+            }
+            retVal = new ArrayData(dataItems);
+        } else
+            retVal = IOMessageConverterUtils.getPrimitiveDataFromString(values[0]);
         return retVal;
     }
 
     public String toString(Data data) {
         String retVal = null;
-        switch (getDataType(data)) {
-            case Data.IOArray:
-                StringBuilder allValues = new StringBuilder();
-                for (Data arrayItem : ((ArrayData) data).getContainer()) {
-                    allValues.append(arrayItem.toString());
-                }
-                retVal = allValues.toString();
-                break;
-            case Data.IOInteger:
-            case Data.IODecimal:
-            case Data.IOBoolean:
-            case Data.IOString:
-            case Data.IOAnyURI:
-                retVal = data.toString();
-                break;
-        }
+        if (data instanceof ArrayData) {
+            StringBuilder allValues = new StringBuilder();
+            for (Data arrayItem : ((ArrayData) data).getContainer()) {
+                allValues.append(arrayItem.toString());
+            }
+            retVal = allValues.toString();
+        } else if (data instanceof PrimitiveData)
+            retVal = data.toString();
         return retVal;
     }
 
-    private int getDataType(String[] values) {
-        if ((values == null) || (values.length == 0))
-            return Data.IOUnknown;
-        else if (values.length > 1)
-            return Data.IOArray;
-        else if (NumberUtils.isDigits(values[0]))
-            return Data.IOInteger;
-        else if (NumberUtils.isParsable(values[0]))
-            return Data.IODecimal;
-        else if ("true".equalsIgnoreCase(values[0]) || "false".equalsIgnoreCase(values[0]))
-            return Data.IOBoolean;
-        else if (isURI(values[0]))
-            return Data.IOAnyURI;
-        else
-            return Data.IOString;
-    }
 
 }

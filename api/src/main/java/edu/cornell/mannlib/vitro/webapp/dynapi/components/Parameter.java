@@ -61,8 +61,8 @@ public class Parameter implements Removable {
     }
 
     private boolean isValid(String name, Data data, ParameterType parameterType) {
-        boolean retVal = true;
-        if (data.checkType(parameterType)) {
+        boolean retVal = data != null && data.checkType(parameterType);
+        if (retVal) {
             if (parameterType instanceof PrimitiveParameterType) {
                 retVal = validators.isAllValid(name, ((PrimitiveData<?>) data).getValue().toString());
             } else if (parameterType instanceof ArrayParameterType) {
@@ -86,8 +86,6 @@ public class Parameter implements Removable {
                     }
                 }
             }
-        } else {
-            retVal = false;
         }
 
         return retVal;
