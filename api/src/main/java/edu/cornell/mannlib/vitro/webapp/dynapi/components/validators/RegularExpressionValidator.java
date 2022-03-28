@@ -29,7 +29,7 @@ public class RegularExpressionValidator extends AbstractValidator {
             return false;
         }
 
-        if (!isLengthInRange(value)) {
+        if (!matchingRegularExpression(value)) {
             log.debug("Value of " + name + " is not in accordance with the pattern \"" + regularExpression + "\"");
             return false;
         }
@@ -37,7 +37,7 @@ public class RegularExpressionValidator extends AbstractValidator {
         return true;
     }
 
-    private boolean isLengthInRange(String string) {
+    private boolean matchingRegularExpression(String string) {
         return Pattern.matches(regularExpression, string);
     }
 

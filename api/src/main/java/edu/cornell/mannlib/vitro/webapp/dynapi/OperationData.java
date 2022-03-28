@@ -1,6 +1,5 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi;
 
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletContext;

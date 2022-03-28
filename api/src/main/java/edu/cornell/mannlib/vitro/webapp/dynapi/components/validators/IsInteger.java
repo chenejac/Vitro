@@ -1,5 +1,6 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi.components.validators;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.converters.IOMessageConverterUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -22,11 +23,11 @@ public class IsInteger extends IsNotBlank {
     }
 
     private boolean isInteger(String value) {
-        if (NumberUtils.isDigits(value)) {
+        if (! IOMessageConverterUtils.isInteger(value)) {
+            log.debug("Value is not a number. Validation failed.");
+            return false;
+        } else
             return true;
-        }
-        log.debug("Value is not a number. Validation failed.");
-        return false;
     }
 
 }
