@@ -42,30 +42,10 @@ public class IOMessageConverterUtils {
         }
     }
 
-    public static PrimitiveData getPrimitiveDataFromString(String text){
-        PrimitiveData retVal = null;
-        if (text != null){
-            if (IOMessageConverterUtils.isInteger(text))
-                retVal = new IntegerData(Integer.parseInt(text));
-            else if (IOMessageConverterUtils.isDouble(text))
-                retVal = new DecimalData(Double.parseDouble(text));
-            else if (IOMessageConverterUtils.isURI(text))
-                retVal = new AnyURIData(text);
-            else if (IOMessageConverterUtils.isBoolean(text))
-                retVal = new BooleanData(Boolean.valueOf(text));
-            else
-                retVal = new StringData(text);
-        }
-
-        return retVal;
-    }
-
     public static PrimitiveData getPrimitiveDataFromString(String text, ParameterType type){
         PrimitiveData retVal = null;
-        if (text != null){
-            if (type == null)
-                retVal = getPrimitiveDataFromString(text);
-            else if (IOMessageConverterUtils.isInteger(text) && new IntegerData(Integer.parseInt(text)).checkType(type))
+        if (text != null && type != null){
+            if (IOMessageConverterUtils.isInteger(text) && new IntegerData(Integer.parseInt(text)).checkType(type))
                 retVal = new IntegerData(Integer.parseInt(text));
             else if (IOMessageConverterUtils.isDouble(text) && new DecimalData(Double.parseDouble(text)).checkType(type))
                 retVal = new DecimalData(Double.parseDouble(text));

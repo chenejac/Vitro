@@ -5,6 +5,7 @@ import java.util.Map;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.Parameters;
 import edu.cornell.mannlib.vitro.webapp.dynapi.io.converters.IOJsonMessageConverter;
 import edu.cornell.mannlib.vitro.webapp.dynapi.io.converters.IOParametersMessageConverter;
 import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.Data;
@@ -20,21 +21,21 @@ public class OperationData {
     private final ServletContext context;
     private ObjectData data;
 
-    public OperationData(HttpServletRequest request) {
+    public OperationData(HttpServletRequest request, Parameters parameters) {
         params = request.getParameterMap();
         context = request.getServletContext();
         // if (ContentType.APPLICATION_JSON.toString().equalsIgnoreCase(request.getContentType()))
         //   data = IOJsonMessageConverter.getInstance().loadDataFromRequest(request);
         // else
         //   data = IOParametersMessageConverter.getInstance().loadDataFromRequest(request);
-        data = IOJsonMessageConverter.getInstance().loadDataFromRequest(request);
+        data = IOJsonMessageConverter.getInstance().loadDataFromRequest(request, parameters);
         if ((data == null) || (data.getContainer().size() == 0)) {
-            data = IOParametersMessageConverter.getInstance().loadDataFromRequest(request);
+            data = IOParametersMessageConverter.getInstance().loadDataFromRequest(request, parameters);
         }
-        addRequestPathParameters(request);
+        addRequestPathParameters(request, parameters);
     }
 
-    private void addRequestPathParameters(HttpServletRequest request) {
+    private void addRequestPathParameters(HttpServletRequest request, Parameters parameters) {
         if (data == null)
             data = new ObjectData();
         Map<String, Data> ioDataMap = data.getContainer();

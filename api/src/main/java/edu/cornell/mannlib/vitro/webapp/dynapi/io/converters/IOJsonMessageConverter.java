@@ -19,6 +19,11 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.Parameter;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.Parameters;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ArrayParameterType;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ObjectParameterType;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
 import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.*;
 
 public class IOJsonMessageConverter extends IOMessageConverter {
@@ -31,7 +36,7 @@ public class IOJsonMessageConverter extends IOMessageConverter {
 
     private ObjectMapper mapper = new ObjectMapper();
 
-    public ObjectData loadDataFromRequest(HttpServletRequest request) {
+    public ObjectData loadDataFromRequest(HttpServletRequest request, Parameters parameters) {
         Map<String, Data> ioDataMap = new HashMap<String, Data>();
         try {
             if (request.getReader() != null && request.getReader().lines() != null) {
@@ -41,9 +46,12 @@ public class IOJsonMessageConverter extends IOMessageConverter {
                 while (fieldNames.hasNext()) {
                     String fieldName = fieldNames.next();
                     JsonNode value = actualObj.get(fieldName);
-                    Data data = fromJson(value);
-                    if (data != null) {
-                        ioDataMap.put(fieldName, data);
+                    Parameter parameter = parameters.get(fieldName);
+                    if (parameter != null) {
+                        Data data = fromJson(value, parameter.getType());
+                        if (data != null) {
+                            ioDataMap.put(fieldName, data);
+                        }
                     }
                 }
             }
@@ -57,9 +65,7 @@ public class IOJsonMessageConverter extends IOMessageConverter {
     public String exportDataToResponseBody(ObjectData data) {
         ObjectNode objectNode = mapper.createObjectNode();
         Map<String, Data> ioDataMap = data.getContainer();
-        Iterator<String> fieldNames = ioDataMap.keySet().iterator();
-        while (fieldNames.hasNext()) {
-            String fieldName = fieldNames.next();
+        for (String fieldName : ioDataMap.keySet()) {
             JsonNode node = toJson(ioDataMap.get(fieldName));
             if (node != null) {
                 objectNode.set(fieldName, node);
@@ -68,41 +74,36 @@ public class IOJsonMessageConverter extends IOMessageConverter {
         return objectNode.toString();
     }
 
-    public Data fromJson(JsonNode node) {
+    public Data fromJson(JsonNode node, ParameterType type) {
         Data retVal = null;
-        if (node.isArray()) {
-            if (node instanceof ArrayNode) {
+        if (type != null) {
+            if ((node.isArray()) && (type instanceof ArrayParameterType)) {
                 ArrayNode arrayNode = (ArrayNode) node;
+                ParameterType innerType = ((ArrayParameterType) type).getElementsType();
                 List<Data> values = new ArrayList<Data>();
                 Iterator<JsonNode> itr = arrayNode.elements();
                 while (itr.hasNext()) {
                     JsonNode next = itr.next();
-                    values.add(fromJson(next));
+                    values.add(fromJson(next, innerType));
                 }
                 retVal = new ArrayData(values);
-            }
-        } else if (node.isObject()) {
-            Map<String, Data> fields = new HashMap<String, Data>();
-            Iterator<String> fieldNames = node.fieldNames();
-            while (fieldNames.hasNext()) {
-                String fieldName = fieldNames.next();
-                JsonNode value = node.get(fieldName);
-                Data data = fromJson(value);
-                if (data != null) {
-                    fields.put(fieldName, data);
+            } else if ((node.isObject()) && (type instanceof ObjectParameterType)) {
+                Map<String, Data> fields = new HashMap<String, Data>();
+                Iterator<String> fieldNames = node.fieldNames();
+                while (fieldNames.hasNext()) {
+                    String fieldName = fieldNames.next();
+                    JsonNode value = node.get(fieldName);
+                    ParameterType innerType = ((ObjectParameterType) type).getInternalElements().get(fieldName).getType();
+                    Data data = fromJson(value, innerType);
+                    if (data != null) {
+                        fields.put(fieldName, data);
+                    }
                 }
-            }
-            retVal = new ObjectData(fields);
-        } else if (node.isInt())
-            retVal = new IntegerData(node.asInt());
-        else if (node.isDouble())
-            retVal = new DecimalData(node.asDouble());
-        else if (node.isBoolean())
-            retVal = new BooleanData(node.asBoolean());
-        else if (node.isTextual() && IOMessageConverterUtils.isURI(node.asText()))
-            retVal = new AnyURIData(node.asText());
-        else if (node.isTextual())
-            retVal = new StringData(node.asText());
+                retVal = new ObjectData(fields);
+            } else
+                retVal = IOMessageConverterUtils.getPrimitiveDataFromString(node.asText(), type);
+        }
+
         return retVal;
     }
 
@@ -119,9 +120,7 @@ public class IOJsonMessageConverter extends IOMessageConverter {
         } else if (data instanceof ObjectData) {
             ObjectNode objectNode = mapper.createObjectNode();
             Map<String, Data> fields = ((ObjectData) data).getContainer();
-            Iterator<String> fieldNames = fields.keySet().iterator();
-            while (fieldNames.hasNext()) {
-                String fieldName = fieldNames.next();
+            for (String fieldName : fields.keySet()) {
                 JsonNode node = toJson(fields.get(fieldName));
                 if (node != null) {
                     objectNode.set(fieldName, node);

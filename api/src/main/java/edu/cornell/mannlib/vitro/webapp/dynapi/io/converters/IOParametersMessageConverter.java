@@ -7,8 +7,11 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.Parameter;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.Parameters;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ArrayParameterType;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
 import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.*;
-import org.apache.commons.lang3.math.NumberUtils;
 
 public class IOParametersMessageConverter extends IOMessageConverter {
 
@@ -18,15 +21,18 @@ public class IOParametersMessageConverter extends IOMessageConverter {
         return INSTANCE;
     }
 
-    public ObjectData loadDataFromRequest(HttpServletRequest request) {
+    public ObjectData loadDataFromRequest(HttpServletRequest request, Parameters parameters) {
         Map<String, Data> ioDataMap = new HashMap<String, Data>();
         Map<String, String[]> params = request.getParameterMap();
         if (params != null)
             for (String key : params.keySet()) {
                 String[] values = params.get(key);
-                Data data = fromRequest(values);
-                if (data != null) {
-                    ioDataMap.put(key, data);
+                Parameter parameter = parameters.get(key);
+                if (parameter != null) {
+                    Data data = fromRequest(values, parameter.getType());
+                    if (data != null) {
+                        ioDataMap.put(key, data);
+                    }
                 }
             }
         return new ObjectData(ioDataMap);
@@ -37,25 +43,27 @@ public class IOParametersMessageConverter extends IOMessageConverter {
         Map<String, Data> ioDataMap = data.getContainer();
         for (String key : ioDataMap.keySet()) {
             Data value = ioDataMap.get(key);
-            retVal.append(key + "=");
+            retVal.append(key);
+            retVal.append("=");
             retVal.append(toString(value));
             retVal.append("\n");
         }
         return retVal.toString();
     }
 
-    public Data fromRequest(String[] values) {
+    public Data fromRequest(String[] values, ParameterType type) {
         Data retVal = null;
-        if ((values == null) || (values.length == 0))
-            return null;
-        else if (values.length > 1) {
-            List<Data> dataItems = new ArrayList<Data>();
-            for (String value : values) {
-                dataItems.add(fromRequest(new String[] { value }));
-            }
-            retVal = new ArrayData(dataItems);
-        } else
-            retVal = IOMessageConverterUtils.getPrimitiveDataFromString(values[0]);
+        if ((values != null) && (values.length != 0) && (type != null)) {
+            if (type instanceof ArrayParameterType) {
+                List<Data> dataItems = new ArrayList<Data>();
+                ParameterType innerType = ((ArrayParameterType) type).getElementsType() ;
+                for (String value : values) {
+                    dataItems.add(IOMessageConverterUtils.getPrimitiveDataFromString(value, innerType));
+                }
+                retVal = new ArrayData(dataItems);
+            } else
+                retVal = IOMessageConverterUtils.getPrimitiveDataFromString(values[0], type);
+        }
         return retVal;
     }
 
