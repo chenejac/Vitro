@@ -1,9 +1,7 @@
 package edu.cornell.mannlib.vitro.webapp.dynapi.io.converters;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
-import edu.cornell.mannlib.vitro.webapp.dynapi.components.validators.IsInteger;
 import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.*;
-import org.apache.commons.lang3.math.NumberUtils;
 
 
 import java.net.URI;

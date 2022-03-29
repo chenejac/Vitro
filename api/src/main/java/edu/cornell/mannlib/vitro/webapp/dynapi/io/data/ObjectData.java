@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.Parameter;
+import edu.cornell.mannlib.vitro.webapp.dynapi.components.Validators;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ObjectParameterType;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -26,11 +28,7 @@ public class ObjectData extends ContainerData<Map<String, Data>> {
             String fieldNameFirstPart = fieldName.substring(0, fieldName.indexOf("."));
             String fieldNameSecondPart = fieldName.substring(fieldName.indexOf(".") + 1);
             Data data = container.get(fieldNameFirstPart);
-            if (data instanceof ContainerData) {
-                return ((ContainerData<?>) data).getElement(fieldNameSecondPart);
-            } else {
-                return null;
-            }
+            return data.getElement(fieldNameSecondPart);
         }
     }
 
@@ -57,7 +55,7 @@ public class ObjectData extends ContainerData<Map<String, Data>> {
                     container.put(fieldNameFirstPart, internalData);
                 }
             }
-            return ((ContainerData<?>) internalData).setElement(fieldNameOtherPart, newData);
+            return internalData.setElement(fieldNameOtherPart, newData);
         }
     }
 
@@ -88,6 +86,20 @@ public class ObjectData extends ContainerData<Map<String, Data>> {
                     retVal = false;
                     break;
                 }
+            }
+        }
+        return retVal;
+    }
+
+    @Override
+    public boolean isAllValid(String name, Validators validators, ParameterType type) {
+        boolean retVal = true;
+        for (String internalName : ((ObjectParameterType) type).getInternalElements().getNames()) {
+            Data element = container.get(internalName);
+            Parameter internalParameter = ((ObjectParameterType) type).getInternalElements().get(internalName);
+            if (!(element.isAllValid(name + "." + internalName, internalParameter.getValidators(), internalParameter.getType()))) {
+                retVal = false;
+                break;
             }
         }
         return retVal;
