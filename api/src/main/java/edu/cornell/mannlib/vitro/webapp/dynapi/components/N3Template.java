@@ -64,7 +64,6 @@ public class N3Template extends Operation implements Template {
 		if (!isInputValid(input)) {
 			return new OperationResult(500);
 		}
-
 		String substitutedN3Template;
 		try {
 			substitutedN3Template=insertParameters(input);
@@ -99,7 +98,7 @@ public class N3Template extends Operation implements Template {
 		//region Substitute IRI variables
 		Map<String, List<String>> parametersToUris = requiredParams.getParameters().values().stream()
 				.filter(value->value.getRDFDataType().getURI().equals(ANY_URI))
-				.collect(Collectors.toMap(param -> param.getName(), param -> Arrays.asList(input.get(param.getName()))));
+				.collect(Collectors.toMap(param -> param.getName(), param -> Arrays.asList(input.getData(param.getName()).toString())));
 
 		gen.subInMultiUris(parametersToUris, n3WithParameters);
 		//endregion
@@ -110,7 +109,7 @@ public class N3Template extends Operation implements Template {
 				.collect(Collectors.toMap(
 						param -> param.getName(),
 						param -> Arrays.asList(ResourceFactory.createTypedLiteral(
-																	input.get(param.getName())[0],
+																	input.getData(param.getName()).toString(),
 																	param.getRDFDataType()
 																	)
 						)));

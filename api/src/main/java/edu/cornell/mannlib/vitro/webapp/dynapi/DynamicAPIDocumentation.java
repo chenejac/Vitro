@@ -4,6 +4,7 @@ import static edu.cornell.mannlib.vitro.webapp.dynapi.OperationData.RESOURCE_ID;
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.FULL_UNION;
 import static java.lang.String.format;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +42,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.BooleanSchema;
 import io.swagger.v3.oas.models.media.Content;
@@ -193,6 +195,8 @@ public class DynamicAPIDocumentation {
         apiInformation.setDescription("An RPC API.");
         apiInformation.setVersion("");
 
+        openApi.servers(new ArrayList<>());
+        openApi.addServersItem(servers(apiInformation));
         openApi.setInfo(info(apiInformation));
 
         if (requestPath.getActionName() == null) {
@@ -251,6 +255,13 @@ public class DynamicAPIDocumentation {
         }
 
         return apiInformation;
+    }
+
+    private Server servers(APIInformation apiInformation) {
+        Server server = new Server();
+        server.setUrl("http://localhost:8080/vivo");
+
+        return server;
     }
 
     private Info info(APIInformation apiInformation) {

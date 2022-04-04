@@ -56,41 +56,12 @@ public class Parameter implements Removable {
         validators.add(validator);
     }
 
-    public boolean isValid(Data data) {
-        return isValid(name, data, type);
+    public Validators getValidators() {
+        return validators;
     }
 
-    private boolean isValid(String name, Data data, ParameterType parameterType) {
-        boolean retVal = true;
-        if (data.checkType(parameterType)) {
-            if (parameterType instanceof PrimitiveParameterType) {
-                retVal = validators.isAllValid(name, ((PrimitiveData<?>) data).getValue().toString());
-            } else if (parameterType instanceof ArrayParameterType) {
-                ArrayData arrayData = (ArrayData) data;
-                ParameterType internalParameterType = ((ArrayParameterType) type).getElementsType();
-                for (int i = 0; i < arrayData.getContainer().size(); i++) {
-                    Data element = arrayData.getContainer().get(i);
-                    if (!(isValid(name + "[" + "]", element, internalParameterType))) {
-                        retVal = false;
-                        break;
-                    }
-                }
-            } else if (type instanceof ObjectParameterType) {
-                ObjectData objectData = (ObjectData) data;
-                for (String internalName : ((ObjectParameterType) type).getInternalElements().getNames()) {
-                    Data element = objectData.getContainer().get(name);
-                    Parameter internalParameter = ((ObjectParameterType) type).getInternalElements().get(name);
-                    if (!(internalParameter.isValid(name + "." + internalName, element, internalParameter.getType()))) {
-                        retVal = false;
-                        break;
-                    }
-                }
-            }
-        } else {
-            retVal = false;
-        }
-
-        return retVal;
+    public boolean isValid(Data data) {
+        return (data != null) && (data.checkType(type)) && (data.isAllValid(name, validators, type));
     }
 
     public String computePrefix(String fieldName) {

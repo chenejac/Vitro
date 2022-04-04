@@ -20,11 +20,17 @@ public class Initializer implements ServletContextListener {
         actionPool.init(ctx);
     }
 
+    private void initializeDynamicAPIDocumentation(ServletContext ctx) {
+        DynamicAPIDocumentation dynamicAPIDocumentation = DynamicAPIDocumentation.getInstance();
+        dynamicAPIDocumentation.init(ctx);
+    }
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         ServletContext ctx = sce.getServletContext();
         initializeActionPool(ctx);
         initializeResourcePool(ctx);
+        initializeDynamicAPIDocumentation(ctx);
     }
 
     @Override

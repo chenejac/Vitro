@@ -7,6 +7,10 @@ import edu.cornell.mannlib.vitro.webapp.dynapi.OperationData;
 import edu.cornell.mannlib.vitro.webapp.dynapi.ServletContextTest;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.PrimitiveParameterType;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.AnyURIData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.BooleanData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.Data;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.StringData;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.impl.ContextModelAccessImpl;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.ConfigurationBeanLoaderException;
@@ -17,10 +21,7 @@ import org.apache.jena.ontology.impl.OntModelImpl;
 
 import org.apache.jena.rdf.model.impl.PropertyImpl;
 import org.apache.jena.rdf.model.impl.ResourceImpl;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -109,7 +110,7 @@ public class N3TemplateTest extends ServletContextTest {
         n3Template.addRequiredParameter(param1);
 
         when(input.has(any(String.class))).thenReturn(true);
-        when(input.get("uri1")).thenReturn(new String[]{"http://testSubject"});
+        when(input.getData("uri1")).thenReturn(new AnyURIData("http://testSubject"));
 
         assertTrue(n3Template.run(input).hasError());
     }
@@ -132,8 +133,8 @@ public class N3TemplateTest extends ServletContextTest {
 
         when(input.has(any(String.class))).thenReturn(true);
         when(input.getContext()).thenReturn(servletContext);
-        when(input.get("uri1")).thenReturn(new String[]{"http://testSubject"});
-        when(input.get("uri2")).thenReturn(new String[]{"http://testObject"});
+        when(input.getData("uri1")).thenReturn(new AnyURIData("http://testSubject"));
+        when(input.getData("uri2")).thenReturn(new AnyURIData("http://testObject"));
 
         assertFalse(n3Template.run(input).hasError());
         assertNotNull(writeModel.getResource("http://testSubject"));
@@ -160,8 +161,8 @@ public class N3TemplateTest extends ServletContextTest {
 
         when(input.has(any(String.class))).thenReturn(true);
         when(input.getContext()).thenReturn(servletContext);
-        when(input.get("uri1")).thenReturn(new String[]{"http://testSubject"});
-        when(input.get("literal1")).thenReturn(new String[]{"testLiteral"});
+        when(input.getData("uri1")).thenReturn(new AnyURIData("http://testSubject"));
+        when(input.getData("literal1")).thenReturn(new StringData("testLiteral"));
 
         assertFalse(n3Template.run(input).hasError());
         assertNotNull(writeModel.getResource("http://testSubject"));
@@ -192,9 +193,9 @@ public class N3TemplateTest extends ServletContextTest {
 
         when(input.has(any(String.class))).thenReturn(true);
         when(input.getContext()).thenReturn(servletContext);
-        when(input.get("uri1")).thenReturn(new String[]{"http://testSubject"});
-        when(input.get("literal1")).thenReturn(new String[]{"testLiteral"});
-        when(input.get("literal2")).thenReturn(new String[]{"true"});
+        when(input.getData("uri1")).thenReturn(new AnyURIData("http://testSubject"));
+        when(input.getData("literal1")).thenReturn(new StringData("testLiteral"));
+        when(input.getData("literal2")).thenReturn(new BooleanData(true));
 
         assertFalse(n3Template.run(input).hasError());
         assertNotNull(writeModel.getResource("http://testSubject"));

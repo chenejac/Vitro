@@ -7,8 +7,8 @@
             <properties>
                 <app-name>vitro</app-name>
 
-                <vitro-dir>/usr/local/vitro/home</vitro-dir>
-                <tomcat-dir>/usr/local/tomcat</tomcat-dir>
+                <vivo-dir>e:/VIVO/home</vivo-dir>
+                <tomcat-dir>e:/VIVO/apache-tomcat-8.5.70</tomcat-dir>
 
                 <default-theme>vitro</default-theme>
             </properties>
