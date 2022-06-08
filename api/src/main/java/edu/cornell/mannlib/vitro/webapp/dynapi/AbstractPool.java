@@ -168,7 +168,7 @@ public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C
         this.ctx = ctx;
         modelAccess = ModelAccess.on(ctx);
         dynamicAPIModel = modelAccess.getOntModel(FULL_UNION);
-        modelValidator = new SHACLValidator(dynamicAPIModel, dynamicAPIModel);
+        modelValidator = new SHACLValidator(dynamicAPIModel, modelAccess.getOntModel(TBOX_ASSERTIONS));
         loader = new ConfigurationBeanLoader(dynamicAPIModel, ctx, modelValidator);
         log.debug("Context Initialization ...");
         loadComponents(components);
