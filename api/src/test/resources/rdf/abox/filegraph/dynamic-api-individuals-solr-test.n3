@@ -48,7 +48,7 @@
 
 <https://vivoweb.org/ontology/vitro-dynamic-api/rpc/solrTestRPC1>
         a                           dynapi:rpc ;
-        dynapi:name                 "solr_test_action"@en-US ;
+        dynapi:name                 "solr_test_action" ;
         dynapi:hasDefaultMethod     <https://vivoweb.org/ontology/vitro-dynamic-api/http_method/post> ;
         dynapi:minAPIVersionMin     "0.1.0" .
 
