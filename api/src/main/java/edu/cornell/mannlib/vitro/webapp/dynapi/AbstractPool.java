@@ -16,14 +16,10 @@ import javax.servlet.ServletContext;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.validator.ModelValidator;
 import edu.cornell.mannlib.vitro.webapp.dynapi.validator.NullValidator;
-import edu.cornell.mannlib.vitro.webapp.dynapi.validator.SHACLBeanValidator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.jena.ontology.OntModel;
-import org.apache.jena.rdf.model.NodeIterator;
-import org.apache.jena.rdf.model.Property;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.*;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.Poolable;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
@@ -31,18 +27,18 @@ import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.ConfigurationBeanLoader;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.ConfigurationBeanLoaderException;
 
-public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C>> implements Pool<K, C> {
+public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C>, V extends ModelValidator> implements Pool<K, C> {
 
-    private final Log log = LogFactory.getLog(this.getClass());
+    protected final Log log = LogFactory.getLog(this.getClass());
 
     private static final Object mutex = new Object();
 
-    private ConcurrentNavigableMap<K, C> components;
-    private ServletContext ctx;
-    private ConfigurationBeanLoader loader;
-    private ContextModelAccess modelAccess;
-    private OntModel dynamicAPIModel;
-    private ModelValidator modelValidator;
+    protected ConcurrentNavigableMap<K, C> components;
+    protected ServletContext ctx;
+    protected ConfigurationBeanLoader loader;
+    protected ContextModelAccess modelAccess;
+    protected OntModel dynamicAPIModel;
+    protected ModelValidator modelValidator;
     private ConcurrentLinkedQueue<C> obsoleteComponents;
 
     protected AbstractPool() {
@@ -55,6 +51,8 @@ public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C
     }
 
     public abstract P getPool();
+
+    public abstract V getValidator(Model data, Model scheme);
 
     public abstract C getDefault();
 
@@ -171,13 +169,13 @@ public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C
         this.ctx = ctx;
         modelAccess = ModelAccess.on(ctx);
         dynamicAPIModel = modelAccess.getOntModel(FULL_UNION);
-        modelValidator = new SHACLBeanValidator(dynamicAPIModel, modelAccess.getOntModel(TBOX_ASSERTIONS));
+        modelValidator = getValidator(dynamicAPIModel, modelAccess.getOntModel(TBOX_ASSERTIONS));
         loader = new ConfigurationBeanLoader(dynamicAPIModel, ctx);
         log.debug("Context Initialization ...");
         loadComponents(components);
     }
 
-    private void loadComponents(ConcurrentNavigableMap<K, C> components) {
+    protected void loadComponents(ConcurrentNavigableMap<K, C> components) {
         Set<C> newActions = loader.loadEach(getType(), modelValidator);
         log.debug(format("Context Initialization. %s %s(s) currently loaded.", components.size(), getType().getName()));
         for (C component : newActions) {
