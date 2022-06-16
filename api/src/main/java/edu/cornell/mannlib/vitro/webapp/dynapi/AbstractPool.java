@@ -15,11 +15,14 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.servlet.ServletContext;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.validator.ModelValidator;
-import edu.cornell.mannlib.vitro.webapp.dynapi.validator.NullValidator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.jena.ontology.OntModel;
-import org.apache.jena.rdf.model.*;
+import org.apache.jena.rdf.model.NodeIterator;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.Model;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.Poolable;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
@@ -29,16 +32,16 @@ import edu.cornell.mannlib.vitro.webapp.utils.configuration.ConfigurationBeanLoa
 
 public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C>> implements Pool<K, C> {
 
-    protected final Log log = LogFactory.getLog(this.getClass());
+    private final Log log = LogFactory.getLog(this.getClass());
 
     private static final Object mutex = new Object();
 
-    protected ConcurrentNavigableMap<K, C> components;
-    protected ServletContext ctx;
-    protected ConfigurationBeanLoader loader;
-    protected ContextModelAccess modelAccess;
-    protected OntModel dynamicAPIModel;
-    protected ModelValidator modelValidator;
+    private ConcurrentNavigableMap<K, C> components;
+    private ServletContext ctx;
+    private ConfigurationBeanLoader loader;
+    private ContextModelAccess modelAccess;
+    private OntModel dynamicAPIModel;
+    private ModelValidator modelValidator;
     private ConcurrentLinkedQueue<C> obsoleteComponents;
 
     protected AbstractPool() {
