@@ -14,7 +14,7 @@ import javax.servlet.ServletContext;
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.FULL_UNION;
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.TBOX_ASSERTIONS;
 
-public class ActionPool extends AbstractPool<String, Action, ActionPool, SHACLActionBeanValidator> {
+public class ActionPool extends AbstractPool<String, Action, ActionPool> {
 
     private static ActionPool INSTANCE = new ActionPool();
 
@@ -38,7 +38,7 @@ public class ActionPool extends AbstractPool<String, Action, ActionPool, SHACLAc
     }
 
     @Override
-    public SHACLActionBeanValidator getValidator(Model data, Model scheme) {
+    public ModelValidator getValidator(Model data, Model scheme) {
         return new SHACLActionBeanValidator(data, scheme);
     }
 }

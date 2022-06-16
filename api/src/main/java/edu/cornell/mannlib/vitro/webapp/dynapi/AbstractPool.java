@@ -27,7 +27,7 @@ import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.ConfigurationBeanLoader;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.ConfigurationBeanLoaderException;
 
-public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C>, V extends ModelValidator> implements Pool<K, C> {
+public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C>> implements Pool<K, C> {
 
     protected final Log log = LogFactory.getLog(this.getClass());
 
@@ -52,7 +52,7 @@ public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C
 
     public abstract P getPool();
 
-    public abstract V getValidator(Model data, Model scheme);
+    public abstract ModelValidator getValidator(Model data, Model scheme);
 
     public abstract C getDefault();
 
@@ -153,16 +153,6 @@ public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C
             oldActions.remove(component.getKey());
         }
         unloadObsoleteComponents();
-    }
-
-    public void initWithoutValidation(ServletContext ctx) {
-        this.ctx = ctx;
-        modelAccess = ModelAccess.on(ctx);
-        dynamicAPIModel = modelAccess.getOntModel(FULL_UNION);
-        modelValidator = NullValidator.getInstance();
-        loader = new ConfigurationBeanLoader(dynamicAPIModel, ctx);
-        log.debug("Context Initialization ...");
-        loadComponents(components);
     }
 
     public void init(ServletContext ctx) {
