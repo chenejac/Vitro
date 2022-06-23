@@ -9,7 +9,9 @@ public class ModelComponent implements Removable {
 
     @Property(uri = "https://vivoweb.org/ontology/vitro-dynamic-api#name", minOccurs = 1, maxOccurs = 1)
     public void setName(String name) {
-        this.name = ModelNames.namesMap.get(name);
+        this.name = (ModelNames.namesMap.get(name) != null) ?
+                ModelNames.namesMap.get(name)   :
+                name;
     }
 
     @Override
