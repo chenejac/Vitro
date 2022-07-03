@@ -7,6 +7,10 @@ import edu.cornell.mannlib.vitro.webapp.dynapi.OperationData;
 import edu.cornell.mannlib.vitro.webapp.dynapi.ServletContextTest;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.ParameterType;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.types.PrimitiveParameterType;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.ArrayData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.Data;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.ObjectData;
+import edu.cornell.mannlib.vitro.webapp.dynapi.io.data.StringData;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.impl.ContextModelAccessImpl;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.ConfigurationBeanLoaderException;
@@ -298,5 +302,25 @@ public class N3TemplateTest extends ServletContextTest {
                 NodeFactory.createLiteral("Bike"))
         );
 
+    }
+
+    @Test
+    public void testActionWithObjectsAsParameters() throws IOException, ConfigurationBeanLoaderException {
+        String testDataPath = "src/test/resources/rdf/abox/filegraph/dyn-api-geolocation-crud-endpoints.n3";
+
+        loadDefaultModel();
+        loadModels(testDataPath.split("\\.")[1],testDataPath);
+
+        String n3_uri="https://vivoweb.org/ontology/vitro-dynamic-api/N3Template/deleteDynamicActionN3Template";
+        N3Template n3Template = loader.loadInstance(n3_uri, N3Template.class);
+        assertNotNull(n3Template);
+        assertEquals(1, n3Template.getRequiredParams().size());
+
+        when(input.has("actionForDeleting")).thenReturn(true);
+        when(input.get("actionForDeleting.0.uri")).thenReturn(new String[]{"http://Joe"});
+        when(input.get("actionForDeleting.0.label")).thenReturn(new String[]{"test_label"});
+        when(input.getContext()).thenReturn(servletContext);
+
+        assertFalse(n3Template.run(input).hasError());
     }
 }
