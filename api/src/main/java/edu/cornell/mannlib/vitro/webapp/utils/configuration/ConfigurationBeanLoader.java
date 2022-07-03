@@ -15,6 +15,7 @@ import java.util.TreeSet;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.validator.ModelValidator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.jena.rdf.model.Model;
@@ -34,7 +35,7 @@ public class ConfigurationBeanLoader {
 
 	private static final String JAVA_URI_PREFIX = "java:";
 
-  Map<String, Object> instancesMap = new HashMap<String,Object>();
+	Map<String, Object> instancesMap = new HashMap<String,Object>();
 
 	
 	// ----------------------------------------------------------------------
@@ -163,7 +164,7 @@ public class ConfigurationBeanLoader {
 		    throw new ConfigurationBeanLoaderException(uri, e);
 		  }
 		}
-		
+
 		try {
 			ConfigurationRdf<T> parsedRdf = ConfigurationRdfParser
 					.parse(locking, uri, resultClass);
@@ -194,25 +195,8 @@ public class ConfigurationBeanLoader {
 		}
 		return instances;
 	}
-	
-	/**
-	 * Find all of the resources with the specified class, and instantiate them.
-	 */
-	public <T> Set<T> loadEach(Class<T> resultClass){
-		Set<String> uris = new HashSet<>();
-		findUris(resultClass, uris);
-		Set<T> instances = new HashSet<>();
-		for (String uri : uris) {
-			try {
-				instances.add(loadInstance(uri, resultClass));
-			} catch (ConfigurationBeanLoaderException e) {
-				e.printStackTrace();
-			}
-		}
-		return instances;
-	}
 
-	private <T> void findUris(Class<T> resultClass, Set<String> uris) {
+	public <T> void findUris(Class<T> resultClass, Set<String> uris) {
 		try (LockedModel m = locking.read()) {
 			for (String typeUri : toPossibleJavaUris(resultClass)) {
 				List<Resource> resources = m.listResourcesWithProperty(RDF.type,

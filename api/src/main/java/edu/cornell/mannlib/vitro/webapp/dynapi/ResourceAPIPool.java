@@ -3,6 +3,9 @@ package edu.cornell.mannlib.vitro.webapp.dynapi;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.DefaultResourceAPI;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceAPI;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.ResourceAPIKey;
+import edu.cornell.mannlib.vitro.webapp.dynapi.validator.ModelValidator;
+import edu.cornell.mannlib.vitro.webapp.dynapi.validator.SHACLResourceAPIBeanValidator;
+import org.apache.jena.rdf.model.Model;
 
 public class ResourceAPIPool extends VersionableAbstractPool<ResourceAPIKey, ResourceAPI, ResourceAPIPool> {
 
@@ -25,5 +28,10 @@ public class ResourceAPIPool extends VersionableAbstractPool<ResourceAPIKey, Res
     @Override
     public Class<ResourceAPI> getType() {
         return ResourceAPI.class;
+    }
+
+    @Override
+    public ModelValidator getValidator(Model data, Model scheme) {
+        return new SHACLResourceAPIBeanValidator(data, scheme);
     }
 }

@@ -2,6 +2,9 @@ package edu.cornell.mannlib.vitro.webapp.dynapi;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.Action;
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.DefaultAction;
+import edu.cornell.mannlib.vitro.webapp.dynapi.validator.ModelValidator;
+import edu.cornell.mannlib.vitro.webapp.dynapi.validator.SHACLActionBeanValidator;
+import org.apache.jena.rdf.model.Model;
 
 public class ActionPool extends AbstractPool<String, Action, ActionPool> {
 
@@ -26,4 +29,8 @@ public class ActionPool extends AbstractPool<String, Action, ActionPool> {
         return Action.class;
     }
 
+    @Override
+    public ModelValidator getValidator(Model data, Model scheme) {
+        return new SHACLActionBeanValidator(data, scheme);
+    }
 }

@@ -2,9 +2,11 @@ package edu.cornell.mannlib.vitro.webapp.dynapi;
 
 import static edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary.RDF_TYPE;
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.FULL_UNION;
+import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.TBOX_ASSERTIONS;
 import static edu.cornell.mannlib.vitro.webapp.utils.configuration.ConfigurationBeanLoader.toJavaUri;
 import static java.lang.String.format;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -13,6 +15,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.servlet.ServletContext;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.validator.ModelValidator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.jena.ontology.OntModel;
@@ -20,6 +23,7 @@ import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.Model;
 
 import edu.cornell.mannlib.vitro.webapp.dynapi.components.Poolable;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
@@ -38,6 +42,7 @@ public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C
     private ConfigurationBeanLoader loader;
     private ContextModelAccess modelAccess;
     private OntModel dynamicAPIModel;
+    private ModelValidator modelValidator;
     private ConcurrentLinkedQueue<C> obsoleteComponents;
 
     protected AbstractPool() {
@@ -50,6 +55,8 @@ public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C
     }
 
     public abstract P getPool();
+
+    public abstract ModelValidator getValidator(Model data, Model scheme);
 
     public abstract C getDefault();
 
@@ -124,7 +131,9 @@ public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C
 
     public void reload(String uri) {
         try {
-            add(uri, loader.loadInstance(uri, getType()));
+            C component = (modelValidator.isValidResource(uri, true))?loader.loadInstance(uri, getType()):null;
+            if(component!=null)
+                add(uri, component);
         } catch (ConfigurationBeanLoaderException e) {
             throw new RuntimeException(format("Failed to reload %s with URI %s.", getType().getName(), uri));
         }
@@ -154,13 +163,26 @@ public abstract class AbstractPool<K, C extends Poolable<K>, P extends Pool<K, C
         this.ctx = ctx;
         modelAccess = ModelAccess.on(ctx);
         dynamicAPIModel = modelAccess.getOntModel(FULL_UNION);
+        modelValidator = getValidator(dynamicAPIModel, modelAccess.getOntModel(TBOX_ASSERTIONS));
         loader = new ConfigurationBeanLoader(dynamicAPIModel, ctx);
         log.debug("Context Initialization ...");
         loadComponents(components);
     }
 
-    private void loadComponents(ConcurrentNavigableMap<K, C> components) {
-        Set<C> newActions = loader.loadEach(getType());
+    protected void loadComponents(ConcurrentNavigableMap<K, C> components) {
+        Set<String> uris = new HashSet<>();
+        loader.findUris(getType(), uris);
+        Set<C> newActions = new HashSet<>();
+        for (String uri : uris) {
+            try {
+                C instance = (modelValidator.isValidResource(uri, true))?loader.loadInstance(uri, getType()):null;
+                if (instance != null) {
+                    newActions.add(instance);
+                }
+            } catch (ConfigurationBeanLoaderException e) {
+                log.warn(e,e);
+            }
+        }
         log.debug(format("Context Initialization. %s %s(s) currently loaded.", components.size(), getType().getName()));
         for (C component : newActions) {
             if (component.isValid()) {

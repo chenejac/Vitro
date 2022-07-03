@@ -9,6 +9,8 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
+import edu.cornell.mannlib.vitro.webapp.dynapi.validator.NullValidator;
+import edu.cornell.mannlib.vitro.webapp.dynapi.validator.SHACLBeanValidator;
 import org.junit.After;
 import org.junit.Test;
 
@@ -19,6 +21,8 @@ import edu.cornell.mannlib.vitro.webapp.utils.configuration.ConfigurationBeanLoa
 public class ActionPoolTest extends ServletContextTest {
 
     protected final static String TEST_PERSON_ACTION_URI = "https://vivoweb.org/ontology/vitro-dynamic-api/action/testPersonAction1";
+
+    protected final static String TEST_NOT_VALID_ACTION_URI = "https://vivoweb.org/ontology/vitro-dynamic-api/action/testNoValidAction1";
 
     @After
     public void reset() {
@@ -220,6 +224,61 @@ public class ActionPoolTest extends ServletContextTest {
     }
 
     @Test
+    public void testLoadingOfNotValidActionWithoutAnyValidation() throws IOException {
+        ActionPool actionPool = initWithDefaultModelWithoutValidation();
+
+        assertAction(TEST_ACTION_NAME, actionPool.get(TEST_ACTION_NAME));
+
+        modelValidator = NullValidator.getInstance();
+
+        loadTestModel();
+        loadNotValidAction();
+        actionPool.reload();
+
+        assertEquals(9, actionPool.count());
+        assertEquals(0, actionPool.obsoleteCount());
+
+    }
+
+    @Test
+    public void testLoadingOfNotValidActionWithFileSHACLValidation() throws IOException {
+        ActionPool actionPool = initWithDefaultModelWithoutValidation();
+
+        assertAction(TEST_ACTION_NAME, actionPool.get(TEST_ACTION_NAME));
+
+        modelValidator = new SHACLBeanValidator(ontModel, schemeModel, "https://vivoweb.org/ontology/vitro-dynamic-api#action", null);
+
+        loadTestModel();
+        loadNotValidAction();
+
+        actionPool.reload();
+
+        assertEquals(8, actionPool.count());
+        assertEquals(0, actionPool.obsoleteCount());
+
+        assertTrue(actionPool.get(TEST_NOT_VALID_ACTION_URI) instanceof DefaultAction);
+    }
+
+    @Test
+    public void testLoadingOfNotValidActionWithBeanLoaderSHACLValidation() throws IOException {
+        ActionPool actionPool = initWithDefaultModel();
+
+        assertAction(TEST_ACTION_NAME, actionPool.get(TEST_ACTION_NAME));
+
+        modelValidator = NullValidator.getInstance();
+
+        loadTestModel();
+        loadNotValidAction();
+
+        actionPool.reload();
+
+        assertEquals(8, actionPool.count());
+        assertEquals(0, actionPool.obsoleteCount());
+
+        assertTrue(actionPool.get(TEST_NOT_VALID_ACTION_URI) instanceof DefaultAction);
+    }
+
+    @Test
     public void testReloadThreadSafety() throws IOException {
         ActionPool actionPool = initWithDefaultModel();
 
@@ -297,6 +356,16 @@ public class ActionPoolTest extends ServletContextTest {
         loadDefaultModel();
 
         ActionPool actionPool = ActionPool.getInstance();
+
+        actionPool.init(servletContext);
+
+        return actionPool;
+    }
+
+    private ActionPool initWithDefaultModelWithoutValidation() throws IOException {
+        loadDefaultModel();
+
+        ActionPool actionPool = ActionPoolNullValidator.getInstance();
 
         actionPool.init(servletContext);
 
