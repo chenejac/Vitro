@@ -375,7 +375,7 @@
 <https://vivoweb.org/ontology/vitro-dynamic-api/rpc/createGeolocationRPC>
         a                            		dynapi:rpc ;
         rdfs:label                     		"remote procedure call endpoint for creation of a geolocation"@en-US ;
-        dynapi:name                   		"remote procedure call endpoint for creation of a geolocation" ;
+        dynapi:name                   		"remote%procedure call endpoint for creation of a geolocation" ;
         dynapi:hasDefaultMethod 			<https://vivoweb.org/ontology/vitro-dynamic-api/http_method/post> ;
         dynapi:minAPIVersionMin      		"1.0.0" .
 
