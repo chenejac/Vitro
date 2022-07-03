@@ -66,11 +66,9 @@ public class IOJsonMessageConverter implements IOMessageConverter {
         Iterator<String> fieldNames = ioDataMap.keySet().iterator();
         while (fieldNames.hasNext()) {
             String fieldName = fieldNames.next();
-            if (fieldName.equalsIgnoreCase("result")) {
-                JsonNode node = toJson(ioDataMap.get(fieldName));
-                if (node != null) {
-                    objectNode.set(fieldName, node);
-                }
+            JsonNode node = toJson(ioDataMap.get(fieldName));
+            if (node != null) {
+                objectNode.set(fieldName, node);
             }
         }
         return objectNode.toString();
