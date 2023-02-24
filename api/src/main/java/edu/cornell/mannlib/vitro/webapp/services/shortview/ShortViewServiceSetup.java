@@ -13,36 +13,36 @@ import edu.cornell.mannlib.vitro.webapp.startup.StartupStatus;
  * Set up the ShortViewService.
  */
 public class ShortViewServiceSetup implements ServletContextListener {
-	private static final String ATTRIBUTE_NAME = ShortViewService.class
-			.getName();
+    private static final String ATTRIBUTE_NAME = ShortViewService.class
+        .getName();
 
-	@Override
-	public void contextInitialized(ServletContextEvent sce) {
-		ServletContext ctx = sce.getServletContext();
-		StartupStatus ss = StartupStatus.getBean(ctx);
+    public static ShortViewService getService(ServletContext ctx) {
+        return (ShortViewService) ctx.getAttribute(ATTRIBUTE_NAME);
+    }
 
-		FakeApplicationOntologyService faker;
-		try {
-			faker = new FakeApplicationOntologyService(ctx);
-		} catch (ShortViewConfigException e) {
-			ss.warning(this, "Failed to load the shortview_config.n3 file -- "
-					+ e.getMessage(), e);
-			faker = new FakeApplicationOntologyService();
-		}
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        ServletContext ctx = sce.getServletContext();
+        StartupStatus ss = StartupStatus.getBean(ctx);
 
-		ShortViewServiceImpl svs = new ShortViewServiceImpl(faker);
-		ctx.setAttribute(ATTRIBUTE_NAME, svs);
+        FakeApplicationOntologyService faker;
+        try {
+            faker = new FakeApplicationOntologyService(ctx);
+        } catch (ShortViewConfigException e) {
+            ss.warning(this, "Failed to load the shortview_config.n3 file -- "
+                + e.getMessage(), e);
+            faker = new FakeApplicationOntologyService();
+        }
 
-		ss.info(this,
-				"Started the Short View Service with a ShortViewServiceImpl");
-	}
+        ShortViewServiceImpl svs = new ShortViewServiceImpl(faker);
+        ctx.setAttribute(ATTRIBUTE_NAME, svs);
 
-	@Override
-	public void contextDestroyed(ServletContextEvent sce) {
-		sce.getServletContext().removeAttribute(ATTRIBUTE_NAME);
-	}
+        ss.info(this,
+            "Started the Short View Service with a ShortViewServiceImpl");
+    }
 
-	public static ShortViewService getService(ServletContext ctx) {
-		return (ShortViewService) ctx.getAttribute(ATTRIBUTE_NAME);
-	}
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) {
+        sce.getServletContext().removeAttribute(ATTRIBUTE_NAME);
+    }
 }

@@ -1,13 +1,11 @@
 /* $This file is distributed under the terms of the license in LICENSE$ */
 package edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo;
 
+import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import org.junit.Assert;
-
 import org.junit.Before;
 import org.junit.Test;
-
 import stubs.javax.servlet.http.HttpServletRequestStub;
-import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 
 public class EditConfigurationUtilsTest {
 
@@ -28,7 +26,7 @@ public class EditConfigurationUtilsTest {
         req = new HttpServletRequestStub();
 
         hash = EditConfigurationUtils.getDataHash(new VitroRequest(req));
-        Assert.assertNull( hash);
+        Assert.assertNull(hash);
 
 
     }

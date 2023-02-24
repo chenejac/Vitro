@@ -13,50 +13,50 @@ import java.io.InputStream;
 
 public interface ModelChange {
 
-	public enum Operation {
-	    ADD, REMOVE
-	}
+    /**
+     * @return InputStream - the serialized model (collection of RDF triples) representing a change to make
+     */
+    public InputStream getSerializedModel();
 
-	/**
-	 * @return InputStream - the serialized model (collection of RDF triples) representing a change to make
-	 */
-	public InputStream getSerializedModel();
+    /**
+     * @param serializedModel - the serialized model (collection of RDF triples) representing a change to make
+     */
+    public void setSerializedModel(InputStream serializedModel);
 
-	/**
-	 * @param serializedModel - the serialized model (collection of RDF triples) representing a change to make
-	 */
-	public void setSerializedModel(InputStream serializedModel);
+    /**
+     * @return RDFService.ModelSerializationFormat - the serialization format of the model
+     */
+    public RDFService.ModelSerializationFormat getSerializationFormat();
 
-	/**
-	 * @return RDFService.ModelSerializationFormat - the serialization format of the model
-	 */
-	public RDFService.ModelSerializationFormat getSerializationFormat();
+    /**
+     * @param serializationFormat - the serialization format of the model
+     */
+    public void setSerializationFormat(RDFService.ModelSerializationFormat serializationFormat);
 
-	/**
-	 * @param serializationFormat - the serialization format of the model
-	 */
-	public void setSerializationFormat(RDFService.ModelSerializationFormat serializationFormat);
+    /**
+     * @return ModelChange.Operation - the operation to be performed
+     */
+    public ModelChange.Operation getOperation();
 
-	/**
-	 * @return ModelChange.Operation - the operation to be performed
-	 */
-	public ModelChange.Operation getOperation();
+    /**
+     * @param operation - the operation to be performed
+     */
+    public void setOperation(ModelChange.Operation operation);
 
-	/**
-	 * @param operation - the operation to be performed
-	 */
-	public void setOperation(ModelChange.Operation operation);
+    /**
+     * @return String - the URI of the graph to which to apply the change
+     */
+    public String getGraphURI();
 
-	/**
-	 * @return String - the URI of the graph to which to apply the change
-	 */
-	public String getGraphURI();
+    /**
+     * @param graphURI - the URI of the graph to which to apply the change
+     *                 If the graphURI is null the change applies to the
+     *                 default write graph. If this method is not used to
+     *                 set the write graph the default write graph will be used.
+     */
+    public void setGraphURI(String graphURI);
 
-	/**
-	 * @param graphURI - the URI of the graph to which to apply the change
-	 *                   If the graphURI is null the change applies to the
-	 *                   default write graph. If this method is not used to
-	 *                   set the write graph the default write graph will be used.
-	 */
-	public void setGraphURI(String graphURI);
+    public enum Operation {
+        ADD, REMOVE
+    }
 }

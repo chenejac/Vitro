@@ -11,14 +11,12 @@ import org.linkeddatafragments.exceptions.DataSourceCreationException;
  *
  * @author <a href="http://olafhartig.de">Olaf Hartig</a>
  */
-public class RDFServiceDataSourceType implements IDataSourceType
-{
+public class RDFServiceDataSourceType implements IDataSourceType {
     @Override
-    public IDataSource createDataSource( final String title,
-                                         final String description,
-                                         final JsonNode settings )
-                                                     throws DataSourceCreationException
-    {
+    public IDataSource createDataSource(final String title,
+                                        final String description,
+                                        final JsonNode settings)
+        throws DataSourceCreationException {
         try {
             return new RDFServiceDataSource(title, description);
         } catch (Exception ex) {

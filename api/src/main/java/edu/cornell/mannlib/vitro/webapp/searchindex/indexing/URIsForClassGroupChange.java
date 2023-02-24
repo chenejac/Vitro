@@ -6,49 +6,50 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.jena.rdf.model.Statement;
-
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.ContextModelsUser;
+import org.apache.jena.rdf.model.Statement;
 
 /**
  * if a class's classgroup changes, reindex all individuals in that class.
  */
-public class URIsForClassGroupChange  implements IndexingUriFinder, ContextModelsUser {
+public class URIsForClassGroupChange implements IndexingUriFinder, ContextModelsUser {
 
     IndividualDao indDao;
 
     @Override
-	public void setContextModels(ContextModelAccess models) {
-    	this.indDao = models.getWebappDaoFactory().getIndividualDao();
-	}
+    public void setContextModels(ContextModelAccess models) {
+        this.indDao = models.getWebappDaoFactory().getIndividualDao();
+    }
 
-	@Override
+    @Override
     public List<String> findAdditionalURIsToIndex(Statement stmt) {
-        if( stmt == null || stmt.getPredicate() == null)
+        if (stmt == null || stmt.getPredicate() == null) {
             return Collections.emptyList();
+        }
 
         //if it is a change in classgroup of a class
-        if( VitroVocabulary.IN_CLASSGROUP.equals( stmt.getPredicate().getURI() ) &&
+        if (VitroVocabulary.IN_CLASSGROUP.equals(stmt.getPredicate().getURI()) &&
             stmt.getSubject() != null &&
-            stmt.getSubject().isURIResource() ){
+            stmt.getSubject().isURIResource()) {
 
             //get individuals in class
-            List<Individual>indsInClass =
+            List<Individual> indsInClass =
                 indDao.getIndividualsByVClassURI(stmt.getSubject().getURI());
-            if( indsInClass == null )
+            if (indsInClass == null) {
                 return Collections.emptyList();
+            }
 
             //convert individuals to list of uris
             List<String> uris = new ArrayList<String>();
-            for( Individual ind : indsInClass){
-                uris.add( ind.getURI() );
+            for (Individual ind : indsInClass) {
+                uris.add(ind.getURI());
             }
             return uris;
-        }else{
+        } else {
             return Collections.emptyList();
         }
     }
@@ -65,9 +66,9 @@ public class URIsForClassGroupChange  implements IndexingUriFinder, ContextModel
 
     }
 
-	@Override
-	public String toString() {
-		return this.getClass().getSimpleName();
-	}
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
+    }
 
 }

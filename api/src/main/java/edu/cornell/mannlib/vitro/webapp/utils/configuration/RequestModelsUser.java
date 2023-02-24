@@ -9,5 +9,5 @@ import edu.cornell.mannlib.vitro.webapp.modelaccess.RequestModelAccess;
  * call this method, supplying the RDF models for the current HTTP request.
  */
 public interface RequestModelsUser {
-	void setRequestModels(RequestModelAccess models);
+    void setRequestModels(RequestModelAccess models);
 }

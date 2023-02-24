@@ -9,8 +9,7 @@ import org.apache.jena.rdf.model.StmtIterator;
  *
  * @author <a href="http://olafhartig.de">Olaf Hartig</a>
  */
-public class TriplePatternFragmentImpl extends TriplePatternFragmentBase
-{
+public class TriplePatternFragmentImpl extends TriplePatternFragmentBase {
 
     /**
      *
@@ -19,49 +18,51 @@ public class TriplePatternFragmentImpl extends TriplePatternFragmentBase
 
     /**
      * Creates an empty Triple Pattern Fragment.
+     *
      * @param fragmentURL
      * @param datasetURL
      */
-    public TriplePatternFragmentImpl( final String fragmentURL,
-                                      final String datasetURL ) {
-        this( null, 0L, fragmentURL, datasetURL, 1, true );
+    public TriplePatternFragmentImpl(final String fragmentURL,
+                                     final String datasetURL) {
+        this(null, 0L, fragmentURL, datasetURL, 1, true);
     }
 
     /**
      * Creates an empty Triple Pattern Fragment page.
+     *
      * @param fragmentURL
      * @param datasetURL
      * @param isLastPage
      * @param pageNumber
      */
-    public TriplePatternFragmentImpl( final String fragmentURL,
-                                      final String datasetURL,
-                                      final long pageNumber,
-                                      final boolean isLastPage ) {
-        this( null, 0L, fragmentURL, datasetURL, pageNumber, isLastPage );
+    public TriplePatternFragmentImpl(final String fragmentURL,
+                                     final String datasetURL,
+                                     final long pageNumber,
+                                     final boolean isLastPage) {
+        this(null, 0L, fragmentURL, datasetURL, pageNumber, isLastPage);
     }
 
     /**
      * Creates a new Triple Pattern Fragment.
-     * @param triples the triples (possibly partial)
-     * @param totalSize the total size
+     *
+     * @param triples     the triples (possibly partial)
+     * @param totalSize   the total size
      * @param fragmentURL
      * @param datasetURL
      * @param isLastPage
      * @param pageNumber
      */
-    public TriplePatternFragmentImpl( final Model triples,
-                                      long totalSize,
-                                      final String fragmentURL,
-                                      final String datasetURL,
-                                      final long pageNumber,
-                                      final boolean isLastPage ) {
-        super( totalSize, fragmentURL, datasetURL, pageNumber, isLastPage );
+    public TriplePatternFragmentImpl(final Model triples,
+                                     long totalSize,
+                                     final String fragmentURL,
+                                     final String datasetURL,
+                                     final long pageNumber,
+                                     final boolean isLastPage) {
+        super(totalSize, fragmentURL, datasetURL, pageNumber, isLastPage);
         this.triples = triples;
     }
 
     /**
-     *
      * @return
      */
     @Override

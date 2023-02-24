@@ -9,68 +9,67 @@ import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
  * requested actions.
  */
 public abstract class Permission implements Comparable<Permission> {
-	protected final String uri;
+    /**
+     * A concrete Permission instance that authorizes nothing.
+     */
+    static Permission NOT_AUTHORIZED = new Permission("java:"
+        + Permission.class.getName() + "#NOT_AUTHORIZED") {
 
-	protected Permission(String uri) {
-		if (uri == null) {
-			throw new NullPointerException("uri may not be null.");
-		}
-		this.uri = uri;
-	}
+        @Override
+        public boolean isAuthorized(RequestedAction whatToAuth) {
+            return false;
+        }
 
-	/**
-	 * Get the URI that identifies this Permission object.
-	 */
-	public String getUri() {
-		return uri;
-	}
+    };
+    protected final String uri;
 
-	/**
-	 * Is a user with this Permission authorized to perform this
-	 * RequestedAction?
-	 */
-	public abstract boolean isAuthorized(RequestedAction whatToAuth);
+    protected Permission(String uri) {
+        if (uri == null) {
+            throw new NullPointerException("uri may not be null.");
+        }
+        this.uri = uri;
+    }
 
-	@Override
-	public int compareTo(Permission that) {
-		return this.uri.compareTo(that.uri);
-	}
+    /**
+     * Get the URI that identifies this Permission object.
+     */
+    public String getUri() {
+        return uri;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (!obj.getClass().equals(this.getClass())) {
-			return false;
-		}
-		Permission that = (Permission) obj;
-		return this.uri.equals(that.uri);
-	}
+    /**
+     * Is a user with this Permission authorized to perform this
+     * RequestedAction?
+     */
+    public abstract boolean isAuthorized(RequestedAction whatToAuth);
 
-	@Override
-	public int hashCode() {
-		return uri.hashCode();
-	}
+    @Override
+    public int compareTo(Permission that) {
+        return this.uri.compareTo(that.uri);
+    }
 
-	@Override
-	public String toString() {
-		return this.getClass().getSimpleName() + "['" + uri + "']";
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!obj.getClass().equals(this.getClass())) {
+            return false;
+        }
+        Permission that = (Permission) obj;
+        return this.uri.equals(that.uri);
+    }
 
-	/**
-	 * A concrete Permission instance that authorizes nothing.
-	 */
-	static Permission NOT_AUTHORIZED = new Permission("java:"
-			+ Permission.class.getName() + "#NOT_AUTHORIZED") {
+    @Override
+    public int hashCode() {
+        return uri.hashCode();
+    }
 
-		@Override
-		public boolean isAuthorized(RequestedAction whatToAuth) {
-			return false;
-		}
-
-	};
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + "['" + uri + "']";
+    }
 }

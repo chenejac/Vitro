@@ -12,105 +12,101 @@ import java.util.Map;
  * and DESCRIBE).
  */
 public enum RdfResultMediaType {
-	TEXT("text/plain", true, "NTRIPLE", "N-TRIPLE", "nt"),
+    TEXT("text/plain", true, "NTRIPLE", "N-TRIPLE", "nt"),
 
-	RDF_XML("application/rdf+xml", true, "RDFXML", "RDF/XML", "rdf"),
+    RDF_XML("application/rdf+xml", true, "RDFXML", "RDF/XML", "rdf"),
 
-	N3("text/n3", true, "N3", "N3", "n3"),
+    N3("text/n3", true, "N3", "N3", "n3"),
 
-	TTL("text/turtle", false, "N3", "TTL", "ttl"),
+    TTL("text/turtle", false, "N3", "TTL", "ttl"),
 
-	JSON("application/json", false, "N3", "JSON", "json"),
+    JSON("application/json", false, "N3", "JSON", "json"),
 
-	JSON_LD("application/ld+json", false, "N3", "JSON", "jsonld");
+    JSON_LD("application/ld+json", false, "N3", "JSON", "jsonld");
 
-	// ----------------------------------------------------------------------
-	// Keep a map of content types, for easy conversion back and forth
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // Keep a map of content types, for easy conversion back and forth
+    // ----------------------------------------------------------------------
 
-	private final static Map<String, RdfResultMediaType> contentTypesMap = buildMap();
+    private final static Map<String, RdfResultMediaType> contentTypesMap = buildMap();
+    /**
+     * The MIME type as it would appear in an HTTP Accept or Content-Type
+     * header.
+     */
+    private final String contentType;
+    /**
+     * Is this a format that is supported directly by the RDFService?
+     */
+    private final boolean nativeFormat;
+    /**
+     * What format shall we ask the RDFService to supply?
+     */
+    private final String serializationFormat;
 
-	private static Map<String, RdfResultMediaType> buildMap() {
-		Map<String, RdfResultMediaType> map = new LinkedHashMap<>();
-		for (RdfResultMediaType value : values()) {
-			map.put(value.contentType, value);
-		}
-		return Collections.unmodifiableMap(map);
-	}
+    // ----------------------------------------------------------------------
+    // The instance
+    // ----------------------------------------------------------------------
+    /**
+     * What format shall we ask the resulting OntModel to write?
+     */
+    private final String jenaResponseFormat;
+    /**
+     * What extension should be used if file is downloaded?
+     */
+    private final String extension;
 
-	public static Collection<String> contentTypes() {
-		return contentTypesMap.keySet();
-	}
+    private RdfResultMediaType(String contentType, boolean nativeFormat,
+                               String serializationFormat, String jenaResponseFormat,
+                               String extension) {
+        this.contentType = contentType;
+        this.nativeFormat = nativeFormat;
+        this.serializationFormat = serializationFormat;
+        this.jenaResponseFormat = jenaResponseFormat;
+        this.extension = extension;
+    }
 
-	public static RdfResultMediaType fromContentType(String contentType)
-			throws IllegalArgumentException {
-		RdfResultMediaType type = contentTypesMap.get(contentType);
-		if (type == null) {
-			throw new IllegalArgumentException(
-					"No RdfResultMediaType has contentType='" + contentType
-							+ "'");
-		} else {
-			return type;
-		}
-	}
+    private static Map<String, RdfResultMediaType> buildMap() {
+        Map<String, RdfResultMediaType> map = new LinkedHashMap<>();
+        for (RdfResultMediaType value : values()) {
+            map.put(value.contentType, value);
+        }
+        return Collections.unmodifiableMap(map);
+    }
 
-	// ----------------------------------------------------------------------
-	// The instance
-	// ----------------------------------------------------------------------
+    public static Collection<String> contentTypes() {
+        return contentTypesMap.keySet();
+    }
 
-	/**
-	 * The MIME type as it would appear in an HTTP Accept or Content-Type
-	 * header.
-	 */
-	private final String contentType;
+    public static RdfResultMediaType fromContentType(String contentType)
+        throws IllegalArgumentException {
+        RdfResultMediaType type = contentTypesMap.get(contentType);
+        if (type == null) {
+            throw new IllegalArgumentException(
+                "No RdfResultMediaType has contentType='" + contentType
+                    + "'");
+        } else {
+            return type;
+        }
+    }
 
-	/**
-	 * Is this a format that is supported directly by the RDFService?
-	 */
-	private final boolean nativeFormat;
+    public String getContentType() {
+        return contentType;
+    }
 
-	/**
-	 * What format shall we ask the RDFService to supply?
-	 */
-	private final String serializationFormat;
+    public boolean isNativeFormat() {
+        return nativeFormat;
+    }
 
-	/**
-	 * What format shall we ask the resulting OntModel to write?
-	 */
-	private final String jenaResponseFormat;
+    public String getSerializationFormat() {
+        return serializationFormat;
+    }
 
-	/**
-	 * What extension should be used if file is downloaded?
-	 */
-	private final String extension;
+    public String getJenaResponseFormat() {
+        return jenaResponseFormat;
+    }
 
-	private RdfResultMediaType(String contentType, boolean nativeFormat,
-			String serializationFormat, String jenaResponseFormat, String extension) {
-		this.contentType = contentType;
-		this.nativeFormat = nativeFormat;
-		this.serializationFormat = serializationFormat;
-		this.jenaResponseFormat = jenaResponseFormat;
-		this.extension = extension;
-	}
-
-	public String getContentType() {
-		return contentType;
-	}
-
-	public boolean isNativeFormat() {
-		return nativeFormat;
-	}
-
-	public String getSerializationFormat() {
-		return serializationFormat;
-	}
-
-	public String getJenaResponseFormat() {
-		return jenaResponseFormat;
-	}
-
-	public String getExtension() {
-		return extension;
-	}
+    public String getExtension() {
+        return extension;
+    }
 
 }

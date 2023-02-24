@@ -9,31 +9,31 @@ import java.util.List;
  */
 public interface SearchFacetField {
 
-	/**
-	 * The name of the field that was faceted. Never null.
-	 */
-	String getName();
+    /**
+     * The name of the field that was faceted. Never null.
+     */
+    String getName();
 
-	/**
-	 * The different facet values. May return an empty list, but never null.
-	 */
-	List<Count> getValues();
+    /**
+     * The different facet values. May return an empty list, but never null.
+     */
+    List<Count> getValues();
 
-	/**
-	 * Holds one facet from this field.
-	 */
-	public interface Count {
+    /**
+     * Holds one facet from this field.
+     */
+    public interface Count {
 
-		/**
-		 * The value of this facet. Never null.
-		 */
-		String getName();
+        /**
+         * The value of this facet. Never null.
+         */
+        String getName();
 
-		/**
-		 * The number of times that the value occurs in the results.
-		 */
-		long getCount();
+        /**
+         * The number of times that the value occurs in the results.
+         */
+        long getCount();
 
-	}
+    }
 
 }

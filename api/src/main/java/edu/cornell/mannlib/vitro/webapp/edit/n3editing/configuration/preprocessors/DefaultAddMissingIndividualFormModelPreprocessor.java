@@ -2,38 +2,37 @@
 
 package edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ResourceFactory;
 
-
-
-import javax.servlet.http.HttpServletRequest;
-
 /**
  * This will remove old relation triple for an edit.
- * @author bdc34
  *
+ * @author bdc34
  */
 public class DefaultAddMissingIndividualFormModelPreprocessor implements
-        ModelChangePreprocessor {
+    ModelChangePreprocessor {
     private String subjectUri, predicateUri, objectUri;
 
     public DefaultAddMissingIndividualFormModelPreprocessor(String subjectUri,
-            String predicateUri, String objectUri) {
+                                                            String predicateUri, String objectUri) {
         super();
         this.subjectUri = subjectUri;
         this.predicateUri = predicateUri;
         this.objectUri = objectUri;
     }
 
-    public void preprocess( Model retractionsModel, Model additionsModel, HttpServletRequest r) {
-        if( retractionsModel == null || additionsModel == null)
+    public void preprocess(Model retractionsModel, Model additionsModel, HttpServletRequest r) {
+        if (retractionsModel == null || additionsModel == null) {
             return;
+        }
 
         retractionsModel.add(
-                ResourceFactory.createResource(subjectUri),
-                ResourceFactory.createProperty(predicateUri),
-                ResourceFactory.createResource(objectUri));
+            ResourceFactory.createResource(subjectUri),
+            ResourceFactory.createProperty(predicateUri),
+            ResourceFactory.createResource(objectUri));
     }
 
 }

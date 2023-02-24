@@ -11,56 +11,55 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.rdf.model.Statement;
 
 /**
  * The basic implementation.
  */
 public class IndexingUriFinderListBasic implements IndexingUriFinderList {
-	private static final Log log = LogFactory
-			.getLog(IndexingUriFinderListBasic.class);
+    private static final Log log = LogFactory
+        .getLog(IndexingUriFinderListBasic.class);
 
-	private final List<IndexingUriFinder> finders;
+    private final List<IndexingUriFinder> finders;
 
-	public IndexingUriFinderListBasic(
-			Collection<? extends IndexingUriFinder> finders) {
-		this.finders = Collections.synchronizedList(new ArrayList<>(finders));
-	}
+    public IndexingUriFinderListBasic(
+        Collection<? extends IndexingUriFinder> finders) {
+        this.finders = Collections.synchronizedList(new ArrayList<>(finders));
+    }
 
-	@Override
-	public void startIndexing() {
-		for (IndexingUriFinder finder : finders) {
-			finder.startIndexing();
-		}
-	}
+    @Override
+    public void startIndexing() {
+        for (IndexingUriFinder finder : finders) {
+            finder.startIndexing();
+        }
+    }
 
-	@Override
-	public void stopIndexing() {
-		for (IndexingUriFinder finder : finders) {
-			finder.endIndexing();
-		}
-	}
+    @Override
+    public void stopIndexing() {
+        for (IndexingUriFinder finder : finders) {
+            finder.endIndexing();
+        }
+    }
 
-	@Override
-	public Set<String> findAdditionalUris(Statement stmt) {
-		Set<String> uris = new HashSet<>();
-		for (IndexingUriFinder uriFinder : finders) {
-			List<String> additions = uriFinder.findAdditionalURIsToIndex(stmt);
-			if (log.isDebugEnabled() && !additions.isEmpty()) {
-				log.debug(uriFinder + " found " + additions.size()
-						+ " additions " + additions + " for this statement "
-						+ stmt);
-			}
-			for (String addition : additions) {
-				if (addition == null) {
-					log.warn("Finder " + uriFinder + " returned a null URI.");
-				} else {
-					uris.add(addition);
-				}
-			}
-		}
-		return uris;
-	}
+    @Override
+    public Set<String> findAdditionalUris(Statement stmt) {
+        Set<String> uris = new HashSet<>();
+        for (IndexingUriFinder uriFinder : finders) {
+            List<String> additions = uriFinder.findAdditionalURIsToIndex(stmt);
+            if (log.isDebugEnabled() && !additions.isEmpty()) {
+                log.debug(uriFinder + " found " + additions.size()
+                    + " additions " + additions + " for this statement "
+                    + stmt);
+            }
+            for (String addition : additions) {
+                if (addition == null) {
+                    log.warn("Finder " + uriFinder + " returned a null URI.");
+                } else {
+                    uris.add(addition);
+                }
+            }
+        }
+        return uris;
+    }
 
 }

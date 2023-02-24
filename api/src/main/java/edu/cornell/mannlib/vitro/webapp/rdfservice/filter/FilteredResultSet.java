@@ -17,7 +17,7 @@ public class FilteredResultSet implements ResultSet {
     protected ResultSet originalResultSet;
     protected int rowNum = -1;
 
-    public FilteredResultSet (List<QuerySolution> solutions, ResultSet originalResultSet) {
+    public FilteredResultSet(List<QuerySolution> solutions, ResultSet originalResultSet) {
         this.solutIt = solutions.iterator();
         this.originalResultSet = originalResultSet;
     }

@@ -2,6 +2,7 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 
+import javax.servlet.annotation.WebServlet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,9 +11,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.AuthorizationRequest;
@@ -32,19 +30,18 @@ import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
 import edu.cornell.mannlib.vitro.webapp.utils.json.JacksonUtils;
 import edu.cornell.mannlib.vitro.webapp.web.URLEncoder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import javax.servlet.annotation.WebServlet;
-
-@WebServlet(name = "ListPropertyWebappsController", urlPatterns = {"/listPropertyWebapps"} )
+@WebServlet(name = "ListPropertyWebappsController", urlPatterns = {"/listPropertyWebapps"})
 public class ListPropertyWebappsController extends FreemarkerHttpServlet {
-    private static Log log = LogFactory.getLog( ListPropertyWebappsController.class );
-
     private static final String TEMPLATE_NAME = "siteAdmin-objectPropHierarchy.ftl";
+    private static Log log = LogFactory.getLog(ListPropertyWebappsController.class);
 
     @Override
-	protected AuthorizationRequest requiredActions(VitroRequest vreq) {
-		return SimplePermission.EDIT_ONTOLOGY.ACTION;
-	}
+    protected AuthorizationRequest requiredActions(VitroRequest vreq) {
+        return SimplePermission.EDIT_ONTOLOGY.ACTION;
+    }
 
     @Override
     protected ResponseValues processRequest(VitroRequest vreq) {
@@ -61,8 +58,10 @@ public class ListPropertyWebappsController extends FreemarkerHttpServlet {
             String ontologyUri = vreq.getParameter("ontologyUri");
 
             ObjectPropertyDao dao = vreq.getUnfilteredWebappDaoFactory().getObjectPropertyDao();
-            ObjectPropertyDao opDaoLangNeut = vreq.getLanguageNeutralWebappDaoFactory().getObjectPropertyDao();
-            PropertyInstanceDao piDao = vreq.getLanguageNeutralWebappDaoFactory().getPropertyInstanceDao();
+            ObjectPropertyDao opDaoLangNeut =
+                vreq.getLanguageNeutralWebappDaoFactory().getObjectPropertyDao();
+            PropertyInstanceDao piDao =
+                vreq.getLanguageNeutralWebappDaoFactory().getPropertyInstanceDao();
             VClassDao vcDao = vreq.getUnfilteredWebappDaoFactory().getVClassDao();
             VClassDao vcDaoLangNeut = vreq.getLanguageNeutralWebappDaoFactory().getVClassDao();
             PropertyGroupDao pgDao = vreq.getUnfilteredWebappDaoFactory().getPropertyGroupDao();
@@ -80,10 +79,10 @@ public class ListPropertyWebappsController extends FreemarkerHttpServlet {
 
                 Map<String, PropertyInstance> propInstMap = new HashMap<String, PropertyInstance>();
                 for (String classURI : superclassURIs) {
-            	    Collection<PropertyInstance> propInsts = piDao.getAllPropInstByVClass(classURI);
-            	    for (PropertyInstance propInst : propInsts) {
-            		    propInstMap.put(propInst.getPropertyURI(), propInst);
-            	    }
+                    Collection<PropertyInstance> propInsts = piDao.getAllPropInstByVClass(classURI);
+                    for (PropertyInstance propInst : propInsts) {
+                        propInstMap.put(propInst.getPropertyURI(), propInst);
+                    }
                 }
                 List<PropertyInstance> propInsts = new ArrayList<PropertyInstance>();
                 propInsts.addAll(propInstMap.values());
@@ -95,34 +94,37 @@ public class ListPropertyWebappsController extends FreemarkerHttpServlet {
                     PropertyInstance pi = (PropertyInstance) propInstIt.next();
                     if (!(propURIs.contains(pi.getPropertyURI()))) {
                         propURIs.add(pi.getPropertyURI());
-                        ObjectProperty prop = (ObjectProperty) dao.getObjectPropertyByURI(pi.getPropertyURI());
+                        ObjectProperty prop =
+                            (ObjectProperty) dao.getObjectPropertyByURI(pi.getPropertyURI());
                         if (prop != null) {
                             props.add(prop);
                         }
                     }
                 }
             } else {
-                props = (vreq.getParameter("iffRoot")!=null)
+                props = (vreq.getParameter("iffRoot") != null)
                     ? dao.getRootObjectProperties()
                     : dao.getAllObjectProperties();
             }
 
             OntologyDao oDao = vreq.getUnfilteredWebappDaoFactory().getOntologyDao();
-            HashMap<String,String> ontologyHash = new HashMap<String,String>();
+            HashMap<String, String> ontologyHash = new HashMap<String, String>();
 
             Iterator<ObjectProperty> propIt = props.iterator();
             List<ObjectProperty> scratch = new ArrayList<ObjectProperty>();
             while (propIt.hasNext()) {
                 ObjectProperty p = propIt.next();
                 if (p.getNamespace() != null) {
-                    if( !ontologyHash.containsKey( p.getNamespace() )){
+                    if (!ontologyHash.containsKey(p.getNamespace())) {
                         Ontology o = oDao.getOntologyByURI(p.getNamespace());
-                        if (o==null) {
+                        if (o == null) {
                             if (!VitroVocabulary.vitroURI.equals(p.getNamespace())) {
-                                log.debug("doGet(): no ontology object found for the namespace "+p.getNamespace());
+                                log.debug("doGet(): no ontology object found for the namespace " +
+                                    p.getNamespace());
                             }
                         } else {
-                            ontologyHash.put(p.getNamespace(), o.getName() == null ? p.getNamespace() : o.getName());
+                            ontologyHash.put(p.getNamespace(),
+                                o.getName() == null ? p.getNamespace() : o.getName());
                         }
                     }
                     if (ontologyUri != null && p.getNamespace().equals(ontologyUri)) {
@@ -136,14 +138,14 @@ public class ListPropertyWebappsController extends FreemarkerHttpServlet {
             }
 
             if (props != null) {
-        	    sortForPickList(props, vreq);
+                sortForPickList(props, vreq);
             }
 
             StringBuilder json = new StringBuilder();
             int counter = 0;
 
             if (props != null) {
-                if (props.size()==0) {
+                if (props.size() == 0) {
                     json = new StringBuilder("{ \"name\": \"" + noResultsMsgStr + "\" }");
                 } else {
                     for (ObjectProperty prop1 : props) {
@@ -152,38 +154,51 @@ public class ListPropertyWebappsController extends FreemarkerHttpServlet {
                         }
                         ObjectProperty prop = prop1;
 
-                        String propNameStr = ShowObjectPropertyHierarchyController.getDisplayLabel(prop);
+                        String propNameStr =
+                            ShowObjectPropertyHierarchyController.getDisplayLabel(prop);
 
                         try {
-                            json.append("{ \"name\": ").append(JacksonUtils.quote("<a href='./propertyEdit?uri=" + URLEncoder.encode(prop.getURI()) + "'>"
+                            json.append("{ \"name\": ").append(JacksonUtils.quote(
+                                "<a href='./propertyEdit?uri=" + URLEncoder.encode(prop.getURI()) +
+                                    "'>"
                                     + propNameStr + "</a>")).append(", ");
                         } catch (Exception e) {
                             json.append("{ \"name\": \"").append(propNameStr).append("\", ");
                         }
 
-                        json.append("\"data\": { \"internalName\": ").append(JacksonUtils.quote(prop.getLocalNameWithPrefix())).append(", ");
+                        json.append("\"data\": { \"internalName\": ")
+                            .append(JacksonUtils.quote(prop.getLocalNameWithPrefix())).append(", ");
 
-                        ObjectProperty opLangNeut = opDaoLangNeut.getObjectPropertyByURI(prop.getURI());
+                        ObjectProperty opLangNeut =
+                            opDaoLangNeut.getObjectPropertyByURI(prop.getURI());
                         if (opLangNeut == null) {
                             opLangNeut = prop;
                         }
-                        String domainStr = getVClassNameFromURI(opLangNeut.getDomainVClassURI(), vcDao, vcDaoLangNeut);
-                        json.append("\"domainVClass\": ").append(JacksonUtils.quote(domainStr)).append(", ");
+                        String domainStr =
+                            getVClassNameFromURI(opLangNeut.getDomainVClassURI(), vcDao,
+                                vcDaoLangNeut);
+                        json.append("\"domainVClass\": ").append(JacksonUtils.quote(domainStr))
+                            .append(", ");
 
-                        String rangeStr = getVClassNameFromURI(opLangNeut.getRangeVClassURI(), vcDao, vcDaoLangNeut);
-                        json.append("\"rangeVClass\": ").append(JacksonUtils.quote(rangeStr)).append(", ");
+                        String rangeStr =
+                            getVClassNameFromURI(opLangNeut.getRangeVClassURI(), vcDao,
+                                vcDaoLangNeut);
+                        json.append("\"rangeVClass\": ").append(JacksonUtils.quote(rangeStr))
+                            .append(", ");
 
                         if (prop.getGroupURI() != null) {
                             PropertyGroup pGroup = pgDao.getGroupByURI(prop.getGroupURI());
-                            json.append("\"group\": ").append(JacksonUtils.quote((pGroup == null) ? "unknown group" : pGroup.getName())).append(" } } ");
+                            json.append("\"group\": ").append(JacksonUtils
+                                .quote((pGroup == null) ? "unknown group" : pGroup.getName()))
+                                .append(" } } ");
                         } else {
                             json.append("\"group\": \"unspecified\" } }");
                         }
                         counter += 1;
                     }
-                 }
-                 body.put("jsonTree", json.toString());
-             }
+                }
+                body.put("jsonTree", json.toString());
+            }
 
         } catch (Throwable t) {
             t.printStackTrace();
@@ -192,15 +207,16 @@ public class ListPropertyWebappsController extends FreemarkerHttpServlet {
         return new TemplateResponseValues(TEMPLATE_NAME, body);
     }
 
-    private String getVClassNameFromURI(String vclassURI, VClassDao vcDao, VClassDao vcDaoLangNeut) {
-        if(vclassURI == null) {
+    private String getVClassNameFromURI(String vclassURI, VClassDao vcDao,
+                                        VClassDao vcDaoLangNeut) {
+        if (vclassURI == null) {
             return "";
         }
         VClass vclass = vcDaoLangNeut.getVClassByURI(vclassURI);
-        if(vclass == null) {
+        if (vclass == null) {
             return "";
         }
-        if(vclass.isAnonymous()) {
+        if (vclass.isAnonymous()) {
             return vclass.getPickListName();
         } else {
             VClass vclassWLang = vcDao.getVClassByURI(vclassURI);

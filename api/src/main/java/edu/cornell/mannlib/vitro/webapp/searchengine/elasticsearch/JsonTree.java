@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * Build a Map of Objects, suitable for marshalling by Jackson.
- * 
+ * <p>
  * Include conditional logic, so null values, empty maps, or empty lists will
  * not be added, unless you use the special values.
  */
@@ -18,12 +18,13 @@ public class JsonTree {
      * Empty maps will not be added, except for this one.
      */
     public static final Map<String, Object> EMPTY_JSON_MAP = Collections
-            .emptyMap();
+        .emptyMap();
 
     /**
      * Empty lists will not be added, except for this one.
      */
     public static final List<Object> EMPTY_JSON_LIST = Collections.emptyList();
+    private Map<String, Object> map = new HashMap<>();
 
     /**
      * Create the tree
@@ -39,8 +40,6 @@ public class JsonTree {
         return (i > 0) ? i : null;
     }
 
-    private Map<String, Object> map = new HashMap<>();
-
     public JsonTree put(String key, Object value) {
         if (isSignificant(value)) {
             storeIt(key, value);
@@ -53,11 +52,11 @@ public class JsonTree {
             return false;
         }
         if (value instanceof Map && ((Map) value).isEmpty()
-                && value != EMPTY_JSON_MAP) {
+            && value != EMPTY_JSON_MAP) {
             return false;
         }
         if (value instanceof List && ((List) value).isEmpty()
-                && value != EMPTY_JSON_LIST) {
+            && value != EMPTY_JSON_LIST) {
             return false;
         }
         return true;

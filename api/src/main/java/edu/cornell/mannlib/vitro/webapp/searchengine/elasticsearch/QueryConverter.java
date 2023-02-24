@@ -11,15 +11,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchQuery;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchQuery.Order;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Accept a SearchQuery and make it available as a JSON string, suitable for
@@ -57,10 +55,10 @@ public class QueryConverter {
 
     private Map<String, Object> buildFilterStructure() {
         return tree() //
-                .put("bool", tree() //
-                        .put("must", new QueryStringMap(query.getQuery()).map) //
-                        .put("filter", buildFiltersList())) //
-                .asMap();
+            .put("bool", tree() //
+                .put("must", new QueryStringMap(query.getQuery()).map) //
+                .put("filter", buildFiltersList())) //
+            .asMap();
     }
 
     private List<Map<String, Object>> buildFiltersList() {
@@ -91,19 +89,19 @@ public class QueryConverter {
 
     private Map<String, Object> figureHighlighter() {
         return tree() //
-                .put("fields", tree() //
-                        .put("ALLTEXT", EMPTY_JSON_MAP))
-                .asMap();
+            .put("fields", tree() //
+                .put("ALLTEXT", EMPTY_JSON_MAP))
+            .asMap();
     }
 
     private Map<String, Object> figureFacet(String field) {
         return tree() //
-                .put("terms", tree() //
-                        .put("field", field) //
-                        .put("size", ifPositive(query.getFacetLimit())) //
-                        .put("min_doc_count",
-                                ifPositive(query.getFacetMinCount()))) //
-                .asMap();
+            .put("terms", tree() //
+                .put("field", field) //
+                .put("size", ifPositive(query.getFacetLimit())) //
+                .put("min_doc_count",
+                    ifPositive(query.getFacetMinCount()))) //
+            .asMap();
     }
 
     private List<String> figureReturnFields() {
@@ -112,14 +110,14 @@ public class QueryConverter {
 
     private Map<String, Object> figureFullMap() {
         return tree() //
-                .put("query", queryAndFilters) //
-                .put("from", ifPositive(query.getStart())) //
-                .put("highlight", highlighter)
-                .put("size", ifPositive(query.getRows())) //
-                .put("sort", sortFields) //
-                .put("_source", returnFields) //
-                .put("aggregations", facets) //
-                .asMap();
+            .put("query", queryAndFilters) //
+            .put("from", ifPositive(query.getStart())) //
+            .put("highlight", highlighter)
+            .put("size", ifPositive(query.getRows())) //
+            .put("sort", sortFields) //
+            .put("_source", returnFields) //
+            .put("aggregations", facets) //
+            .asMap();
     }
 
     public String asString() throws SearchEngineException {
@@ -140,25 +138,25 @@ public class QueryConverter {
 
         /**
          * This is a kluge, but perhaps it will work for now.
-         * 
+         * <p>
          * Apparently Solr is willing to put up with query strings that contain
          * special characters in odd places, but Elasticsearch is not.
-         * 
+         * <p>
          * So, a query string of "classgroup:http://this/that" must be escaped
          * as "classgroup:http\:\/\/this\/that". Notice that the first colon
          * delimits the field name, and so must not be escaped.
-         * 
+         * <p>
          * But what if no field is specified? Then all colons must be escaped.
          * How would we distinguish that?
-         * 
+         * <p>
          * And what if the query is more complex, and more than one field is
          * specified? What if other special characters are included?
-         * 
+         * <p>
          * This could be a real problem.
          */
         private String escape(String queryString) {
             return queryString.replace(":", "\\:").replace("/", "\\/")
-                    .replaceFirst("\\\\:", ":");
+                .replaceFirst("\\\\:", ":");
         }
 
         private Map<String, String> makeInnerMap(String queryString) {

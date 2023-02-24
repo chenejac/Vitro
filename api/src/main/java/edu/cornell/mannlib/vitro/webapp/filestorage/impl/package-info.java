@@ -164,7 +164,7 @@
  * 	The uploaded image files are identified by a combination of URI and filename.
  * 	The URI is used as the principal identifier so we don't need to worry about
  * 	collisions if two people each upload an image named "image.jpg".
- *
+ * <p>
  * 	The filename is retained so the user can use their browser to download their
  * 	image from the system and it will be named as they expect it to be.
  * </p>
@@ -173,7 +173,7 @@
  * 	all be in the same directory. We took our inspiration from the
  * 	<a href="https://confluence.ucop.edu/display/Curation/PairTree">PairTree</a>
  * 	folks, and modified their algorithm to suit our needs.
- *
+ * <p>
  * 	The general idea is to store files in a multi-layer directory structure
  * 	based on the URI assigned to the file.
  * </p>
@@ -200,10 +200,10 @@
  * <p>
  * 	By breaking this into PairTree-like groupings, we insure that all files
  * 	don't go into the same directory.
- *
+ * <p>
  * 	Limiting to 3-character names will insure a maximum of about 30,000 files
  * 	per directory. In practice, the number will be considerably smaller.
- *
+ * <p>
  * 	So then it would look like this:
  * </p>
  * 	<pre>

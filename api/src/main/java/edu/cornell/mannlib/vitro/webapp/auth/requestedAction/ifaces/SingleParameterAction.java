@@ -19,7 +19,7 @@ public abstract class SingleParameterAction extends RequestedAction {
     }
 
     @Override
-	public String toString(){
-        return this.getClass().getName() + " <"+subjectUri+">";
+    public String toString() {
+        return this.getClass().getName() + " <" + subjectUri + ">";
     }
 }

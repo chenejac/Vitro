@@ -13,23 +13,23 @@ import edu.cornell.mannlib.vitro.webapp.beans.UserAccount;
  * Find out what Profiles the User can edit through proxy.
  */
 public class HasProxyEditingRightsFactory extends
-		BaseUserBasedIdentifierBundleFactory {
+    BaseUserBasedIdentifierBundleFactory {
 
-	public HasProxyEditingRightsFactory(ServletContext ctx) {
-		super(ctx);
-	}
+    public HasProxyEditingRightsFactory(ServletContext ctx) {
+        super(ctx);
+    }
 
-	@Override
-	public IdentifierBundle getIdentifierBundleForUser(UserAccount user) {
-		ArrayIdentifierBundle ids = new ArrayIdentifierBundle();
+    @Override
+    public IdentifierBundle getIdentifierBundleForUser(UserAccount user) {
+        ArrayIdentifierBundle ids = new ArrayIdentifierBundle();
 
-		if (user != null) {
-			for (String proxiedUri : user.getProxiedIndividualUris()) {
-				ids.add(new HasProxyEditingRights(proxiedUri));
-			}
-		}
+        if (user != null) {
+            for (String proxiedUri : user.getProxiedIndividualUris()) {
+                ids.add(new HasProxyEditingRights(proxiedUri));
+            }
+        }
 
-		return ids;
-	}
+        return ids;
+    }
 
 }

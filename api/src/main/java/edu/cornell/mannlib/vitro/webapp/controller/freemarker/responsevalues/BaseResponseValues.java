@@ -4,16 +4,16 @@ package edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues;
 
 import java.util.Map;
 
-import org.apache.jena.rdf.model.Model;
-
 import edu.cornell.mannlib.vitro.webapp.web.ContentType;
+import org.apache.jena.rdf.model.Model;
 
 public abstract class BaseResponseValues implements ResponseValues {
 
     private int statusCode = 0;
     private ContentType contentType = null;
 
-    BaseResponseValues() { }
+    BaseResponseValues() {
+    }
 
     BaseResponseValues(int statusCode) {
         this.statusCode = statusCode;
@@ -51,42 +51,42 @@ public abstract class BaseResponseValues implements ResponseValues {
     @Override
     public String getTemplateName() {
         throw new UnsupportedOperationException(
-                "This is not a template response.");
+            "This is not a template response.");
     }
 
     @Override
     public Map<String, Object> getMap() {
         throw new UnsupportedOperationException(
-                "This is not a template response.");
+            "This is not a template response.");
     }
 
     @Override
     public String getRedirectUrl() {
         throw new UnsupportedOperationException(
-                "This is not a redirect response.");
+            "This is not a redirect response.");
     }
 
     @Override
     public Map<String, String> getHeader() {
         throw new UnsupportedOperationException(
-                "This is not a header response.");
+            "This is not a header response.");
     }
 
     @Override
     public String getForwardUrl() {
         throw new UnsupportedOperationException(
-                "This is not a forwarding response.");
+            "This is not a forwarding response.");
     }
 
     @Override
     public Throwable getException() {
         throw new UnsupportedOperationException(
-                "This is not an exception response.");
+            "This is not an exception response.");
     }
 
     @Override
     public Model getModel() {
         throw new UnsupportedOperationException(
-                "This is not an RDF response.");
+            "This is not an RDF response.");
     }
 }

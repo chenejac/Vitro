@@ -14,17 +14,17 @@ import edu.cornell.mannlib.vitro.webapp.beans.UserAccount;
  */
 public class IsUserFactory extends BaseUserBasedIdentifierBundleFactory {
 
-	public IsUserFactory(ServletContext ctx) {
-		super(ctx);
-	}
+    public IsUserFactory(ServletContext ctx) {
+        super(ctx);
+    }
 
-	@Override
-	public IdentifierBundle getIdentifierBundleForUser(UserAccount user) {
-		if (user == null) {
-			return new ArrayIdentifierBundle();
-		} else {
-			return new ArrayIdentifierBundle(new IsUser(user.getUri()));
-		}
-	}
+    @Override
+    public IdentifierBundle getIdentifierBundleForUser(UserAccount user) {
+        if (user == null) {
+            return new ArrayIdentifierBundle();
+        } else {
+            return new ArrayIdentifierBundle(new IsUser(user.getUri()));
+        }
+    }
 
 }

@@ -8,20 +8,20 @@ package edu.cornell.mannlib.vitro.webapp.modules.searchEngine;
  */
 public class SearchEngineNotRespondingException extends SearchEngineException {
 
-	public SearchEngineNotRespondingException() {
-		super();
-	}
+    public SearchEngineNotRespondingException() {
+        super();
+    }
 
-	public SearchEngineNotRespondingException(String message) {
-		super(message);
-	}
+    public SearchEngineNotRespondingException(String message) {
+        super(message);
+    }
 
-	public SearchEngineNotRespondingException(Throwable cause) {
-		super(cause);
-	}
+    public SearchEngineNotRespondingException(Throwable cause) {
+        super(cause);
+    }
 
-	public SearchEngineNotRespondingException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public SearchEngineNotRespondingException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }

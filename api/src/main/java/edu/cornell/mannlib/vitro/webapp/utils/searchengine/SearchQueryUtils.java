@@ -8,10 +8,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngine;
@@ -19,6 +15,9 @@ import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchQuery;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchQuery.Order;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchResponse;
 import edu.cornell.mannlib.vitro.webapp.search.VitroSearchTermNames;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Some static methods to help in constructing search queries and parsing the
@@ -26,161 +25,155 @@ import edu.cornell.mannlib.vitro.webapp.search.VitroSearchTermNames;
  */
 
 public class SearchQueryUtils {
-	private static final Log log = LogFactory.getLog(SearchQueryUtils.class.getName());
+    private static final Log log = LogFactory.getLog(SearchQueryUtils.class.getName());
 
-	public enum Conjunction {
-		AND, OR;
+    /**
+     * Create an AutoCompleteWords object that can be used to build an
+     * auto-complete query.
+     */
+    public static AutoCompleteWords parseForAutoComplete(String searchTerm,
+                                                         String delimiterPattern) {
+        return new AutoCompleteWords(searchTerm, delimiterPattern);
+    }
 
-		public String joiner() {
-			return " " + this.name() + " ";
-		}
-	}
+    /**
+     * Create a builder object that can assemble a map of search result field
+     * names to JSON field names.
+     */
+    public static FieldMap fieldMap() {
+        return new FieldMap();
+    }
 
-	/**
-	 * Create an AutoCompleteWords object that can be used to build an
-	 * auto-complete query.
-	 */
-	public static AutoCompleteWords parseForAutoComplete(String searchTerm,
-			String delimiterPattern) {
-		return new AutoCompleteWords(searchTerm, delimiterPattern);
-	}
+    /**
+     * Parse a response into a list of maps, one map for each document.
+     * <p>
+     * The search result field names in the document are replaced by json field
+     * names in the result, according to the fieldMap.
+     */
+    public static List<Map<String, String>> parseResponse(
+        SearchResponse queryResponse, FieldMap fieldMap) {
+        return new SearchResultsParser(queryResponse, fieldMap).parse();
+    }
 
-	/**
-	 * Create a builder object that can assemble a map of search result field
-	 * names to JSON field names.
-	 */
-	public static FieldMap fieldMap() {
-		return new FieldMap();
-	}
+    /**
+     * Parse a response into a list of maps, accepting only those maps that pass
+     * a filter, and only up to a maximum number of records.
+     * <p>
+     * The search result field names in the document are replaced by json field
+     * names in the result, according to the fieldMap.
+     */
+    public static List<Map<String, String>> parseAndFilterResponse(
+        SearchResponse queryResponse, FieldMap fieldMap,
+        SearchResponseFilter filter, int maxNumberOfResults) {
+        return new SearchResultsParser(queryResponse, fieldMap)
+            .parseAndFilterResponse(filter, maxNumberOfResults);
+    }
 
-	/**
-	 * Parse a response into a list of maps, one map for each document.
-	 *
-	 * The search result field names in the document are replaced by json field
-	 * names in the result, according to the fieldMap.
-	 */
-	public static List<Map<String, String>> parseResponse(
-			SearchResponse queryResponse, FieldMap fieldMap) {
-		return new SearchResultsParser(queryResponse, fieldMap).parse();
-	}
+    /**
+     * Break a string into a list of words, according to a RegEx delimiter. Trim
+     * leading and trailing white space from each word.
+     */
+    public static List<String> parseWords(String typesString,
+                                          String wordDelimiter) {
+        List<String> list = new ArrayList<String>();
+        String[] array = typesString.split(wordDelimiter);
+        for (String word : array) {
+            String trimmed = word.trim();
+            if (!trimmed.isEmpty()) {
+                list.add(trimmed);
+            }
+        }
+        return list;
+    }
 
-	/**
-	 * Parse a response into a list of maps, accepting only those maps that pass
-	 * a filter, and only up to a maximum number of records.
-	 *
-	 * The search result field names in the document are replaced by json field
-	 * names in the result, according to the fieldMap.
-	 */
-	public static List<Map<String, String>> parseAndFilterResponse(
-			SearchResponse queryResponse, FieldMap fieldMap,
-			SearchResponseFilter filter, int maxNumberOfResults) {
-		return new SearchResultsParser(queryResponse, fieldMap)
-				.parseAndFilterResponse(filter, maxNumberOfResults);
-	}
+    /**
+     * Glue these words together into a query on a given field, joined by either
+     * AND or OR.
+     */
+    public static String assembleConjunctiveQuery(String fieldName,
+                                                  Collection<String> words, Conjunction c) {
+        List<String> terms = new ArrayList<String>();
+        for (String word : words) {
+            terms.add(buildTerm(fieldName, word));
+        }
+        return StringUtils.join(terms, c.joiner());
+    }
 
-	/**
-	 * Break a string into a list of words, according to a RegEx delimiter. Trim
-	 * leading and trailing white space from each word.
-	 */
-	public static List<String> parseWords(String typesString,
-			String wordDelimiter) {
-		List<String> list = new ArrayList<String>();
-		String[] array = typesString.split(wordDelimiter);
-		for (String word : array) {
-			String trimmed = word.trim();
-			if (!trimmed.isEmpty()) {
-				list.add(trimmed);
-			}
-		}
-		return list;
-	}
+    private static String buildTerm(String fieldName, String word) {
+        return fieldName + ":\"" + word + "\"";
+    }
 
-	/**
-	 * Glue these words together into a query on a given field, joined by either
-	 * AND or OR.
-	 */
-	public static String assembleConjunctiveQuery(String fieldName,
-			Collection<String> words, Conjunction c) {
-		List<String> terms = new ArrayList<String>();
-		for (String word : words) {
-			terms.add(buildTerm(fieldName, word));
-		}
-		return StringUtils.join(terms, c.joiner());
-	}
+    /**
+     * Methods that can be used in multiple places, such as
+     * IndividualListController and SearchIndividualsDataGetter
+     */
 
-	private static String buildTerm(String fieldName, String word) {
-		return fieldName + ":\"" + word + "\"";
-	}
-
-	/**
-	 * Methods that can be used in multiple places, such as
-	 * IndividualListController and SearchIndividualsDataGetter
-	 */
-
-	public static String getAlphaParameter(VitroRequest request){
+    public static String getAlphaParameter(VitroRequest request) {
         return request.getParameter("alpha");
     }
 
     public static int getPageParameter(VitroRequest request) {
         String pageStr = request.getParameter("page");
-        if( pageStr != null ){
-            try{
+        if (pageStr != null) {
+            try {
                 return Integer.parseInt(pageStr);
-            }catch(NumberFormatException nfe){
+            } catch (NumberFormatException nfe) {
                 log.debug("could not parse page parameter");
                 return 1;
             }
-        }else{
+        } else {
             return 1;
         }
     }
 
-	//Get count of individuals without actually getting the results
+    //Get count of individuals without actually getting the results
     public static long getIndividualCount(List<String> vclassUris) {
-       SearchEngine search = ApplicationUtils.instance().getSearchEngine();
-       SearchQuery query = search.createQuery(makeMultiClassQuery(vclassUris));
-       query.setRows(0);
-    	try {
+        SearchEngine search = ApplicationUtils.instance().getSearchEngine();
+        SearchQuery query = search.createQuery(makeMultiClassQuery(vclassUris));
+        query.setRows(0);
+        try {
             SearchResponse response = null;
             response = search.query(query);
             return response.getResults().getNumFound();
-    	} catch(Exception ex) {
-    		log.error("An error occured in retrieving individual count", ex);
-    	}
-    	return 0;
+        } catch (Exception ex) {
+            log.error("An error occured in retrieving individual count", ex);
+        }
+        return 0;
     }
 
-	/**
+    /**
      * builds a query with a type clause for each type in vclassUris,
      * NAME_LOWERCASE filtered by alpha, and just the hits for the page for pageSize.
+     *
      * @param locale may be null.  If null, default sort field will be used.
-     *            Otherwise, query will be sorted by locale-specific sort field. 
+     *               Otherwise, query will be sorted by locale-specific sort field.
      */
     public static SearchQuery getQuery(List<String> vclassUris, String alpha,
-            Locale locale, int page, int pageSize){
+                                       Locale locale, int page, int pageSize) {
         String queryText = "";
         SearchEngine searchEngine = ApplicationUtils.instance().getSearchEngine();
 
         try {
             queryText = makeMultiClassQuery(vclassUris);
-                        
+
             String localeSpecificField = null;
-            
+
             if (locale != null) {
-                localeSpecificField = getSortFieldNameForLocale(locale); 
+                localeSpecificField = getSortFieldNameForLocale(locale);
             }
-            
-        	 // Add alpha filter if applicable
-            if ( alpha != null && !"".equals(alpha) && alpha.length() == 1) {
+
+            // Add alpha filter if applicable
+            if (alpha != null && !"".equals(alpha) && alpha.length() == 1) {
                 if (locale == null) {
-                    queryText += VitroSearchTermNames.NAME_LOWERCASE + ":" + alpha.toLowerCase() + "*";
+                    queryText +=
+                        VitroSearchTermNames.NAME_LOWERCASE + ":" + alpha.toLowerCase() + "*";
                 } else {
                     // Retrieve items matching the appropriate alpha char
                     // on the i18ned field if that field exists.  For records
                     // where the field does not exist, fall back to NAME_LOWERCASE
                     queryText += "(" + localeSpecificField + ":" + alpha.toLowerCase()
-                           + "* OR (-" + localeSpecificField + ":[* TO *] AND "
-                           + VitroSearchTermNames.NAME_LOWERCASE + ":" + alpha.toLowerCase() + "*))";
+                        + "* OR (-" + localeSpecificField + ":[* TO *] AND "
+                        + VitroSearchTermNames.NAME_LOWERCASE + ":" + alpha.toLowerCase() + "*))";
                     log.debug("Multiclass query text: " + queryText);
                 }
             }
@@ -188,13 +181,13 @@ public class SearchQueryUtils {
             SearchQuery query = searchEngine.createQuery(queryText);
 
             //page count starts at 1, row count starts at 0
-            int startRow = (page-1) * pageSize ;
-            query.setStart( startRow ).setRows( pageSize );
+            int startRow = (page - 1) * pageSize;
+            query.setStart(startRow).setRows(pageSize);
 
             // Need a single-valued field for sorting
             // Sort first by sort field for locale; fall back to
             // NAME_LOWERCASE_SINGLE_VALUED if not available.
-            if(locale != null) {
+            if (locale != null) {
                 query.addSortField(localeSpecificField, Order.ASC);
             }
             query.addSortField(VitroSearchTermNames.NAME_LOWERCASE_SINGLE_VALUED, Order.ASC);
@@ -202,52 +195,60 @@ public class SearchQueryUtils {
             log.debug("Query is " + query.toString());
             return query;
 
-        } catch (Exception ex){
-            log.error("Could not make the search query",ex);
+        } catch (Exception ex) {
+            log.error("Could not make the search query", ex);
             return searchEngine.createQuery();
         }
     }
-    
+
     public static String getSortFieldNameForLocale(Locale locale) {
         return locale.toLanguageTag().replace('_', '-') + VitroSearchTermNames.LABEL_SORT_SUFFIX;
     }
-    
+
     public static String getLabelFieldNameForLocale(Locale locale) {
         return locale.toLanguageTag().replace('_', '-') + VitroSearchTermNames.LABEL_DISPLAY_SUFFIX;
     }
 
-    public static SearchQuery getRandomQuery(List<String> vclassUris, int page, int pageSize){
+    public static SearchQuery getRandomQuery(List<String> vclassUris, int page, int pageSize) {
         String queryText = "";
         SearchEngine searchEngine = ApplicationUtils.instance().getSearchEngine();
 
-		try {
+        try {
             queryText = makeMultiClassQuery(vclassUris);
             log.debug("queryText is " + queryText);
             SearchQuery query = searchEngine.createQuery(queryText);
 
             //page count starts at 1, row count starts at 0
-            query.setStart( page ).setRows( pageSize );
+            query.setStart(page).setRows(pageSize);
 
             log.debug("Query is " + query.toString());
             return query;
 
-        } catch (Exception ex){
-            log.error("Could not make the search query",ex);
+        } catch (Exception ex) {
+            log.error("Could not make the search query", ex);
             return searchEngine.createQuery();
         }
     }
 
-    public static String makeMultiClassQuery( List<String> vclassUris){
+    public static String makeMultiClassQuery(List<String> vclassUris) {
         List<String> queryTypes = new ArrayList<String>();
         try {
             // query term for rdf:type - multiple types possible
-            for(String vclassUri: vclassUris) {
+            for (String vclassUri : vclassUris) {
                 queryTypes.add(VitroSearchTermNames.RDFTYPE + ":\"" + vclassUri + "\" ");
             }
-			return StringUtils.join(queryTypes, " AND ");
-        } catch (Exception ex){
-            log.error("Could not make the search query",ex);
+            return StringUtils.join(queryTypes, " AND ");
+        } catch (Exception ex) {
+            log.error("Could not make the search query", ex);
             return "";
+        }
+    }
+
+    public enum Conjunction {
+        AND, OR;
+
+        public String joiner() {
+            return " " + this.name() + " ";
         }
     }
 

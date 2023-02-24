@@ -18,80 +18,80 @@ import org.apache.jena.sparql.core.Quad;
  * Helper classes for producing N-Triples or N-Quads from ResultSets
  */
 public class ResultSetIterators {
-	/**
-	 * If the ResultSet contains appropriate values for g, s, p, and o, return a
-	 * Quad for each row.
-	 */
-	public static class ResultSetQuadsIterator implements Iterator<Quad> {
-		private final ResultSet resultSet;
+    /**
+     * If the ResultSet contains appropriate values for g, s, p, and o, return a
+     * Quad for each row.
+     */
+    public static class ResultSetQuadsIterator implements Iterator<Quad> {
+        private final ResultSet resultSet;
 
-		public ResultSetQuadsIterator(ResultSet resultSet) {
-			this.resultSet = resultSet;
-		}
+        public ResultSetQuadsIterator(ResultSet resultSet) {
+            this.resultSet = resultSet;
+        }
 
-		@Override
-		public boolean hasNext() {
-			return resultSet.hasNext();
-		}
+        @Override
+        public boolean hasNext() {
+            return resultSet.hasNext();
+        }
 
-		@Override
-		public Quad next() {
-			QuerySolution s = resultSet.next();
-			return new Quad(NodeConverter.toNode(s.get("g")),
-					NodeConverter.toNode(s.get("s")), NodeConverter.toNode(s
-							.get("p")), NodeConverter.toNode(s.get("o")));
-		}
+        @Override
+        public Quad next() {
+            QuerySolution s = resultSet.next();
+            return new Quad(NodeConverter.toNode(s.get("g")),
+                NodeConverter.toNode(s.get("s")), NodeConverter.toNode(s
+                .get("p")), NodeConverter.toNode(s.get("o")));
+        }
 
-		@Override
-		public void remove() {
-			throw new UnsupportedOperationException();
-		}
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
 
-	}
+    }
 
-	/**
-	 * If the ResultSet contains appropriate values for s, p, and o, return a
-	 * Triple for each row.
-	 */
-	public static class ResultSetTriplesIterator implements Iterator<Triple> {
-		private final ResultSet resultSet;
+    /**
+     * If the ResultSet contains appropriate values for s, p, and o, return a
+     * Triple for each row.
+     */
+    public static class ResultSetTriplesIterator implements Iterator<Triple> {
+        private final ResultSet resultSet;
 
-		public ResultSetTriplesIterator(ResultSet resultSet) {
-			this.resultSet = resultSet;
-		}
+        public ResultSetTriplesIterator(ResultSet resultSet) {
+            this.resultSet = resultSet;
+        }
 
-		@Override
-		public boolean hasNext() {
-			return resultSet.hasNext();
-		}
+        @Override
+        public boolean hasNext() {
+            return resultSet.hasNext();
+        }
 
-		@Override
-		public Triple next() {
-			QuerySolution s = resultSet.next();
-			return new Triple(NodeConverter.toNode(s.get("s")),
-					NodeConverter.toNode(s.get("p")), NodeConverter.toNode(s
-							.get("o")));
-		}
+        @Override
+        public Triple next() {
+            QuerySolution s = resultSet.next();
+            return new Triple(NodeConverter.toNode(s.get("s")),
+                NodeConverter.toNode(s.get("p")), NodeConverter.toNode(s
+                .get("o")));
+        }
 
-		@Override
-		public void remove() {
-			throw new UnsupportedOperationException();
-		}
-	}
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
 
-	private static class NodeConverter {
-		public static Node toNode(RDFNode rdfNode) {
-			if (rdfNode.isAnon()) {
-				Resource a = rdfNode.asResource();
-				return NodeFactory.createBlankNode();
-			}
-			if (rdfNode.isLiteral()) {
-				Literal l = rdfNode.asLiteral();
-				return NodeFactory.createLiteral(l.getLexicalForm(),
-						l.getLanguage(), l.getDatatype());
-			}
-			return NodeFactory.createURI(rdfNode.asResource().getURI());
-		}
-	}
+    private static class NodeConverter {
+        public static Node toNode(RDFNode rdfNode) {
+            if (rdfNode.isAnon()) {
+                Resource a = rdfNode.asResource();
+                return NodeFactory.createBlankNode();
+            }
+            if (rdfNode.isLiteral()) {
+                Literal l = rdfNode.asLiteral();
+                return NodeFactory.createLiteral(l.getLexicalForm(),
+                    l.getLanguage(), l.getDatatype());
+            }
+            return NodeFactory.createURI(rdfNode.asResource().getURI());
+        }
+    }
 
 }

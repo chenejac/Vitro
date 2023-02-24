@@ -11,6 +11,8 @@ public interface PolicyDecision {
     public Authorization getAuthorized();
 
     public String getStackTrace();
+
     public String getMessage();
+
     public String getDebuggingInfo();
 }

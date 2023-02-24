@@ -8,54 +8,54 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.cornell.mannlib.vitro.webapp.i18n.I18nBundle;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.EditConfigurationVTwo;
+import edu.cornell.mannlib.vitro.webapp.i18n.I18nBundle;
 import edu.cornell.mannlib.vitro.webapp.modules.tboxreasoner.TBoxReasonerStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class IndividualsViaVClassOptions implements FieldOptions {
 
-    protected static final Log log = LogFactory.getLog(IndividualsViaVClassOptions.class.getName());
-
     public static final String LEFT_BLANK = "";
+    protected static final Log log = LogFactory.getLog(IndividualsViaVClassOptions.class.getName());
     protected List<String> vclassURIs;
     protected String defaultOptionLabel;
 
-    public IndividualsViaVClassOptions(String ... vclassURIs) throws Exception {
+    public IndividualsViaVClassOptions(String... vclassURIs) throws Exception {
         super();
 
-        if (vclassURIs==null )
+        if (vclassURIs == null) {
             throw new Exception("vclassURIs must not be null or empty ");
+        }
 
         this.vclassURIs = new ArrayList<String>(vclassURIs.length);
         for (String vclassURI : vclassURIs) {
-            if (vclassURI != null && !vclassURI.trim().isEmpty())
+            if (vclassURI != null && !vclassURI.trim().isEmpty()) {
                 this.vclassURIs.add(vclassURI);
+            }
         }
     }
 
-    public FieldOptions setDefaultOptionLabel(String label){
+    public FieldOptions setDefaultOptionLabel(String label) {
         this.defaultOptionLabel = label;
         return this;
     }
 
     @Override
     public Map<String, String> getOptions(
-            EditConfigurationVTwo editConfig,
-            String fieldName,
-            WebappDaoFactory wDaoFact,
-            I18nBundle i18n) throws Exception {
+        EditConfigurationVTwo editConfig,
+        String fieldName,
+        WebappDaoFactory wDaoFact,
+        I18nBundle i18n) throws Exception {
 
         Map<String, Individual> individualMap = new HashMap<String, Individual>();
 
-        for( String vclassURI : this.vclassURIs){
-            individualMap.putAll(  getIndividualsForClass( vclassURI, wDaoFact) );
+        for (String vclassURI : this.vclassURIs) {
+            individualMap.putAll(getIndividualsForClass(vclassURI, wDaoFact));
         }
 
         //sort the individuals
@@ -63,14 +63,14 @@ public class IndividualsViaVClassOptions implements FieldOptions {
         individuals.addAll(individualMap.values());
         Collections.sort(individuals);
 
-        Map<String, String> optionsMap = new HashMap<String,String>();
+        Map<String, String> optionsMap = new HashMap<String, String>();
 
         if (defaultOptionLabel != null) {
             optionsMap.put(LEFT_BLANK, defaultOptionLabel);
         }
 
         if (individuals.size() == 0) {
-            optionsMap.putAll( notFoundMsg() );
+            optionsMap.putAll(notFoundMsg());
         } else {
             for (Individual ind : individuals) {
                 if (ind.getURI() != null) {
@@ -83,18 +83,20 @@ public class IndividualsViaVClassOptions implements FieldOptions {
 
 
     private Map<? extends String, ? extends String> notFoundMsg() {
-        StringBuilder msg = new StringBuilder("No individuals found for " + (vclassURIs.size() > 1 ? "types" : "type"));
-        for( String uri : vclassURIs ){
+        StringBuilder msg = new StringBuilder(
+            "No individuals found for " + (vclassURIs.size() > 1 ? "types" : "type"));
+        for (String uri : vclassURIs) {
             msg.append(" ").append(uri);
         }
         return Collections.singletonMap("", msg.toString());
     }
 
-    protected Map<String,Individual> getIndividualsForClass(String vclassURI, WebappDaoFactory wDaoFact ){
+    protected Map<String, Individual> getIndividualsForClass(String vclassURI,
+                                                             WebappDaoFactory wDaoFact) {
         Map<String, Individual> individualMap = new HashMap<String, Individual>();
         IndividualDao indDao = wDaoFact.getIndividualDao();
 
-        List<Individual> indsForClass= indDao.getIndividualsByVClassURI(vclassURI, -1, -1);
+        List<Individual> indsForClass = indDao.getIndividualsByVClassURI(vclassURI, -1, -1);
         for (Individual ind : indsForClass) {
             if (ind.getURI() != null) {
                 individualMap.put(ind.getURI(), ind);
@@ -103,14 +105,15 @@ public class IndividualsViaVClassOptions implements FieldOptions {
 
         // if reasoning isn't available, we will also need to add
         // individuals asserted in subclasses
-        individualMap.putAll( addWhenMissingInference(vclassURI, wDaoFact));
+        individualMap.putAll(addWhenMissingInference(vclassURI, wDaoFact));
 
         return individualMap;
     }
 
-    protected boolean isReasoningAvailable(){
-    	try {
-            TBoxReasonerStatus status = ApplicationUtils.instance().getTBoxReasonerModule().getStatus();
+    protected boolean isReasoningAvailable() {
+        try {
+            TBoxReasonerStatus status =
+                ApplicationUtils.instance().getTBoxReasonerModule().getStatus();
             return status.isConsistent() && !status.isInErrorState();
         } catch (IllegalStateException e) {
             log.debug("Status of reasoner could not be determined. It is likely disabled.", e);
@@ -118,12 +121,14 @@ public class IndividualsViaVClassOptions implements FieldOptions {
         }
     }
 
-    protected Map<String, Individual> addWhenMissingInference( String classUri , WebappDaoFactory wDaoFact ){
+    protected Map<String, Individual> addWhenMissingInference(String classUri,
+                                                              WebappDaoFactory wDaoFact) {
         boolean inferenceAvailable = isReasoningAvailable();
-        Map<String,Individual> individualMap = new HashMap<String,Individual>();
-        if ( !inferenceAvailable ) {
+        Map<String, Individual> individualMap = new HashMap<String, Individual>();
+        if (!inferenceAvailable) {
             for (String subclassURI : wDaoFact.getVClassDao().getAllSubClassURIs(classUri)) {
-                for (Individual ind : wDaoFact.getIndividualDao().getIndividualsByVClassURI(subclassURI, -1, -1)) {
+                for (Individual ind : wDaoFact.getIndividualDao()
+                    .getIndividualsByVClassURI(subclassURI, -1, -1)) {
                     if (ind.getURI() != null) {
                         individualMap.put(ind.getURI(), ind);
                     }
@@ -134,7 +139,7 @@ public class IndividualsViaVClassOptions implements FieldOptions {
     }
 
     public Comparator<String[]> getCustomComparator() {
-    	return null;
+        return null;
     }
 }
 

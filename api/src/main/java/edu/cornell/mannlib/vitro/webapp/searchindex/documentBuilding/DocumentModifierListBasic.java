@@ -14,29 +14,29 @@ import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchInputDocument
  * The basic implementation.
  */
 public class DocumentModifierListBasic implements DocumentModifierList {
-	private final List<DocumentModifier> modifiers;
+    private final List<DocumentModifier> modifiers;
 
-	public DocumentModifierListBasic(
-			Collection<? extends DocumentModifier> modifiers) {
-		this.modifiers = Collections
-				.unmodifiableList(new ArrayList<>(modifiers));
-	}
+    public DocumentModifierListBasic(
+        Collection<? extends DocumentModifier> modifiers) {
+        this.modifiers = Collections
+            .unmodifiableList(new ArrayList<>(modifiers));
+    }
 
-	@Override
-	public void startIndexing() {
-		// Nothing to do.
-	}
+    @Override
+    public void startIndexing() {
+        // Nothing to do.
+    }
 
-	@Override
-	public void stopIndexing() {
-		// Nothing to do.
-	}
+    @Override
+    public void stopIndexing() {
+        // Nothing to do.
+    }
 
-	@Override
-	public void modifyDocument(Individual ind, SearchInputDocument doc) {
-		for (DocumentModifier m : modifiers) {
-			m.modifyDocument(ind, doc);
-		}
-	}
+    @Override
+    public void modifyDocument(Individual ind, SearchInputDocument doc) {
+        for (DocumentModifier m : modifiers) {
+            m.modifyDocument(ind, doc);
+        }
+    }
 
 }

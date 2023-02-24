@@ -2,13 +2,12 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit.listing;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import edu.cornell.mannlib.vedit.controller.BaseEditController;
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
@@ -26,7 +25,7 @@ public class VClassWebappWithInstancesListingController extends BaseEditControll
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) {
         if (!isAuthorizedToDisplayPage(request, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-        	return;
+            return;
         }
 
         VitroRequest vrequest = new VitroRequest(request);
@@ -35,7 +34,7 @@ public class VClassWebappWithInstancesListingController extends BaseEditControll
 
         ArrayList results = new ArrayList();
 
-        if(uriStr != null) {
+        if (uriStr != null) {
 
             VClassDao dao = vrequest.getUnfilteredWebappDaoFactory().getVClassDao();
 
@@ -51,11 +50,11 @@ public class VClassWebappWithInstancesListingController extends BaseEditControll
             if (vcw != null) {
 
                 results.add("XX");
-                String nameStr = (vcw.getName()==null) ? "" : vcw.getName();
+                String nameStr = (vcw.getName() == null) ? "" : vcw.getName();
                 results.add(nameStr);
                 String groupStr = ""; // TODO
                 results.add(groupStr);
-                String exampleStr = (vcw.getExample()==null) ? "" : vcw.getExample();
+                String exampleStr = (vcw.getExample() == null) ? "" : vcw.getExample();
                 results.add(exampleStr);
                 String lastModifiedStr = ""; //TODO
                 results.add(lastModifiedStr);
@@ -64,7 +63,7 @@ public class VClassWebappWithInstancesListingController extends BaseEditControll
                 IndividualDao ewDao = vrequest.getUnfilteredWebappDaoFactory().getIndividualDao();
 
                 List ents = ewDao.getIndividualsByVClassURI(vcw.getURI(), -2, -2);
-                if (ents != null && ents.size()>0) {
+                if (ents != null && ents.size() > 0) {
                     results.add("+");
                     results.add("XX");
                     results.add("Class");
@@ -73,13 +72,15 @@ public class VClassWebappWithInstancesListingController extends BaseEditControll
                     results.add("@@entities");
                     Iterator entIt = ents.iterator();
                     int maxEnts = 25;
-                    while (entIt.hasNext() && maxEnts>0) {
+                    while (entIt.hasNext() && maxEnts > 0) {
                         --maxEnts;
                         Individual ew = (Individual) entIt.next();
                         results.add("XX");
                         if (ew.getName() != null && ew.getURI() != null) {
                             try {
-                                results.add("<a href=\"entityEdit?uri="+URLEncoder.encode(ew.getURI(),"UTF-8")+"\">"+ew.getName()+"</a>");
+                                results.add("<a href=\"entityEdit?uri=" +
+                                    URLEncoder.encode(ew.getURI(), "UTF-8") + "\">" + ew.getName() +
+                                    "</a>");
                             } catch (Exception e) {
                                 results.add(ew.getName());
                             }
@@ -88,20 +89,22 @@ public class VClassWebappWithInstancesListingController extends BaseEditControll
                         }
                         //String exampleStr = (vcw.getExample() == null) ? "" : vcw.getName();
                         //results.add(exampleStr);
-                        String descriptionStr = (vcw.getDescription() == null) ? "" : vcw.getDescription();
+                        String descriptionStr =
+                            (vcw.getDescription() == null) ? "" : vcw.getDescription();
                         results.add(descriptionStr);
-                        if (entIt.hasNext())
+                        if (entIt.hasNext()) {
                             results.add("@@entities");
+                        }
 
                     }
                 }
-                request.setAttribute("results",results);
+                request.setAttribute("results", results);
             }
         }
 
-        request.setAttribute("columncount",new Integer(NUM_COLS));
-        request.setAttribute("suppressquery","true");
-        request.setAttribute("title","Class Groups");
+        request.setAttribute("columncount", new Integer(NUM_COLS));
+        request.setAttribute("suppressquery", "true");
+        request.setAttribute("title", "Class Groups");
         try {
             JSPPageHandler.renderBasicPage(request, response, Controllers.HORIZONTAL_JSP);
         } catch (Throwable t) {

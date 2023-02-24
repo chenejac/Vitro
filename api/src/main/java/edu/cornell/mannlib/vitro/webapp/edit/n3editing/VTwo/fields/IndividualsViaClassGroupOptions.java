@@ -11,7 +11,7 @@ import edu.cornell.mannlib.vitro.webapp.i18n.I18nBundle;
 public class IndividualsViaClassGroupOptions implements FieldOptions {
 
     String classGroupUri;
-    String defualtOptionLabel=null;
+    String defualtOptionLabel = null;
 
 
     public IndividualsViaClassGroupOptions(String classGroupUri) {
@@ -19,27 +19,27 @@ public class IndividualsViaClassGroupOptions implements FieldOptions {
         this.classGroupUri = classGroupUri;
     }
 
-    public IndividualsViaClassGroupOptions setDefaultOptionLabel(String label){
+    public IndividualsViaClassGroupOptions setDefaultOptionLabel(String label) {
         defualtOptionLabel = label;
         return this;
     }
 
     @Override
     public Map<String, String> getOptions(
-            EditConfigurationVTwo editConfig,
-            String fieldName,
-            WebappDaoFactory wDaoFact,
-            I18nBundle i18n) throws Exception {
+        EditConfigurationVTwo editConfig,
+        String fieldName,
+        WebappDaoFactory wDaoFact,
+        I18nBundle i18n) throws Exception {
         throw new Error("not implemented");
     }
 
 
-    public String getClassGroupUri(){
+    public String getClassGroupUri() {
         return classGroupUri;
     }
 
     public Comparator<String[]> getCustomComparator() {
-    	return null;
+        return null;
     }
 
 }

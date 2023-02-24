@@ -9,10 +9,10 @@ import java.util.List;
  * Simple class to store urls for different controllers.
  * This is just a place to stick the constants that are urls
  * to servlets and jsps.
- *
+ * <p>
  * Maybe it should be pulled out of a properties file?
- * @author bdc34
  *
+ * @author bdc34
  */
 
 public class Controllers {
@@ -44,7 +44,8 @@ public class Controllers {
     public static final String DASHBOARD_PROP_LIST_JSP = "edit/dashboardPropsList.jsp";
 
     public static final String ENTITY_EDITABLE_JSP = "templates/entity/entityEditable.jsp";
-    public static final String ENTITY_EDITABLE_PROP_LIST_JSP = "templates/entity/entityEditablePropsList.jsp";
+    public static final String ENTITY_EDITABLE_PROP_LIST_JSP =
+        "templates/entity/entityEditablePropsList.jsp";
 
     public static final String ENTITY_LIST_FOR_TABS_JSP = "templates/entity/entityListForTabs.jsp";
     public static final String ENTITY_NOT_FOUND_JSP = "templates/error/entityNotFound.jsp";
@@ -62,11 +63,13 @@ public class Controllers {
 
     public static final String VCLASS_RETRY_URL = "vclass_retry";
 
-    public static final String TOGGLE_SCRIPT_ELEMENT = "<script language='JavaScript' type='text/javascript' src='js/toggle.js'></script>";
+    public static final String TOGGLE_SCRIPT_ELEMENT =
+        "<script language='JavaScript' type='text/javascript' src='js/toggle.js'></script>";
 
     //public static final String TAB_ENTITIES_LIST_JSP = "templates/tab/tabEntities.jsp";
 
     private static List<String> letters = null;
+
     public static List<String> getLetters() {
         //there must be a better place to put this.
         if (Controllers.letters == null) {

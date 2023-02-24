@@ -2,17 +2,21 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import edu.cornell.mannlib.vedit.beans.EditProcessObject;
+import edu.cornell.mannlib.vedit.controller.BaseEditController;
+import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
+import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
+import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
+import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.ontology.Individual;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.rdf.model.Property;
@@ -21,26 +25,20 @@ import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.shared.Lock;
 
-import edu.cornell.mannlib.vedit.beans.EditProcessObject;
-import edu.cornell.mannlib.vedit.controller.BaseEditController;
-import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
-import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
-import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
-
-@WebServlet(name = "NamespacePrefixOperationController", urlPatterns = {"/namespacePrefixOp"} )
+@WebServlet(name = "NamespacePrefixOperationController", urlPatterns = {"/namespacePrefixOp"})
 public class NamespacePrefixOperationController extends BaseEditController {
 
-    private static final Log log = LogFactory.getLog(IndividualTypeOperationController.class.getName());
+    private static final Log log =
+        LogFactory.getLog(IndividualTypeOperationController.class.getName());
 
     public void doPost(HttpServletRequest req, HttpServletResponse response) {
-		if (!isAuthorizedToDisplayPage(req, response,
-				SimplePermission.USE_MISCELLANEOUS_ADMIN_PAGES.ACTION)) {
-        	return;
+        if (!isAuthorizedToDisplayPage(req, response,
+            SimplePermission.USE_MISCELLANEOUS_ADMIN_PAGES.ACTION)) {
+            return;
         }
 
-    	VitroRequest request = new VitroRequest(req);
-    	String defaultLandingPage = getDefaultLandingPage(request);
+        VitroRequest request = new VitroRequest(req);
+        String defaultLandingPage = getDefaultLandingPage(request);
 
         HashMap epoHash = null;
         EditProcessObject epo = null;
@@ -71,57 +69,67 @@ public class NamespacePrefixOperationController extends BaseEditController {
 
         if (request.getParameter("_cancel") == null) {
 
-    		OntModel ontModel = ModelAccess.on(req).getOntModel();
-        	String namespaceStr = request.getParameter("namespace");
-        	String prefixStr = request.getParameter("prefix");
+            OntModel ontModel = ModelAccess.on(req).getOntModel();
+            String namespaceStr = request.getParameter("namespace");
+            String prefixStr = request.getParameter("prefix");
 
-        	if ( (namespaceStr != null) && (prefixStr != null) ) {
+            if ((namespaceStr != null) && (prefixStr != null)) {
 
-        		Property namespaceURIProp = ontModel.getProperty(VitroVocabulary.NAMESPACE_NAMESPACEURI);
+                Property namespaceURIProp =
+                    ontModel.getProperty(VitroVocabulary.NAMESPACE_NAMESPACEURI);
 
                 ontModel.enterCriticalSection(Lock.WRITE);
                 try {
 
-                			Individual namespaceInd = null;
+                    Individual namespaceInd = null;
 
-                			StmtIterator stmtIt = ontModel.listStatements((Resource)null,(Property)namespaceURIProp,ontModel.createLiteral(namespaceStr));
-                			if (stmtIt.hasNext()) {
-                				Statement stmt = stmtIt.nextStatement();
-                				Resource namespaceRes = stmt.getSubject();
-                				if (namespaceRes.canAs(Individual.class)) {
-                					namespaceInd = (Individual) namespaceRes.as(Individual.class);
-                				}
-                			}
+                    StmtIterator stmtIt = ontModel
+                        .listStatements((Resource) null, (Property) namespaceURIProp,
+                            ontModel.createLiteral(namespaceStr));
+                    if (stmtIt.hasNext()) {
+                        Statement stmt = stmtIt.nextStatement();
+                        Resource namespaceRes = stmt.getSubject();
+                        if (namespaceRes.canAs(Individual.class)) {
+                            namespaceInd = (Individual) namespaceRes.as(Individual.class);
+                        }
+                    }
 
-                			if (namespaceInd == null) {
-                				namespaceInd = ontModel.createIndividual(ontModel.getResource(VitroVocabulary.NAMESPACE));
-                				namespaceInd.addProperty(namespaceURIProp,namespaceStr);
-                			}
+                    if (namespaceInd == null) {
+                        namespaceInd = ontModel
+                            .createIndividual(ontModel.getResource(VitroVocabulary.NAMESPACE));
+                        namespaceInd.addProperty(namespaceURIProp, namespaceStr);
+                    }
 
-                			HashSet<Individual> mappingSet = new HashSet<Individual>();
+                    HashSet<Individual> mappingSet = new HashSet<Individual>();
 
-                			StmtIterator mappingStatementIt = namespaceInd.listProperties(ontModel.getProperty(VitroVocabulary.NAMESPACE_HASPREFIXMAPPING));
-                			while (mappingStatementIt.hasNext()) {
-                				Statement stmt = mappingStatementIt.nextStatement();
-                				if (stmt.getObject().canAs(Individual.class)) {
-                					mappingSet.add( (Individual) stmt.getObject().as(Individual.class) );
-                				}
-                			}
+                    StmtIterator mappingStatementIt = namespaceInd.listProperties(
+                        ontModel.getProperty(VitroVocabulary.NAMESPACE_HASPREFIXMAPPING));
+                    while (mappingStatementIt.hasNext()) {
+                        Statement stmt = mappingStatementIt.nextStatement();
+                        if (stmt.getObject().canAs(Individual.class)) {
+                            mappingSet.add((Individual) stmt.getObject().as(Individual.class));
+                        }
+                    }
 
-                			for (Individual oldMapping : mappingSet) {
-                				oldMapping.remove();
-                			}
+                    for (Individual oldMapping : mappingSet) {
+                        oldMapping.remove();
+                    }
 
-                			if (request.getParameter("_delete")==null) {
-                				Individual newMappingInd = ontModel.createIndividual(ontModel.getResource(VitroVocabulary.NAMESPACE_PREFIX_MAPPING));
-                				newMappingInd.addProperty(ontModel.getProperty(VitroVocabulary.NAMESPACE_PREFIX),prefixStr);
-                				namespaceInd.addProperty(ontModel.getProperty(VitroVocabulary.NAMESPACE_HASPREFIXMAPPING),newMappingInd);
-                			}
+                    if (request.getParameter("_delete") == null) {
+                        Individual newMappingInd = ontModel.createIndividual(
+                            ontModel.getResource(VitroVocabulary.NAMESPACE_PREFIX_MAPPING));
+                        newMappingInd
+                            .addProperty(ontModel.getProperty(VitroVocabulary.NAMESPACE_PREFIX),
+                                prefixStr);
+                        namespaceInd.addProperty(
+                            ontModel.getProperty(VitroVocabulary.NAMESPACE_HASPREFIXMAPPING),
+                            newMappingInd);
+                    }
 
                 } finally {
-                   	ontModel.leaveCriticalSection();
+                    ontModel.leaveCriticalSection();
                 }
-        	}
+            }
         }
 
         //if no page forwarder was set, just go back to referring page:

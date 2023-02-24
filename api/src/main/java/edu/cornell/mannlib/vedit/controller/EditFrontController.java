@@ -2,55 +2,53 @@
 
 package edu.cornell.mannlib.vedit.controller;
 
-import edu.cornell.mannlib.vitro.webapp.controller.VitroHttpServlet;
-
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
+import edu.cornell.mannlib.vitro.webapp.controller.VitroHttpServlet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
-import java.io.IOException;
 
 /**
  * This controller exists only so we can request different edit form controllers
  * without having to have entries in web.xml for each.
- * @author bjl23
  *
+ * @author bjl23
  */
-@WebServlet(name = "EditFrontController", urlPatterns = {"/editForm"} )
+@WebServlet(name = "EditFrontController", urlPatterns = {"/editForm"})
 public class EditFrontController extends VitroHttpServlet {
     private static final Log log = LogFactory.getLog(EditFrontController.class.getName());
     private static final String CONTROLLER_PKG = "edu.cornell.mannlib.vitro.webapp.controller.edit";
 
     public void doPost(HttpServletRequest request,
-    		           HttpServletResponse response) throws IOException, ServletException {
-        String controllerName = request.getParameter("controller")+"RetryController";
-        if (controllerName==null || controllerName.length()==0) {
+                       HttpServletResponse response) throws IOException, ServletException {
+        String controllerName = request.getParameter("controller") + "RetryController";
+        if (controllerName == null || controllerName.length() == 0) {
             log.error("doPost() found no controller parameter");
         }
         Class controller = null;
         Object controllerInstance = null;
         try {
-            controller = Class.forName(CONTROLLER_PKG+"."+controllerName);
+            controller = Class.forName(CONTROLLER_PKG + "." + controllerName);
             try {
                 controllerInstance = controller.getConstructor(
-                		(Class[]) null).newInstance((Object[]) null);
-                ((HttpServlet)controllerInstance).init(getServletConfig());
+                    (Class[]) null).newInstance((Object[]) null);
+                ((HttpServlet) controllerInstance).init(getServletConfig());
             } catch (Exception e) {
-            	String errMsg = "doPost() could not instantiate specific " +
-        		        "controller " + controllerName;
+                String errMsg = "doPost() could not instantiate specific " +
+                    "controller " + controllerName;
                 log.error(errMsg, e);
                 throw new RuntimeException(errMsg, e);
             }
-        } catch (ClassNotFoundException e){
-        	String errMsg = "doPost() could not find controller " +
-        	        CONTROLLER_PKG + "." + controllerName;
+        } catch (ClassNotFoundException e) {
+            String errMsg = "doPost() could not find controller " +
+                CONTROLLER_PKG + "." + controllerName;
             log.error(errMsg);
             throw new RuntimeException(errMsg);
         }
@@ -58,33 +56,33 @@ public class EditFrontController extends VitroHttpServlet {
         args[0] = HttpServletRequest.class;
         args[1] = HttpServletResponse.class;
         try {
-            Method meth = controller.getDeclaredMethod("doGet",args);
+            Method meth = controller.getDeclaredMethod("doGet", args);
             Object[] methArgs = new Object[2];
             methArgs[0] = request;
             methArgs[1] = response;
             try {
-                meth.invoke(controllerInstance,methArgs);
+                meth.invoke(controllerInstance, methArgs);
             } catch (IllegalAccessException e) {
-            	String errMsg = "doPost() encountered IllegalAccessException " +
-        		        "while invoking " + controllerName;
+                String errMsg = "doPost() encountered IllegalAccessException " +
+                    "while invoking " + controllerName;
                 log.error(errMsg, e);
                 throw new RuntimeException(errMsg, e);
             } catch (InvocationTargetException e) {
-            	String errMsg = "doPost() encountered InvocationTargetException " +
-        		        "while invoking " + controllerName;
+                String errMsg = "doPost() encountered InvocationTargetException " +
+                    "while invoking " + controllerName;
                 log.error(errMsg, e);
                 throw new RuntimeException(errMsg, e);
             }
-        } catch (NoSuchMethodException e){
+        } catch (NoSuchMethodException e) {
             log.error("could not find doPost() method in " + controllerName);
             throw new RuntimeException("could not find doPost() method in " +
-            		controllerName);
+                controllerName);
         }
     }
 
     public void doGet(HttpServletRequest request,
-    		          HttpServletResponse response) throws IOException, ServletException {
-        doPost(request,response);
+                      HttpServletResponse response) throws IOException, ServletException {
+        doPost(request, response);
     }
 
 }

@@ -9,23 +9,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.jena.rdf.model.Literal;
-
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
 import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatementImpl;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.dao.DataPropertyStatementDao;
 import edu.cornell.mannlib.vitro.webapp.dao.filtering.filters.VitroFilters;
+import org.apache.jena.rdf.model.Literal;
 
-public class DataPropertyStatementDaoFiltering extends BaseFiltering implements DataPropertyStatementDao{
+public class DataPropertyStatementDaoFiltering extends BaseFiltering
+    implements DataPropertyStatementDao {
 
     final DataPropertyStatementDao innerDataPropertyStatementDao;
     final VitroFilters filters;
 
     public DataPropertyStatementDaoFiltering(
-            DataPropertyStatementDao dataPropertyStatementDao,
-            VitroFilters filters) {
+        DataPropertyStatementDao dataPropertyStatementDao,
+        VitroFilters filters) {
         super();
         this.innerDataPropertyStatementDao = dataPropertyStatementDao;
         this.filters = filters;
@@ -38,35 +38,45 @@ public class DataPropertyStatementDaoFiltering extends BaseFiltering implements 
 
 
     public Individual fillExistingDataPropertyStatementsForIndividual(
-            Individual individual/*,
+        Individual individual/*,
             boolean allowAnyNameSpace*/) {
-        if( individual == null ) return null;
-        Individual ind = innerDataPropertyStatementDao.fillExistingDataPropertyStatementsForIndividual(individual/*,allowAnyNameSpace*/);
-        if( ind == null ) return null;
+        if (individual == null) {
+            return null;
+        }
+        Individual ind = innerDataPropertyStatementDao
+            .fillExistingDataPropertyStatementsForIndividual(individual/*,allowAnyNameSpace*/);
+        if (ind == null) {
+            return null;
+        }
 
         List<DataPropertyStatement> dprops = ind.getDataPropertyStatements();
-        if( dprops != null ){
+        if (dprops != null) {
             ind.setDataPropertyStatements(filter(dprops, filters.getDataPropertyStatementFilter()));
         }
         return ind;
     }
 
-    public void deleteDataPropertyStatementsForIndividualByDataProperty(Individual individual, DataProperty dataProperty) {
-        innerDataPropertyStatementDao.deleteDataPropertyStatementsForIndividualByDataProperty(individual, dataProperty);
+    public void deleteDataPropertyStatementsForIndividualByDataProperty(Individual individual,
+                                                                        DataProperty dataProperty) {
+        innerDataPropertyStatementDao
+            .deleteDataPropertyStatementsForIndividualByDataProperty(individual, dataProperty);
     }
 
-    public void deleteDataPropertyStatementsForIndividualByDataProperty(String individualURI, String dataPropertyURI) {
-        innerDataPropertyStatementDao.deleteDataPropertyStatementsForIndividualByDataProperty(individualURI, dataPropertyURI);
+    public void deleteDataPropertyStatementsForIndividualByDataProperty(String individualURI,
+                                                                        String dataPropertyURI) {
+        innerDataPropertyStatementDao
+            .deleteDataPropertyStatementsForIndividualByDataProperty(individualURI,
+                dataPropertyURI);
     }
 
     public Collection<DataPropertyStatement> getDataPropertyStatementsForIndividualByDataPropertyURI(
-            Individual entity, String datapropURI) {
+        Individual entity, String datapropURI) {
         Collection<DataPropertyStatement> col =
             innerDataPropertyStatementDao
                 .getDataPropertyStatementsForIndividualByDataPropertyURI(entity, datapropURI);
-        if( col != null ){
-            return filter(col,filters.getDataPropertyStatementFilter());
-        }else{
+        if (col != null) {
+            return filter(col, filters.getDataPropertyStatementFilter());
+        } else {
             return null;
         }
     }
@@ -77,36 +87,42 @@ public class DataPropertyStatementDaoFiltering extends BaseFiltering implements 
     }
 
     public List<DataPropertyStatement> getDataPropertyStatements(DataProperty dataProperty) {
-    	List<DataPropertyStatement> dps = innerDataPropertyStatementDao.getDataPropertyStatements(dataProperty);
-    	if (dps != null) {
-    		return filter(dps,filters.getDataPropertyStatementFilter());
-    	} else {
-    		return dps;
-    	}
+        List<DataPropertyStatement> dps =
+            innerDataPropertyStatementDao.getDataPropertyStatements(dataProperty);
+        if (dps != null) {
+            return filter(dps, filters.getDataPropertyStatementFilter());
+        } else {
+            return dps;
+        }
     }
 
-    public List<DataPropertyStatement> getDataPropertyStatements(DataProperty dataProperty, int startIndex, int endIndex) {
-    	List<DataPropertyStatement> dps = innerDataPropertyStatementDao.getDataPropertyStatements(dataProperty, startIndex, endIndex);
-    	if (dps != null) {
-    		return filter(dps,filters.getDataPropertyStatementFilter());
-    	} else {
-    		return dps;
-    	}
+    public List<DataPropertyStatement> getDataPropertyStatements(DataProperty dataProperty,
+                                                                 int startIndex, int endIndex) {
+        List<DataPropertyStatement> dps = innerDataPropertyStatementDao
+            .getDataPropertyStatements(dataProperty, startIndex, endIndex);
+        if (dps != null) {
+            return filter(dps, filters.getDataPropertyStatementFilter());
+        } else {
+            return dps;
+        }
     }
 
     public int insertNewDataPropertyStatement(
-            DataPropertyStatement dataPropertyStatement) {
+        DataPropertyStatement dataPropertyStatement) {
         return innerDataPropertyStatementDao.insertNewDataPropertyStatement(dataPropertyStatement);
     }
 
     @Override
-    public List<Literal> getDataPropertyValuesForIndividualByProperty(Individual subject, DataProperty property) {
+    public List<Literal> getDataPropertyValuesForIndividualByProperty(Individual subject,
+                                                                      DataProperty property) {
         return getDataPropertyValuesForIndividualByProperty(subject.getURI(), property.getURI());
     }
 
     @Override
-    public List<Literal> getDataPropertyValuesForIndividualByProperty(String subjectUri, String propertyUri) {
-        List<Literal> literals = innerDataPropertyStatementDao.getDataPropertyValuesForIndividualByProperty(subjectUri, propertyUri);
+    public List<Literal> getDataPropertyValuesForIndividualByProperty(String subjectUri,
+                                                                      String propertyUri) {
+        List<Literal> literals = innerDataPropertyStatementDao
+            .getDataPropertyValuesForIndividualByProperty(subjectUri, propertyUri);
         /* Filter the data
          *
          * Filtering is applied to a list of DataPropertyStatement. Create these statements, mapped
@@ -118,22 +134,25 @@ public class DataPropertyStatementDaoFiltering extends BaseFiltering implements 
 
         for (Literal literal : literals) {
             String value = literal.getLexicalForm();
-            DataPropertyStatement statement = new DataPropertyStatementImpl(subjectUri, propertyUri, value);
+            DataPropertyStatement statement =
+                new DataPropertyStatementImpl(subjectUri, propertyUri, value);
             statement.setDatatypeURI(literal.getDatatypeURI());
             statement.setLanguage(literal.getLanguage());
             stmtsToLiterals.put(statement, literal);
         }
 
-        List<DataPropertyStatement> stmtList = new ArrayList<DataPropertyStatement>(stmtsToLiterals.keySet());
+        List<DataPropertyStatement> stmtList =
+            new ArrayList<DataPropertyStatement>(stmtsToLiterals.keySet());
 
         // Apply the filters to the list of statements
-        List<DataPropertyStatement> filteredStatements = filter(stmtList, filters.getDataPropertyStatementFilter());
+        List<DataPropertyStatement> filteredStatements =
+            filter(stmtList, filters.getDataPropertyStatementFilter());
 
         // Get the literals associated with the filtered statements out of the original list
         List<Literal> filteredLiterals = new ArrayList<Literal>(filteredStatements.size());
         for (DataPropertyStatement dps : filteredStatements) {
             if (dps instanceof DataPropertyStatementFiltering) {
-                dps = ((DataPropertyStatementFiltering)dps).innerStmt;
+                dps = ((DataPropertyStatementFiltering) dps).innerStmt;
             }
             filteredLiterals.add(stmtsToLiterals.get(dps));
         }
@@ -144,13 +163,22 @@ public class DataPropertyStatementDaoFiltering extends BaseFiltering implements 
     }
 
     @Override
-    public List<Literal> getDataPropertyValuesForIndividualByProperty(Individual subject, DataProperty property, String queryString, Set<String> constructQueryStrings) {
-        return getDataPropertyValuesForIndividualByProperty(subject.getURI(), property.getURI(), queryString, constructQueryStrings);
+    public List<Literal> getDataPropertyValuesForIndividualByProperty(Individual subject,
+                                                                      DataProperty property,
+                                                                      String queryString,
+                                                                      Set<String> constructQueryStrings) {
+        return getDataPropertyValuesForIndividualByProperty(subject.getURI(), property.getURI(),
+            queryString, constructQueryStrings);
     }
 
     @Override
-    public List<Literal> getDataPropertyValuesForIndividualByProperty(String subjectUri, String propertyUri, String queryString, Set<String> constructQueryStrings) {
-        List<Literal> literals = innerDataPropertyStatementDao.getDataPropertyValuesForIndividualByProperty(subjectUri, propertyUri,   queryString, constructQueryStrings);
+    public List<Literal> getDataPropertyValuesForIndividualByProperty(String subjectUri,
+                                                                      String propertyUri,
+                                                                      String queryString,
+                                                                      Set<String> constructQueryStrings) {
+        List<Literal> literals = innerDataPropertyStatementDao
+            .getDataPropertyValuesForIndividualByProperty(subjectUri, propertyUri, queryString,
+                constructQueryStrings);
         /* Filter the data
          *
          * Filtering is applied to a list of DataPropertyStatement. Create these statements, mapped
@@ -162,22 +190,25 @@ public class DataPropertyStatementDaoFiltering extends BaseFiltering implements 
 
         for (Literal literal : literals) {
             String value = literal.getLexicalForm();
-            DataPropertyStatement statement = new DataPropertyStatementImpl(subjectUri, propertyUri, value);
+            DataPropertyStatement statement =
+                new DataPropertyStatementImpl(subjectUri, propertyUri, value);
             statement.setDatatypeURI(literal.getDatatypeURI());
             statement.setLanguage(literal.getLanguage());
             stmtsToLiterals.put(statement, literal);
         }
 
-        List<DataPropertyStatement> stmtList = new ArrayList<DataPropertyStatement>(stmtsToLiterals.keySet());
+        List<DataPropertyStatement> stmtList =
+            new ArrayList<DataPropertyStatement>(stmtsToLiterals.keySet());
 
         // Apply the filters to the list of statements
-        List<DataPropertyStatement> filteredStatements = filter(stmtList, filters.getDataPropertyStatementFilter());
+        List<DataPropertyStatement> filteredStatements =
+            filter(stmtList, filters.getDataPropertyStatementFilter());
 
         // Get the literals associated with the filtered statements out of the original list
         List<Literal> filteredLiterals = new ArrayList<Literal>(filteredStatements.size());
         for (DataPropertyStatement dps : filteredStatements) {
             if (dps instanceof DataPropertyStatementFiltering) {
-                dps = ((DataPropertyStatementFiltering)dps).innerStmt;
+                dps = ((DataPropertyStatementFiltering) dps).innerStmt;
             }
             filteredLiterals.add(stmtsToLiterals.get(dps));
         }

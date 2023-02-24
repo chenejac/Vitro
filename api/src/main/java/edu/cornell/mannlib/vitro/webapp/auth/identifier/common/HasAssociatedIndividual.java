@@ -12,34 +12,34 @@ import edu.cornell.mannlib.vitro.webapp.auth.identifier.IdentifierBundle;
 /**
  * The current user is associated with this Individual page, and has editing
  * rights relating to it.
- *
+ * <p>
  * Subclasses exist to indicate how that association is created, as either a
  * Self-Editor or a Proxy Editor. In some cases (e.g., the MyProfile link) the
  * distinction is important.
  */
 public abstract class HasAssociatedIndividual extends AbstractCommonIdentifier
-		implements Identifier {
+    implements Identifier {
 
-	private static Collection<HasAssociatedIndividual> getIdentifiers(
-			IdentifierBundle ids) {
-		return getIdentifiersForClass(ids, HasAssociatedIndividual.class);
-	}
+    private final String associatedIndividualUri;
 
-	public static Collection<String> getIndividualUris(IdentifierBundle ids) {
-		Set<String> set = new HashSet<String>();
-		for (HasAssociatedIndividual id : getIdentifiers(ids)) {
-			set.add(id.getAssociatedIndividualUri());
-		}
-		return set;
-	}
+    public HasAssociatedIndividual(String associatedIndividualUri) {
+        this.associatedIndividualUri = associatedIndividualUri;
+    }
 
-	private final String associatedIndividualUri;
+    private static Collection<HasAssociatedIndividual> getIdentifiers(
+        IdentifierBundle ids) {
+        return getIdentifiersForClass(ids, HasAssociatedIndividual.class);
+    }
 
-	public HasAssociatedIndividual(String associatedIndividualUri) {
-		this.associatedIndividualUri = associatedIndividualUri;
-	}
+    public static Collection<String> getIndividualUris(IdentifierBundle ids) {
+        Set<String> set = new HashSet<String>();
+        for (HasAssociatedIndividual id : getIdentifiers(ids)) {
+            set.add(id.getAssociatedIndividualUri());
+        }
+        return set;
+    }
 
-	public String getAssociatedIndividualUri() {
-		return associatedIndividualUri;
-	}
+    public String getAssociatedIndividualUri() {
+        return associatedIndividualUri;
+    }
 }

@@ -8,8 +8,6 @@ import java.util.List;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.vocabulary.RDF;
 
-import edu.cornell.mannlib.vitro.webapp.searchindex.indexing.IndexingUriFinder;
-
 /**
  * Adds URIs to index for type statement changes on individuals.
  */
@@ -17,9 +15,9 @@ public class AdditionalURIsForTypeStatements implements IndexingUriFinder {
 
     @Override
     public List<String> findAdditionalURIsToIndex(Statement stmt) {
-        if( stmt != null && RDF.type.getURI().equals( stmt.getPredicate().getURI() )){
-            return Collections.singletonList( stmt.getSubject().getURI() );
-        }else{
+        if (stmt != null && RDF.type.getURI().equals(stmt.getPredicate().getURI())) {
+            return Collections.singletonList(stmt.getSubject().getURI());
+        } else {
             return Collections.emptyList();
         }
     }
@@ -30,9 +28,9 @@ public class AdditionalURIsForTypeStatements implements IndexingUriFinder {
     @Override
     public void endIndexing() { /* nothing to do */ }
 
-	@Override
-	public String toString() {
-		return this.getClass().getSimpleName();
-	}
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
+    }
 
 }

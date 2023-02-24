@@ -2,97 +2,101 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.authenticate;
 
-import java.io.IOException;
-import java.util.Enumeration;
-
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Enumeration;
 
+import edu.cornell.mannlib.vitro.webapp.controller.login.LoginProcessBean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import edu.cornell.mannlib.vitro.webapp.controller.login.LoginProcessBean;
-
 /**
  * Set up the external authorization process.
- *
+ * <p>
  * Write down the page that triggered the request, so we can get back to it.
- *
+ * <p>
  * Send a request to the external authorization server that will return us to
  * the LoginExternalAuthReturn servlet for further processing.
  */
 @WebServlet(name = "loginExternalAuthSetup", urlPatterns = {"/loginExternalAuth"})
 public class LoginExternalAuthSetup extends BaseLoginServlet {
-	private static final Log log = LogFactory
-			.getLog(LoginExternalAuthSetup.class);
+    /**
+     * This session attribute tells where we came from.
+     */
+    static final String ATTRIBUTE_REFERRER = LoginExternalAuthSetup.class
+        .getName() + ".referrer";
+    private static final Log log = LogFactory
+        .getLog(LoginExternalAuthSetup.class);
+    private static final String RETURN_SERVLET_URL = "/loginExternalAuthReturn";
 
-	/** This session attribute tells where we came from. */
-	static final String ATTRIBUTE_REFERRER = LoginExternalAuthSetup.class
-			.getName() + ".referrer";
+    /**
+     * This http header holds the referring page.
+     */
+    private static final String HEADING_REFERRER = "referer";
 
-	private static final String RETURN_SERVLET_URL = "/loginExternalAuthReturn";
+    /**
+     * Write down the referring page, record that we are logging in, and
+     * redirect to the external authorization server URL.
+     */
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+        throws ServletException, IOException {
+        storeTheReferringPage(req);
 
-	/** This http header holds the referring page. */
-	private static final String HEADING_REFERRER = "referer";
+        LoginProcessBean.getBean(req).setState(
+            LoginProcessBean.State.LOGGING_IN);
 
-	/**
-	 * Write down the referring page, record that we are logging in, and
-	 * redirect to the external authorization server URL.
-	 */
-	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
-		storeTheReferringPage(req);
+        String returnUrl = buildReturnUrl(req);
+        String redirectUrl = ExternalAuthHelper.getHelper(req)
+            .buildExternalAuthRedirectUrl(returnUrl);
 
-		LoginProcessBean.getBean(req).setState(
-				LoginProcessBean.State.LOGGING_IN);
+        if (redirectUrl == null) {
+            complainAndReturnToReferrer(req, resp, ATTRIBUTE_REFERRER,
+                messageLoginFailed(req));
+        }
 
-		String returnUrl = buildReturnUrl(req);
-		String redirectUrl = ExternalAuthHelper.getHelper(req)
-				.buildExternalAuthRedirectUrl(returnUrl);
+        log.debug("redirecting to '" + redirectUrl + "'");
+        resp.sendRedirect(redirectUrl);
+    }
 
-		if (redirectUrl == null) {
-			complainAndReturnToReferrer(req, resp, ATTRIBUTE_REFERRER,
-					messageLoginFailed(req));
-		}
+    /**
+     * Remember where we came from - we'll need to go back there.
+     */
+    private void storeTheReferringPage(HttpServletRequest req) {
+        String referrer = req.getHeader(HEADING_REFERRER);
+        if (referrer == null) {
+            dumpRequestHeaders(req);
+            referrer = figureHomePageUrl(req);
+        }
+        log.debug("Referring page is '" + referrer + "'");
+        req.getSession().setAttribute(ATTRIBUTE_REFERRER, referrer);
+    }
 
-		log.debug("redirecting to '" + redirectUrl + "'");
-		resp.sendRedirect(redirectUrl);
-	}
+    /**
+     * What is the URL of the LoginExternalAuthReturn servlet?
+     */
+    private String buildReturnUrl(HttpServletRequest req) {
+        return figureHomePageUrl(req) + RETURN_SERVLET_URL;
+    }
 
-	/** Remember where we came from - we'll need to go back there. */
-	private void storeTheReferringPage(HttpServletRequest req) {
-		String referrer = req.getHeader(HEADING_REFERRER);
-		if (referrer == null) {
-			dumpRequestHeaders(req);
-			referrer = figureHomePageUrl(req);
-		}
-		log.debug("Referring page is '" + referrer + "'");
-		req.getSession().setAttribute(ATTRIBUTE_REFERRER, referrer);
-	}
+    private void dumpRequestHeaders(HttpServletRequest req) {
+        if (log.isDebugEnabled()) {
+            @SuppressWarnings("unchecked")
+            Enumeration<String> names = req.getHeaderNames();
+            while (names.hasMoreElements()) {
+                String name = names.nextElement();
+                log.debug("header: " + name + "=" + req.getHeader(name));
+            }
+        }
+    }
 
-	/** What is the URL of the LoginExternalAuthReturn servlet? */
-	private String buildReturnUrl(HttpServletRequest req) {
-		return figureHomePageUrl(req) + RETURN_SERVLET_URL;
-	}
-
-	private void dumpRequestHeaders(HttpServletRequest req) {
-		if (log.isDebugEnabled()) {
-			@SuppressWarnings("unchecked")
-			Enumeration<String> names = req.getHeaderNames();
-			while (names.hasMoreElements()) {
-				String name = names.nextElement();
-				log.debug("header: " + name + "=" + req.getHeader(name));
-			}
-		}
-	}
-
-	@Override
-	protected void doGet(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
-	}
+    @Override
+    protected void doGet(HttpServletRequest request,
+                         HttpServletResponse response) throws ServletException, IOException {
+        doPost(request, response);
+    }
 
 }

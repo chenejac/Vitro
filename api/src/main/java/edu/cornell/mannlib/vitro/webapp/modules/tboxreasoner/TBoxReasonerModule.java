@@ -4,26 +4,25 @@ package edu.cornell.mannlib.vitro.webapp.modules.tboxreasoner;
 
 import java.util.List;
 
-import org.apache.jena.ontology.Restriction;
-
 import edu.cornell.mannlib.vitro.webapp.modules.Application;
+import org.apache.jena.ontology.Restriction;
 
 /**
  * A wrapper around the TBox reasoner
  */
 public interface TBoxReasonerModule extends Application.Module {
-	/**
-	 * What is the TBox reasoner doing now?
-	 */
-	TBoxReasonerStatus getStatus();
+    /**
+     * What is the TBox reasoner doing now?
+     */
+    TBoxReasonerStatus getStatus();
 
-	/**
-	 * What restrictions are currently in the reasoner's internal model?
-	 */
-	List<Restriction> listRestrictions();
+    /**
+     * What restrictions are currently in the reasoner's internal model?
+     */
+    List<Restriction> listRestrictions();
 
-	/**
-	 * Wait until the TBox reasoner becomes quiet.
-	 */
-	void waitForTBoxReasoning();
+    /**
+     * Wait until the TBox reasoner becomes quiet.
+     */
+    void waitForTBoxReasoning();
 }

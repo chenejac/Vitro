@@ -13,22 +13,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.joda.time.DateTime;
-
-import org.apache.jena.ontology.OntModel;
-import org.apache.jena.ontology.OntResource;
-import org.apache.jena.rdf.model.Literal;
-import org.apache.jena.rdf.model.NodeIterator;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.shared.Lock;
-import org.apache.jena.util.iterator.ClosableIterator;
-import org.apache.jena.vocabulary.OWL;
-
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
@@ -40,6 +24,20 @@ import edu.cornell.mannlib.vitro.webapp.beans.VClass;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
 import edu.cornell.mannlib.vitro.webapp.filestorage.model.ImageInfo;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.jena.ontology.OntModel;
+import org.apache.jena.ontology.OntResource;
+import org.apache.jena.rdf.model.Literal;
+import org.apache.jena.rdf.model.NodeIterator;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.shared.Lock;
+import org.apache.jena.util.iterator.ClosableIterator;
+import org.apache.jena.vocabulary.OWL;
+import org.joda.time.DateTime;
 
 public class IndividualJena extends IndividualImpl implements Individual {
 
@@ -48,16 +46,17 @@ public class IndividualJena extends IndividualImpl implements Individual {
     private WebappDaoFactoryJena webappDaoFactory = null;
     private Float _searchBoostJena = null;
     private boolean retrievedNullRdfsLabel = false;
+    private Collator collator = Collator.getInstance();
 
     public IndividualJena(OntResource ind, WebappDaoFactoryJena wadf) {
         this.ind = ind;
         if (ind.isAnon()) {
-        	this.setNamespace(VitroVocabulary.PSEUDO_BNODE_NS);
-        	this.setLocalName(ind.getId().toString());
+            this.setNamespace(VitroVocabulary.PSEUDO_BNODE_NS);
+            this.setLocalName(ind.getId().toString());
         } else {
-        	this.URI = ind.getURI();
-        	this.namespace = ind.getNameSpace();
-        	this.localName = ind.getLocalName();
+            this.URI = ind.getURI();
+            this.namespace = ind.getNameSpace();
+            this.localName = ind.getLocalName();
         }
         this.webappDaoFactory = wadf;
     }
@@ -86,8 +85,8 @@ public class IndividualJena extends IndividualImpl implements Individual {
     public String getRdfsLabel() {
         if (this.rdfsLabel != null) {
             return rdfsLabel;
-        } else if( this.rdfsLabel == null && retrievedNullRdfsLabel ){
-        	return null;
+        } else if (this.rdfsLabel == null && retrievedNullRdfsLabel) {
+            return null;
         } else {
             ind.getOntModel().enterCriticalSection(Lock.READ);
             try {
@@ -104,24 +103,27 @@ public class IndividualJena extends IndividualImpl implements Individual {
         if (this.vClassURI != null) {
             return vClassURI;
         } else {
-        	ind.getOntModel().enterCriticalSection(Lock.READ);
-        	try {
+            ind.getOntModel().enterCriticalSection(Lock.READ);
+            try {
                 ClosableIterator typeIt = ind.listRDFTypes(true);
                 try {
-	                while (typeIt.hasNext()) {
-	                    Resource type = (Resource) typeIt.next();
-	                    if (type.getNameSpace()!=null && (!webappDaoFactory.getJenaBaseDao().NONUSER_NAMESPACES.contains(type.getNameSpace()) || type.getURI().equals(OWL.Thing.getURI())) ) {
-	                    	this.vClassURI=type.getURI();
-	                        break;
-	                    }
-	                }
+                    while (typeIt.hasNext()) {
+                        Resource type = (Resource) typeIt.next();
+                        if (type.getNameSpace() != null &&
+                            (!webappDaoFactory.getJenaBaseDao().NONUSER_NAMESPACES
+                                .contains(type.getNameSpace()) ||
+                                type.getURI().equals(OWL.Thing.getURI()))) {
+                            this.vClassURI = type.getURI();
+                            break;
+                        }
+                    }
                 } finally {
-                	typeIt.close();
+                    typeIt.close();
                 }
-        	} finally {
-        		ind.getOntModel().leaveCriticalSection();
-        	}
-        	return this.vClassURI;
+            } finally {
+                ind.getOntModel().leaveCriticalSection();
+            }
+            return this.vClassURI;
         }
     }
 
@@ -129,25 +131,29 @@ public class IndividualJena extends IndividualImpl implements Individual {
         if (this.vClass != null) {
             return this.vClass;
         } else {
-        	 ind.getOntModel().enterCriticalSection(Lock.READ);
-             try {
-                 ClosableIterator typeIt = ind.listRDFTypes(true);
-                 try {
- 	                while (typeIt.hasNext()) {
- 	                    Resource type = (Resource) typeIt.next();
- 	                    if (type.getNameSpace()!=null && (!webappDaoFactory.getJenaBaseDao().NONUSER_NAMESPACES.contains(type.getNameSpace()) || type.getURI().equals(OWL.Thing.getURI())) ) {
- 	                    	this.vClassURI=type.getURI();
- 	                        this.vClass = webappDaoFactory.getVClassDao().getVClassByURI(this.vClassURI);
- 	                        break;
- 	                    }
- 	                }
-                 } finally {
-                 	typeIt.close();
-                 }
-                 return this.vClass;
-             } finally {
-                 ind.getOntModel().leaveCriticalSection();
-             }
+            ind.getOntModel().enterCriticalSection(Lock.READ);
+            try {
+                ClosableIterator typeIt = ind.listRDFTypes(true);
+                try {
+                    while (typeIt.hasNext()) {
+                        Resource type = (Resource) typeIt.next();
+                        if (type.getNameSpace() != null &&
+                            (!webappDaoFactory.getJenaBaseDao().NONUSER_NAMESPACES
+                                .contains(type.getNameSpace()) ||
+                                type.getURI().equals(OWL.Thing.getURI()))) {
+                            this.vClassURI = type.getURI();
+                            this.vClass =
+                                webappDaoFactory.getVClassDao().getVClassByURI(this.vClassURI);
+                            break;
+                        }
+                    }
+                } finally {
+                    typeIt.close();
+                }
+                return this.vClass;
+            } finally {
+                ind.getOntModel().leaveCriticalSection();
+            }
         }
     }
 
@@ -157,7 +163,8 @@ public class IndividualJena extends IndividualImpl implements Individual {
         } else {
             ind.getOntModel().enterCriticalSection(Lock.READ);
             try {
-                Date modDate = webappDaoFactory.getJenaBaseDao().getPropertyDateTimeValue(ind,webappDaoFactory.getJenaBaseDao().MODTIME);
+                Date modDate = webappDaoFactory.getJenaBaseDao()
+                    .getPropertyDateTimeValue(ind, webappDaoFactory.getJenaBaseDao().MODTIME);
                 if (modDate != null) {
                     modTime = new Timestamp(modDate.getTime());
                 }
@@ -168,77 +175,81 @@ public class IndividualJena extends IndividualImpl implements Individual {
         }
     }
 
-    public Float getSearchBoost(){
-        if( this._searchBoostJena != null ){
+    public Float getSearchBoost() {
+        if (this._searchBoostJena != null) {
             return this._searchBoostJena;
-        }else{
+        } else {
             ind.getOntModel().enterCriticalSection(Lock.READ);
-            try{
+            try {
                 try {
                     searchBoost =
-                        ((Literal)ind.getPropertyValue(webappDaoFactory.getJenaBaseDao().SEARCH_BOOST_ANNOT)).getFloat();
+                        ((Literal) ind
+                            .getPropertyValue(webappDaoFactory.getJenaBaseDao().SEARCH_BOOST_ANNOT))
+                            .getFloat();
                 } catch (Exception e) {
                     searchBoost = null;
                 }
                 return searchBoost;
-            }finally{
+            } finally {
                 ind.getOntModel().leaveCriticalSection();
             }
         }
     }
 
-	@Override
-	public String getMainImageUri() {
-		if (this.mainImageUri != NOT_INITIALIZED) {
-			return mainImageUri;
-		} else {
-			for (ObjectPropertyStatement stmt : getObjectPropertyStatements()) {
-				if (stmt.getPropertyURI()
-						.equals(VitroVocabulary.IND_MAIN_IMAGE)) {
-					mainImageUri = stmt.getObjectURI();
-					return mainImageUri;
-				}
-			}
-			return null;
-		}
-	}
+    @Override
+    public String getMainImageUri() {
+        if (this.mainImageUri != NOT_INITIALIZED) {
+            return mainImageUri;
+        } else {
+            for (ObjectPropertyStatement stmt : getObjectPropertyStatements()) {
+                if (stmt.getPropertyURI()
+                    .equals(VitroVocabulary.IND_MAIN_IMAGE)) {
+                    mainImageUri = stmt.getObjectURI();
+                    return mainImageUri;
+                }
+            }
+            return null;
+        }
+    }
 
-	@Override
-	public String getImageUrl() {
-		if (this.imageInfo == null) {
-			this.imageInfo = ImageInfo.instanceFromEntityUri(webappDaoFactory, this);
-			log.trace("figured imageInfo for " + getURI() + ": '"
-					+ this.imageInfo + "'");
-		}
-		if (this.imageInfo == null) {
-			this.imageInfo = ImageInfo.EMPTY_IMAGE_INFO;
-			log.trace("imageInfo for " + getURI() + " is empty.");
-		}
-		return this.imageInfo.getMainImage().getBytestreamAliasUrl();
-	}
+    @Override
+    public String getImageUrl() {
+        if (this.imageInfo == null) {
+            this.imageInfo = ImageInfo.instanceFromEntityUri(webappDaoFactory, this);
+            log.trace("figured imageInfo for " + getURI() + ": '"
+                + this.imageInfo + "'");
+        }
+        if (this.imageInfo == null) {
+            this.imageInfo = ImageInfo.EMPTY_IMAGE_INFO;
+            log.trace("imageInfo for " + getURI() + " is empty.");
+        }
+        return this.imageInfo.getMainImage().getBytestreamAliasUrl();
+    }
 
-	@Override
-	public String getThumbUrl() {
-		if (this.imageInfo == null) {
-			this.imageInfo = ImageInfo.instanceFromEntityUri(webappDaoFactory, this);
-			log.trace("figured imageInfo for " + getURI() + ": '"
-					+ this.imageInfo + "'");
-		}
-		if (this.imageInfo == null) {
-			this.imageInfo = ImageInfo.EMPTY_IMAGE_INFO;
-			log.trace("imageInfo for " + getURI() + " is empty.");
-		}
-		return this.imageInfo.getThumbnail().getBytestreamAliasUrl();
-	}
+    @Override
+    public String getThumbUrl() {
+        if (this.imageInfo == null) {
+            this.imageInfo = ImageInfo.instanceFromEntityUri(webappDaoFactory, this);
+            log.trace("figured imageInfo for " + getURI() + ": '"
+                + this.imageInfo + "'");
+        }
+        if (this.imageInfo == null) {
+            this.imageInfo = ImageInfo.EMPTY_IMAGE_INFO;
+            log.trace("imageInfo for " + getURI() + " is empty.");
+        }
+        return this.imageInfo.getThumbnail().getBytestreamAliasUrl();
+    }
 
     public List<ObjectPropertyStatement> getObjectPropertyStatements() {
         if (this.objectPropertyStatements != null) {
             return this.objectPropertyStatements;
         } else {
             try {
-                webappDaoFactory.getObjectPropertyStatementDao().fillExistingObjectPropertyStatements(this);
+                webappDaoFactory.getObjectPropertyStatementDao()
+                    .fillExistingObjectPropertyStatements(this);
             } catch (Exception e) {
-                log.error(this.getClass().getName()+" could not fill existing ObjectPropertyStatements for "+this.getURI(), e);
+                log.error(this.getClass().getName() +
+                    " could not fill existing ObjectPropertyStatements for " + this.getURI(), e);
             }
             return this.objectPropertyStatements;
         }
@@ -246,76 +257,81 @@ public class IndividualJena extends IndividualImpl implements Individual {
 
     @Override
     public List<ObjectPropertyStatement> getObjectPropertyStatements(String propertyURI) {
-    	if (propertyURI == null) {
-    		return null;
-    	}
-    	List<ObjectPropertyStatement> objectPropertyStatements = new ArrayList<ObjectPropertyStatement>();
-    	ind.getOntModel().enterCriticalSection(Lock.READ);
-    	try {
-    		StmtIterator sit = ind.listProperties(ind.getModel().getProperty(propertyURI));
-    		while (sit.hasNext()) {
-    			Statement s = sit.nextStatement();
-    			if (!s.getSubject().canAs(OntResource.class) || !s.getObject().canAs(OntResource.class)) {
-    			    continue;
-    			}
-    			Individual subj = new IndividualJena(s.getSubject().as(OntResource.class), webappDaoFactory);
-    			Individual obj = new IndividualJena(s.getObject().as(OntResource.class), webappDaoFactory);
-    			ObjectProperty op = webappDaoFactory.getObjectPropertyDao().getObjectPropertyByURI(s.getPredicate().getURI());
-    			if (subj != null && obj != null && op != null) {
-    				ObjectPropertyStatement ops = new ObjectPropertyStatementImpl();
-    				ops.setSubject(subj);
-    				ops.setSubjectURI(subj.getURI());
-    				ops.setObject(obj);
-    				ops.setObjectURI(obj.getURI());
-    				ops.setProperty(op);
-    				ops.setPropertyURI(op.getURI());
-    				objectPropertyStatements.add(ops);
-    			}
-    		}
-     	} finally {
-    		ind.getOntModel().leaveCriticalSection();
-    	}
-     	return objectPropertyStatements;
+        if (propertyURI == null) {
+            return null;
+        }
+        List<ObjectPropertyStatement> objectPropertyStatements =
+            new ArrayList<ObjectPropertyStatement>();
+        ind.getOntModel().enterCriticalSection(Lock.READ);
+        try {
+            StmtIterator sit = ind.listProperties(ind.getModel().getProperty(propertyURI));
+            while (sit.hasNext()) {
+                Statement s = sit.nextStatement();
+                if (!s.getSubject().canAs(OntResource.class) ||
+                    !s.getObject().canAs(OntResource.class)) {
+                    continue;
+                }
+                Individual subj =
+                    new IndividualJena(s.getSubject().as(OntResource.class), webappDaoFactory);
+                Individual obj =
+                    new IndividualJena(s.getObject().as(OntResource.class), webappDaoFactory);
+                ObjectProperty op = webappDaoFactory.getObjectPropertyDao()
+                    .getObjectPropertyByURI(s.getPredicate().getURI());
+                if (subj != null && obj != null && op != null) {
+                    ObjectPropertyStatement ops = new ObjectPropertyStatementImpl();
+                    ops.setSubject(subj);
+                    ops.setSubjectURI(subj.getURI());
+                    ops.setObject(obj);
+                    ops.setObjectURI(obj.getURI());
+                    ops.setProperty(op);
+                    ops.setPropertyURI(op.getURI());
+                    objectPropertyStatements.add(ops);
+                }
+            }
+        } finally {
+            ind.getOntModel().leaveCriticalSection();
+        }
+        return objectPropertyStatements;
     }
 
     @Override
     public List<Individual> getRelatedIndividuals(String propertyURI) {
-    	if (propertyURI == null) {
-    		return null;
-    	}
-    	List<Individual> relatedIndividuals = new ArrayList<Individual>();
-    	ind.getOntModel().enterCriticalSection(Lock.READ);
-    	try {
-    	    NodeIterator values = ind.listPropertyValues(ind.getModel().getProperty(propertyURI));
-    	    while (values.hasNext()) {
-    	    	RDFNode value = values.nextNode();
-    	    	if (value.canAs(OntResource.class)) {
-        	    	relatedIndividuals.add(
-        	    		new IndividualJena(value.as(OntResource.class), webappDaoFactory) );
-        	    }
-    	    }
-    	} finally {
-    		ind.getOntModel().leaveCriticalSection();
-    	}
-    	return relatedIndividuals;
+        if (propertyURI == null) {
+            return null;
+        }
+        List<Individual> relatedIndividuals = new ArrayList<Individual>();
+        ind.getOntModel().enterCriticalSection(Lock.READ);
+        try {
+            NodeIterator values = ind.listPropertyValues(ind.getModel().getProperty(propertyURI));
+            while (values.hasNext()) {
+                RDFNode value = values.nextNode();
+                if (value.canAs(OntResource.class)) {
+                    relatedIndividuals.add(
+                        new IndividualJena(value.as(OntResource.class), webappDaoFactory));
+                }
+            }
+        } finally {
+            ind.getOntModel().leaveCriticalSection();
+        }
+        return relatedIndividuals;
     }
 
     @Override
     public Individual getRelatedIndividual(String propertyURI) {
-    	if (propertyURI == null) {
-    		return null;
-    	}
-    	ind.getOntModel().enterCriticalSection(Lock.READ);
-    	try {
-    	    RDFNode value = ind.getPropertyValue(ind.getModel().getProperty(propertyURI));
-    	    if (value != null && value.canAs(OntResource.class)) {
-    	    	return new IndividualJena(value.as(OntResource.class), webappDaoFactory);
-    	    } else {
-    	    	return null;
-    	    }
-    	} finally {
-    		ind.getOntModel().leaveCriticalSection();
-    	}
+        if (propertyURI == null) {
+            return null;
+        }
+        ind.getOntModel().enterCriticalSection(Lock.READ);
+        try {
+            RDFNode value = ind.getPropertyValue(ind.getModel().getProperty(propertyURI));
+            if (value != null && value.canAs(OntResource.class)) {
+                return new IndividualJena(value.as(OntResource.class), webappDaoFactory);
+            } else {
+                return null;
+            }
+        } finally {
+            ind.getOntModel().leaveCriticalSection();
+        }
     }
 
     public List<ObjectProperty> getObjectPropertyList() {
@@ -323,9 +339,10 @@ public class IndividualJena extends IndividualImpl implements Individual {
             return this.propertyList;
         } else {
             try {
-                webappDaoFactory.getObjectPropertyDao().fillObjectPropertiesForIndividual( this );
+                webappDaoFactory.getObjectPropertyDao().fillObjectPropertiesForIndividual(this);
             } catch (Exception e) {
-                log.error(this.getClass().getName()+" could not fillEntityProperties for "+this.getURI());
+                log.error(this.getClass().getName() + " could not fillEntityProperties for " +
+                    this.getURI());
             }
             return this.propertyList;
         }
@@ -334,28 +351,29 @@ public class IndividualJena extends IndividualImpl implements Individual {
     @Override
     public List<ObjectProperty> getPopulatedObjectPropertyList() {
         if (populatedObjectPropertyList == null) {
-            populatedObjectPropertyList = webappDaoFactory.getObjectPropertyDao().getObjectPropertyList(this);
+            populatedObjectPropertyList =
+                webappDaoFactory.getObjectPropertyDao().getObjectPropertyList(this);
         }
         return populatedObjectPropertyList;
     }
 
     @Override
-    public Map<String,ObjectProperty> getObjectPropertyMap() {
-    	if (this.objectPropertyMap != null) {
-    		return objectPropertyMap;
-    	} else {
-    		Map map = new HashMap<String,ObjectProperty>();
-    		if (this.propertyList == null) {
-    			getObjectPropertyList();
-    		}
-			for (ObjectProperty op : this.propertyList) {
-				if (op.getURI() != null) {
-					map.put(op.getURI(), op);
-				}
-			}
-    		this.objectPropertyMap = map;
-    		return map;
-    	}
+    public Map<String, ObjectProperty> getObjectPropertyMap() {
+        if (this.objectPropertyMap != null) {
+            return objectPropertyMap;
+        } else {
+            Map map = new HashMap<String, ObjectProperty>();
+            if (this.propertyList == null) {
+                getObjectPropertyList();
+            }
+            for (ObjectProperty op : this.propertyList) {
+                if (op.getURI() != null) {
+                    map.put(op.getURI(), op);
+                }
+            }
+            this.objectPropertyMap = map;
+            return map;
+        }
     }
 
     public List<DataPropertyStatement> getDataPropertyStatements() {
@@ -363,9 +381,11 @@ public class IndividualJena extends IndividualImpl implements Individual {
             return this.dataPropertyStatements;
         } else {
             try {
-                webappDaoFactory.getDataPropertyStatementDao().fillExistingDataPropertyStatementsForIndividual(this/*,false*/);
+                webappDaoFactory.getDataPropertyStatementDao()
+                    .fillExistingDataPropertyStatementsForIndividual(this/*,false*/);
             } catch (Exception e) {
-                log.error(this.getClass().getName()+" could not fill existing DataPropertyStatements for "+this.getURI());
+                log.error(this.getClass().getName() +
+                    " could not fill existing DataPropertyStatements for " + this.getURI());
             }
             return this.dataPropertyStatements;
         }
@@ -376,9 +396,10 @@ public class IndividualJena extends IndividualImpl implements Individual {
             return this.datatypePropertyList;
         } else {
             try {
-                webappDaoFactory.getDataPropertyDao().fillDataPropertiesForIndividual( this );
+                webappDaoFactory.getDataPropertyDao().fillDataPropertiesForIndividual(this);
             } catch (Exception e) {
-                log.error(this.getClass().getName()+" could not fill data properties for "+this.getURI());
+                log.error(this.getClass().getName() + " could not fill data properties for " +
+                    this.getURI());
             }
             return this.datatypePropertyList;
         }
@@ -387,28 +408,29 @@ public class IndividualJena extends IndividualImpl implements Individual {
     @Override
     public List<DataProperty> getPopulatedDataPropertyList() {
         if (populatedDataPropertyList == null) {
-            populatedDataPropertyList = webappDaoFactory.getDataPropertyDao().getDataPropertyList(this);
+            populatedDataPropertyList =
+                webappDaoFactory.getDataPropertyDao().getDataPropertyList(this);
         }
         return populatedDataPropertyList;
     }
 
     @Override
-    public Map<String,DataProperty> getDataPropertyMap() {
-    	if (this.dataPropertyMap != null) {
-    		return dataPropertyMap;
-    	} else {
-    		Map map = new HashMap<String,DataProperty>();
-    		if (this.datatypePropertyList == null) {
-    			getDataPropertyList();
-    		}
-			for (DataProperty dp : this.datatypePropertyList) {
-				if (dp.getURI() != null) {
-					map.put(dp.getURI(), dp);
-				}
-			}
-    		this.dataPropertyMap = map;
-    		return map;
-    	}
+    public Map<String, DataProperty> getDataPropertyMap() {
+        if (this.dataPropertyMap != null) {
+            return dataPropertyMap;
+        } else {
+            Map map = new HashMap<String, DataProperty>();
+            if (this.datatypePropertyList == null) {
+                getDataPropertyList();
+            }
+            for (DataProperty dp : this.datatypePropertyList) {
+                if (dp.getURI() != null) {
+                    map.put(dp.getURI(), dp);
+                }
+            }
+            this.dataPropertyMap = map;
+            return map;
+        }
     }
 
     public List<DataPropertyStatement> getExternalIds() {
@@ -418,10 +440,12 @@ public class IndividualJena extends IndividualImpl implements Individual {
         } else {
             try {
                 List<DataPropertyStatement> dpsList = new ArrayList<DataPropertyStatement>();
-                dpsList.addAll(webappDaoFactory.getIndividualDao().getExternalIds(this.getURI(), null));
+                dpsList.addAll(
+                    webappDaoFactory.getIndividualDao().getExternalIds(this.getURI(), null));
                 this.externalIds = dpsList;
             } catch (Exception e) {
-                log.error(this.getClass().getName()+" could not fill external IDs for "+this.getURI());
+                log.error(this.getClass().getName() + " could not fill external IDs for " +
+                    this.getURI());
             }
             return this.externalIds;
         }
@@ -429,109 +453,112 @@ public class IndividualJena extends IndividualImpl implements Individual {
 
     @Override
     public List<VClass> getVClasses() {
-    	return getVClasses(false);
+        return getVClasses(false);
     }
 
     @Override
     public List<VClass> getVClasses(boolean direct) {
-    	if (direct) {
-    		if (directVClasses != null) {
-    			return directVClasses;
-    		} else {
-    			directVClasses = getMyVClasses(true);
-    			return directVClasses;
-    		}
-    	} else {
-    		if (allVClasses != null) {
-    			return allVClasses;
-    		} else {
-    			allVClasses = getMyVClasses(false);
-    			return allVClasses;
-    		}
-    	}
+        if (direct) {
+            if (directVClasses != null) {
+                return directVClasses;
+            } else {
+                directVClasses = getMyVClasses(true);
+                return directVClasses;
+            }
+        } else {
+            if (allVClasses != null) {
+                return allVClasses;
+            } else {
+                allVClasses = getMyVClasses(false);
+                return allVClasses;
+            }
+        }
     }
 
     private List<VClass> getMyVClasses(boolean direct) {
-		List<VClass> vClassList = new ArrayList<VClass>();
-		OntModel ontModel = ind.getOntModel();
-		ontModel.enterCriticalSection(Lock.READ);
-		try {
-			ClosableIterator typeIt = ind.listRDFTypes(direct);
-			try {
-				for (Iterator it = typeIt; it.hasNext();) {
-					Resource type = (Resource) typeIt.next();
-					String typeURI = (!type.isAnon()) ? type.getURI() : VitroVocabulary.PSEUDO_BNODE_NS + type.getId().toString();
-					if (type.getNameSpace() == null || (!webappDaoFactory.getNonuserNamespaces().contains(type.getNameSpace())) ) {
-						VClass vc = webappDaoFactory.getVClassDao().getVClassByURI(typeURI);
-						if (vc != null) {
-							vClassList.add(vc);
-						}
-					}
+        List<VClass> vClassList = new ArrayList<VClass>();
+        OntModel ontModel = ind.getOntModel();
+        ontModel.enterCriticalSection(Lock.READ);
+        try {
+            ClosableIterator typeIt = ind.listRDFTypes(direct);
+            try {
+                for (Iterator it = typeIt; it.hasNext(); ) {
+                    Resource type = (Resource) typeIt.next();
+                    String typeURI = (!type.isAnon()) ? type.getURI() :
+                        VitroVocabulary.PSEUDO_BNODE_NS + type.getId().toString();
+                    if (type.getNameSpace() == null ||
+                        (!webappDaoFactory.getNonuserNamespaces().contains(type.getNameSpace()))) {
+                        VClass vc = webappDaoFactory.getVClassDao().getVClassByURI(typeURI);
+                        if (vc != null) {
+                            vClassList.add(vc);
+                        }
+                    }
 
-				}
-			} finally {
-				typeIt.close();
-			}
-		} finally {
-			ontModel.leaveCriticalSection();
-		}
-		try {
-			Collections.sort(vClassList);
-		} catch (Exception e) {}
-		return vClassList;
-	}
+                }
+            } finally {
+                typeIt.close();
+            }
+        } finally {
+            ontModel.leaveCriticalSection();
+        }
+        try {
+            Collections.sort(vClassList);
+        } catch (Exception e) {
+        }
+        return vClassList;
+    }
 
-	/**
-	 * The base method in {@link IndividualImpl} is adequate if the reasoner is
-	 * up to date.
-	 *
-	 * If the base method returns false, check directly to see if
-	 * any of the super classes of the direct classes will satisfy this request.
-	 */
-	@Override
-	public boolean isVClass(String uri) {
-    	if (uri == null) {
-    		return false;
-    	}
+    /**
+     * The base method in {@link IndividualImpl} is adequate if the reasoner is
+     * up to date.
+     * <p>
+     * If the base method returns false, check directly to see if
+     * any of the super classes of the direct classes will satisfy this request.
+     */
+    @Override
+    public boolean isVClass(String uri) {
+        if (uri == null) {
+            return false;
+        }
 
-		if (super.isVClass(uri)) {
-			return true;
-		}
+        if (super.isVClass(uri)) {
+            return true;
+        }
 
-		VClassDao vclassDao = webappDaoFactory.getVClassDao();
-		for (VClass vClass : getVClasses(true)) {
-			for (String superClassUri: vclassDao.getAllSuperClassURIs(vClass.getURI())) {
-				if (uri.equals(superClassUri)) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+        VClassDao vclassDao = webappDaoFactory.getVClassDao();
+        for (VClass vClass : getVClasses(true)) {
+            for (String superClassUri : vclassDao.getAllSuperClassURIs(vClass.getURI())) {
+                if (uri.equals(superClassUri)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     /**
      * Overriding the base method so that we can do the sorting by arbitrary property here.  An
      * IndividualJena has a reference back to the model; everything else is just a dumb bean (for now).
      */
     @Override
-    protected void sortEnts2EntsForDisplay(){
-        if( getObjectPropertyList() == null ) return;
+    protected void sortEnts2EntsForDisplay() {
+        if (getObjectPropertyList() == null) {
+            return;
+        }
 
-		for (ObjectProperty prop : getObjectPropertyList()) {
+        for (ObjectProperty prop : getObjectPropertyList()) {
 			/*  if (prop.getObjectIndividualSortPropertyURI()==null) {
             	prop.sortObjectPropertyStatementsForDisplay(prop,prop.getObjectPropertyStatements());
             } else {*/
-			prop.sortObjectPropertyStatementsForDisplay(prop, prop.getObjectPropertyStatements());
-        /*  }*/
-		}
+            prop.sortObjectPropertyStatementsForDisplay(prop, prop.getObjectPropertyStatements());
+            /*  }*/
+        }
     }
 
-    private Collator collator = Collator.getInstance();
-
     private void sortObjectPropertyStatementsForDisplay(ObjectProperty prop) {
-    	try {
-    		log.info("Doing special sort for "+prop.getDomainPublic());
-    		final String sortPropertyURI = prop.getObjectIndividualSortPropertyURI();
+        try {
+            log.info("Doing special sort for " + prop.getDomainPublic());
+            final String sortPropertyURI = prop.getObjectIndividualSortPropertyURI();
             String tmpDir;
             boolean tmpAsc;
 
@@ -541,81 +568,87 @@ public class IndividualJena extends IndividualImpl implements Individual {
             tmpAsc = !"desc".equalsIgnoreCase(tmpDir);
 
             final boolean dir = tmpAsc;
-            Comparator comp = new Comparator(){
+            Comparator comp = new Comparator() {
                 final boolean cAsc = dir;
 
-                public final int compare(Object o1, Object o2){
-                    ObjectPropertyStatement e2e1= (ObjectPropertyStatement)o1, e2e2=(ObjectPropertyStatement)o2;
-                    Individual e1 , e2;
-                    e1 = e2e1 != null ? e2e1.getObject():null;
-                    e2 = e2e2 != null ? e2e2.getObject():null;
+                public final int compare(Object o1, Object o2) {
+                    ObjectPropertyStatement e2e1 = (ObjectPropertyStatement) o1, e2e2 =
+                        (ObjectPropertyStatement) o2;
+                    Individual e1, e2;
+                    e1 = e2e1 != null ? e2e1.getObject() : null;
+                    e2 = e2e2 != null ? e2e2.getObject() : null;
 
                     Object val1 = null, val2 = null;
-                    if( e1 != null ){
+                    if (e1 != null) {
                         try {
-                        	DataProperty dp = e1.getDataPropertyMap().get(sortPropertyURI);
-                        	if (dp.getDataPropertyStatements() != null && dp.getDataPropertyStatements().size()>0) {
-                        		val1 = dp.getDataPropertyStatements().get(0).getData();
-                        	}
-                        }
-                        catch (Exception e) {
-                        	val1 = "";
+                            DataProperty dp = e1.getDataPropertyMap().get(sortPropertyURI);
+                            if (dp.getDataPropertyStatements() != null &&
+                                dp.getDataPropertyStatements().size() > 0) {
+                                val1 = dp.getDataPropertyStatements().get(0).getData();
+                            }
+                        } catch (Exception e) {
+                            val1 = "";
                         }
                     } else {
-                        log.warn( "IndividualJena.sortObjectPropertiesForDisplay passed object property statement with no range entity.");
+                        log.warn(
+                            "IndividualJena.sortObjectPropertiesForDisplay passed object property statement with no range entity.");
                     }
 
-                    if( e2 != null ){
+                    if (e2 != null) {
                         try {
-                        	DataProperty dp = e2.getDataPropertyMap().get(sortPropertyURI);
-                        	if (dp.getDataPropertyStatements() != null && dp.getDataPropertyStatements().size()>0) {
-                        		val2 = dp.getDataPropertyStatements().get(0).getData();
-                        	}
-                        }
-                        catch (Exception e) {
-                        	val2 = "";
+                            DataProperty dp = e2.getDataPropertyMap().get(sortPropertyURI);
+                            if (dp.getDataPropertyStatements() != null &&
+                                dp.getDataPropertyStatements().size() > 0) {
+                                val2 = dp.getDataPropertyStatements().get(0).getData();
+                            }
+                        } catch (Exception e) {
+                            val2 = "";
                         }
                     } else {
-                        log.warn( "IndividualJena.sortObjectPropertyStatementsForDisplay() was passed an object property statement with no range entity.");
+                        log.warn(
+                            "IndividualJena.sortObjectPropertyStatementsForDisplay() was passed an object property statement with no range entity.");
                     }
 
                     int rv = 0;
                     try {
-                        if( val1 instanceof String )
-                        	rv = collator.compare(val1 , val2);
-                            //rv = ((String)val1).compareTo((String)val2);
-                        else if( val1 instanceof Date ) {
+                        if (val1 instanceof String) {
+                            rv = collator.compare(val1, val2);
+                        }
+                        //rv = ((String)val1).compareTo((String)val2);
+                        else if (val1 instanceof Date) {
                             DateTime dt1 = new DateTime(val1);
                             DateTime dt2 = new DateTime(val2);
                             rv = dt1.compareTo(dt2);
-                        }
-                        else
+                        } else {
                             rv = 0;
+                        }
                     } catch (NullPointerException e) {
                         log.error(e, e);
                     }
 
-                    if( cAsc )
+                    if (cAsc) {
                         return rv;
-                    else
+                    } else {
                         return rv * -1;
+                    }
                 }
             };
             try {
                 getObjectPropertyStatements().sort(comp);
             } catch (Exception e) {
-                log.error("Exception sorting object property statements for object property "+this.getURI());
+                log.error("Exception sorting object property statements for object property " +
+                    this.getURI());
             }
 
 
-    	} catch (Exception e) {
-    		log.error(e, e);
-    	}
+        } catch (Exception e) {
+            log.error(e, e);
+        }
     }
 
-	@Override
-	public void resolveAsFauxPropertyStatements(List<ObjectPropertyStatement> list) {
-		webappDaoFactory.getObjectPropertyStatementDao().resolveAsFauxPropertyStatements(list);
-	}
+    @Override
+    public void resolveAsFauxPropertyStatements(List<ObjectPropertyStatement> list) {
+        webappDaoFactory.getObjectPropertyStatementDao().resolveAsFauxPropertyStatements(list);
+    }
 
 }

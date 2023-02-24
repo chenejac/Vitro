@@ -4,84 +4,83 @@ package edu.cornell.mannlib.vitro.webapp.searchengine.solr;
 
 import java.util.Iterator;
 
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
-
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchResultDocument;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchResultDocumentList;
 import edu.cornell.mannlib.vitro.webapp.searchengine.base.BaseSearchResultDocument;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
 
 /**
  * A Solr-based implementation of SearchResultDocumentList.
- *
+ * <p>
  * It's necessary to use this instead of the base version, so the iterator can
  * convert each document as it is requested.
  */
 public class SolrSearchResultDocumentList implements SearchResultDocumentList {
-	private SolrDocumentList solrDocs;
+    private SolrDocumentList solrDocs;
 
-	public SolrSearchResultDocumentList(SolrDocumentList solrDocs) {
-		if (solrDocs == null) {
-			SolrDocumentList list = new SolrDocumentList();
-			list.setStart(0L);
-			list.setNumFound(0L);
-			list.setMaxScore(0.0F);
-			this.solrDocs = list;
-		} else {
-			this.solrDocs = solrDocs;
-		}
-	}
+    public SolrSearchResultDocumentList(SolrDocumentList solrDocs) {
+        if (solrDocs == null) {
+            SolrDocumentList list = new SolrDocumentList();
+            list.setStart(0L);
+            list.setNumFound(0L);
+            list.setMaxScore(0.0F);
+            this.solrDocs = list;
+        } else {
+            this.solrDocs = solrDocs;
+        }
+    }
 
-	@Override
-	public Iterator<SearchResultDocument> iterator() {
-		return new SearchResultDocumentIterator(solrDocs.iterator());
-	}
+    private static SearchResultDocument convertToSearchResultDocument(
+        SolrDocument solrDoc) {
+        return new BaseSearchResultDocument(
+            (String) solrDoc.getFieldValue("DocId"),
+            solrDoc.getFieldValuesMap());
+    }
 
-	@Override
-	public long getNumFound() {
-		return solrDocs.getNumFound();
-	}
+    @Override
+    public Iterator<SearchResultDocument> iterator() {
+        return new SearchResultDocumentIterator(solrDocs.iterator());
+    }
 
-	@Override
-	public int size() {
-		return solrDocs.size();
-	}
+    @Override
+    public long getNumFound() {
+        return solrDocs.getNumFound();
+    }
 
-	@Override
-	public SearchResultDocument get(int i) {
-		return convertToSearchResultDocument(solrDocs.get(i));
-	}
+    @Override
+    public int size() {
+        return solrDocs.size();
+    }
 
-	private static class SearchResultDocumentIterator implements
-			Iterator<SearchResultDocument> {
-		private final Iterator<SolrDocument> solrIterator;
+    @Override
+    public SearchResultDocument get(int i) {
+        return convertToSearchResultDocument(solrDocs.get(i));
+    }
 
-		public SearchResultDocumentIterator(Iterator<SolrDocument> solrIterator) {
-			this.solrIterator = solrIterator;
-		}
+    private static class SearchResultDocumentIterator implements
+        Iterator<SearchResultDocument> {
+        private final Iterator<SolrDocument> solrIterator;
 
-		@Override
-		public boolean hasNext() {
-			return solrIterator.hasNext();
-		}
+        public SearchResultDocumentIterator(Iterator<SolrDocument> solrIterator) {
+            this.solrIterator = solrIterator;
+        }
 
-		@Override
-		public SearchResultDocument next() {
-			return convertToSearchResultDocument(solrIterator.next());
-		}
+        @Override
+        public boolean hasNext() {
+            return solrIterator.hasNext();
+        }
 
-		@Override
-		public void remove() {
-			throw new UnsupportedOperationException();
-		}
+        @Override
+        public SearchResultDocument next() {
+            return convertToSearchResultDocument(solrIterator.next());
+        }
 
-	}
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
 
-	private static SearchResultDocument convertToSearchResultDocument(
-			SolrDocument solrDoc) {
-		return new BaseSearchResultDocument(
-				(String) solrDoc.getFieldValue("DocId"),
-				solrDoc.getFieldValuesMap());
-	}
+    }
 
 }

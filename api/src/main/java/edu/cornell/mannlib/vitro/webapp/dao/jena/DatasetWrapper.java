@@ -23,7 +23,9 @@ public class DatasetWrapper {
     public Dataset getDataset() {
         if (!closed) {
             return dataset;
-        } else throw new RuntimeException("No operations on a closed dataset");
+        } else {
+            throw new RuntimeException("No operations on a closed dataset");
+        }
     }
 
     public void close() {

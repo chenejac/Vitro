@@ -2,16 +2,16 @@
 
 package edu.cornell.mannlib.vitro.webapp.rdfservice;
 
+import java.util.List;
+
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 
-import java.util.List;
-
 /**
  * Base class for creating consumers of ResultSets
- *
+ * <p>
  * processQuerySolution MUST be overridden - it takes each QuerySolution in turn until the ResultSet is complete
- *
+ * <p>
  * startProcessing and endProcessing may be overridden if the implementation needs to know when the processing starts,
  * or when there are no more solutions left to process.
  */
@@ -86,6 +86,7 @@ public abstract class ResultSetConsumer {
 
         /**
          * Helper method that calls the processQuerySolution on an embedded ResultSetConsumer
+         *
          * @param qs Query solution
          */
         protected void chainProcessQuerySolution(QuerySolution qs) {
@@ -98,8 +99,9 @@ public abstract class ResultSetConsumer {
          * Helper method that calls startProcessing on an embedded ResultSetConsumer
          */
         protected void chainStartProcessing() {
-            if (innerConsumer != null)
+            if (innerConsumer != null) {
                 innerConsumer.startProcessing();
+            }
         }
 
         /**
@@ -121,6 +123,7 @@ public abstract class ResultSetConsumer {
 
         /**
          * Override the helper method for processing results to quickly check if there are any results
+         *
          * @param rs - the ResultSet to process
          */
         @Override

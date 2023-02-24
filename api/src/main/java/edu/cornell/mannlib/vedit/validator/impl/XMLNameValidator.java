@@ -5,12 +5,13 @@ package edu.cornell.mannlib.vedit.validator.impl;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import edu.cornell.mannlib.vedit.validator.Validator;
 import edu.cornell.mannlib.vedit.validator.ValidationObject;
+import edu.cornell.mannlib.vedit.validator.Validator;
 
 public class XMLNameValidator implements Validator {
 
-    private final static String ERR_MSG = "Must start with a letter or '_' and use only letters, digits, '.', '-' or '_'. No spaces allowed.";
+    private final static String ERR_MSG =
+        "Must start with a letter or '_' and use only letters, digits, '.', '-' or '_'. No spaces allowed.";
 
     Pattern pat = null;
     boolean permitEmpty = false;
@@ -20,11 +21,11 @@ public class XMLNameValidator implements Validator {
     }
 
     public XMLNameValidator(boolean permitEmpty) {
-	this();
-	this.permitEmpty = permitEmpty;
+        this();
+        this.permitEmpty = permitEmpty;
     }
 
-    public ValidationObject validate (Object obj) throws IllegalArgumentException {
+    public ValidationObject validate(Object obj) throws IllegalArgumentException {
         ValidationObject vo = new ValidationObject();
         String theString = null;
 
@@ -34,11 +35,11 @@ public class XMLNameValidator implements Validator {
             throw new IllegalArgumentException("Expected instance of String");
         }
 
-	if (permitEmpty && (theString == null || "".equals(theString))) {
-	    vo.setValid(true);
-	} else {
+        if (permitEmpty && (theString == null || "".equals(theString))) {
+            vo.setValid(true);
+        } else {
             Matcher mat = pat.matcher(theString);
-            if (mat.matches()){
+            if (mat.matches()) {
                 vo.setValid(true);
             } else {
                 vo.setValid(false);

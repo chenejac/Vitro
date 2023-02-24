@@ -1,5 +1,18 @@
 package org.linkeddatafragments.servlet;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.jena.riot.Lang;
 import org.linkeddatafragments.config.ConfigReader;
@@ -16,19 +29,6 @@ import org.linkeddatafragments.util.MIMEParse;
 import org.linkeddatafragments.views.ILinkedDataFragmentWriter;
 import org.linkeddatafragments.views.LinkedDataFragmentWriterFactory;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map.Entry;
-
 /**
  * Servlet that responds with a Linked Data Fragment.
  *
@@ -38,18 +38,16 @@ import java.util.Map.Entry;
  */
 public class LinkedDataFragmentServlet extends HttpServlet {
 
-    private final static long serialVersionUID = 1L;
-
-    // Parameters
-
     /**
      *
      */
-        public final static String CFGFILE = "configFile";
+    public final static String CFGFILE = "configFile";
 
-    private ConfigReader config;
+    // Parameters
+    private final static long serialVersionUID = 1L;
     private final HashMap<String, IDataSource> dataSources = new HashMap<>();
     private final Collection<String> mimeTypes = new ArrayList<>();
+    private ConfigReader config;
 
     private File getConfigFile(ServletConfig config) throws IOException {
         String path = config.getServletContext().getRealPath("/");
@@ -71,7 +69,6 @@ public class LinkedDataFragmentServlet extends HttpServlet {
     }
 
     /**
-     *
      * @param servletConfig
      * @throws ServletException
      */
@@ -83,14 +80,16 @@ public class LinkedDataFragmentServlet extends HttpServlet {
             config = new ConfigReader(new FileReader(configFile));
 
             // register data source types
-            for ( Entry<String,IDataSourceType> typeEntry : config.getDataSourceTypes().entrySet() ) {
-                DataSourceTypesRegistry.register( typeEntry.getKey(),
-                                                  typeEntry.getValue() );
+            for (Entry<String, IDataSourceType> typeEntry : config.getDataSourceTypes()
+                .entrySet()) {
+                DataSourceTypesRegistry.register(typeEntry.getKey(),
+                    typeEntry.getValue());
             }
 
             // register data sources
             for (Entry<String, JsonNode> dataSource : config.getDataSources().entrySet()) {
-                dataSources.put(dataSource.getKey(), DataSourceFactory.create(dataSource.getValue()));
+                dataSources
+                    .put(dataSource.getKey(), DataSourceFactory.create(dataSource.getValue()));
             }
 
             // register content types
@@ -108,13 +107,11 @@ public class LinkedDataFragmentServlet extends HttpServlet {
      *
      */
     @Override
-    public void destroy()
-    {
-        for ( IDataSource dataSource : dataSources.values() ) {
+    public void destroy() {
+        for (IDataSource dataSource : dataSources.values()) {
             try {
                 dataSource.close();
-            }
-            catch( Exception e ) {
+            } catch (Exception e) {
                 // ignore
             }
         }
@@ -127,13 +124,14 @@ public class LinkedDataFragmentServlet extends HttpServlet {
      * @return
      * @throws IOException
      */
-    private IDataSource getDataSource(HttpServletRequest request) throws DataSourceNotFoundException {
+    private IDataSource getDataSource(HttpServletRequest request)
+        throws DataSourceNotFoundException {
         String contextPath = request.getContextPath();
         String requestURI = request.getRequestURI();
 
         String path = contextPath == null
-                ? requestURI
-                : requestURI.substring(contextPath.length());
+            ? requestURI
+            : requestURI.substring(contextPath.length());
 
         if (path.equals("/") || path.isEmpty()) {
             final String baseURL = FragmentRequestParserBase.extractBaseURL(request, config);
@@ -149,13 +147,13 @@ public class LinkedDataFragmentServlet extends HttpServlet {
     }
 
     /**
-     *
      * @param request
      * @param response
      * @throws ServletException
      */
     @Override
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException {
         ILinkedDataFragment fragment = null;
         try {
             // do conneg
@@ -167,18 +165,19 @@ public class LinkedDataFragmentServlet extends HttpServlet {
             response.setCharacterEncoding("utf-8");
 
             // create a writer depending on the best matching mimeType
-            ILinkedDataFragmentWriter writer = LinkedDataFragmentWriterFactory.create(config.getPrefixes(), dataSources, bestMatch);
+            ILinkedDataFragmentWriter writer = LinkedDataFragmentWriterFactory
+                .create(config.getPrefixes(), dataSources, bestMatch);
 
             try {
 
-                final IDataSource dataSource = getDataSource( request );
+                final IDataSource dataSource = getDataSource(request);
 
                 final ILinkedDataFragmentRequest ldfRequest =
-                        dataSource.getRequestParser()
-                                  .parseIntoFragmentRequest( request, config );
+                    dataSource.getRequestParser()
+                        .parseIntoFragmentRequest(request, config);
 
                 fragment = dataSource.getRequestProcessor()
-                                  .createRequestedFragment( ldfRequest );
+                    .createRequestedFragment(ldfRequest);
 
                 writer.writeFragment(response.getOutputStream(), dataSource, fragment, ldfRequest);
 
@@ -196,14 +195,12 @@ public class LinkedDataFragmentServlet extends HttpServlet {
 
         } catch (Exception e) {
             throw new ServletException(e);
-        }
-        finally {
+        } finally {
             // close the fragment
-            if ( fragment != null ) {
+            if (fragment != null) {
                 try {
                     fragment.close();
-                }
-                catch ( Exception e ) {
+                } catch (Exception e) {
                     // ignore
                 }
             }

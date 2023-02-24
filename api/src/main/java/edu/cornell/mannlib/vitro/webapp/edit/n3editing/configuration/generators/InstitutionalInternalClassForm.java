@@ -2,10 +2,9 @@
 
 package edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.generators;
 
+import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Collections;
-
-import javax.servlet.http.HttpSession;
 
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.EditConfigurationVTwo;
@@ -13,12 +12,11 @@ import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.EditConfigurationVTw
 /**
  * Generate the EditConfiguration for the Institutional Internal Class Form.
  * see http://issues.library.cornell.edu/browse/NIHVIVO-2666
- *
- *
  */
-public class InstitutionalInternalClassForm extends BaseEditConfigurationGenerator implements EditConfigurationGenerator {
+public class InstitutionalInternalClassForm extends BaseEditConfigurationGenerator
+    implements EditConfigurationGenerator {
 
-    String INTERNAL_CLASS_ANNOTATION_URI= "<http://example.com/vivo#ChangeMeUniveristy>";
+    String INTERNAL_CLASS_ANNOTATION_URI = "<http://example.com/vivo#ChangeMeUniveristy>";
 
     @Override
     public EditConfigurationVTwo getEditConfiguration(VitroRequest vreq, HttpSession session) {
@@ -29,11 +27,12 @@ public class InstitutionalInternalClassForm extends BaseEditConfigurationGenerat
 
         //Set the n3 that is required for the edit
         //bdc34: don't know how the annotation will be structured
-        StringList n3ForInternalClass =new StringList( " ?internalClassUri "+INTERNAL_CLASS_ANNOTATION_URI+" \"true\" . " );
-        editConfig.setN3Required( n3ForInternalClass );
+        StringList n3ForInternalClass =
+            new StringList(" ?internalClassUri " + INTERNAL_CLASS_ANNOTATION_URI + " \"true\" . ");
+        editConfig.setN3Required(n3ForInternalClass);
 
         //bdc34: maybe this is redundant with the keys of the fields Map?
-        editConfig.setUrisOnform( new StringList( "internalClassUri" ));
+        editConfig.setUrisOnform(new StringList("internalClassUri"));
 
         //edit config should have URL to submit the form to
         //editConfig.setUrl
@@ -47,8 +46,8 @@ public class InstitutionalInternalClassForm extends BaseEditConfigurationGenerat
     }
 
 
-    public class StringList extends ArrayList<String>{
-        public StringList( String ... strings){
+    public class StringList extends ArrayList<String> {
+        public StringList(String... strings) {
             super();
             Collections.addAll(this, strings);
         }

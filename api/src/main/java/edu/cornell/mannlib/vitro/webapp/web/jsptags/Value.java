@@ -5,21 +5,21 @@ package edu.cornell.mannlib.vitro.webapp.web.jsptags;
 import javax.servlet.jsp.tagext.TagSupport;
 
 /**
- *
  * Build the options list using info in EditConfiguration.  If there are
  * parameters in the request that match the name attribute then mark that
  * option as selected.
- *
+ * <p>
  * User: bdc34
  * Date: Jan 26, 2008
  * Time: 3:00:22 PM
  */
 public class Value extends TagSupport {
-    private String  name;
+    private String name;
 
     public String getName() {
         return name;
     }
+
     public void setName(String n) {
         this.name = n;
     }
@@ -27,13 +27,12 @@ public class Value extends TagSupport {
 
     public int doStartTag() {
 
-            throw new Error("Value tag is no longer supported, Use InputElementFormating ");
-
+        throw new Error("Value tag is no longer supported, Use InputElementFormating ");
 
 
     }
 
-    public int doEndTag(){
-	  return EVAL_PAGE;
-	}
+    public int doEndTag() {
+        return EVAL_PAGE;
+    }
 }

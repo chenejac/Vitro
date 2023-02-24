@@ -4,6 +4,9 @@ package edu.cornell.mannlib.vitro.webapp.config;
 
 import static edu.cornell.mannlib.vitro.webapp.config.RevisionInfoBean.DUMMY_BEAN;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -18,15 +21,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.config.RevisionInfoBean.LevelRevisionInfo;
 import edu.cornell.mannlib.vitro.webapp.startup.StartupStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * <pre>
@@ -48,132 +46,132 @@ import edu.cornell.mannlib.vitro.webapp.startup.StartupStatus;
  * </pre>
  */
 public class RevisionInfoSetup implements ServletContextListener {
-	private static final Log log = LogFactory.getLog(RevisionInfoSetup.class);
+    static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    static final String RESOURCE_PATH = "/WEB-INF/resources/revisionInfo.txt";
+    private static final Log log = LogFactory.getLog(RevisionInfoSetup.class);
+    private static final Pattern LEVEL_INFO_PATTERN = Pattern
+        .compile("(.+) ~ (.+) ~ (.+)");
 
-	private static final Pattern LEVEL_INFO_PATTERN = Pattern
-			.compile("(.+) ~ (.+) ~ (.+)");
+    /**
+     * On startup, read the revision info from the resource file in the
+     * classpath.
+     * <p>
+     * If we can't find the file, or can't parse it, store an empty bean.
+     * <p>
+     * Don't allow any Exceptions to percolate up past this point.
+     */
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        ServletContext context = sce.getServletContext();
+        RevisionInfoBean bean;
+        try {
+            List<String> lines = readRevisionInfo(context);
+            bean = parseRevisionInformation(lines);
+        } catch (Exception e) {
+            StartupStatus.getBean(context).warning(this,
+                "Failed to load the revision info", e);
+            bean = DUMMY_BEAN;
+        }
 
-	static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-	static final String RESOURCE_PATH = "/WEB-INF/resources/revisionInfo.txt";
+        RevisionInfoBean.setBean(sce.getServletContext(), bean);
+    }
 
-	/**
-	 * On startup, read the revision info from the resource file in the
-	 * classpath.
-	 *
-	 * If we can't find the file, or can't parse it, store an empty bean.
-	 *
-	 * Don't allow any Exceptions to percolate up past this point.
-	 */
-	@Override
-	public void contextInitialized(ServletContextEvent sce) {
-		ServletContext context = sce.getServletContext();
-		RevisionInfoBean bean;
-		try {
-			List<String> lines = readRevisionInfo(context);
-			bean = parseRevisionInformation(lines);
-		} catch (Exception e) {
-			StartupStatus.getBean(context).warning(this,
-					"Failed to load the revision info", e);
-			bean = DUMMY_BEAN;
-		}
+    private List<String> readRevisionInfo(ServletContext context)
+        throws IOException {
+        BufferedReader reader = null;
+        try {
+            reader = openRevisionInfoReader(context);
+            return readSignificantLines(reader);
+        } finally {
+            closeReader(reader);
+        }
+    }
 
-		RevisionInfoBean.setBean(sce.getServletContext(), bean);
-	}
+    private BufferedReader openRevisionInfoReader(ServletContext context)
+        throws FileNotFoundException {
+        InputStream stream = context.getResourceAsStream(RESOURCE_PATH);
+        if (stream == null) {
+            throw new FileNotFoundException(
+                "Can't find a resource in the webapp at '" + RESOURCE_PATH
+                    + "'.");
+        } else {
+            return new BufferedReader(new InputStreamReader(stream));
+        }
+    }
 
-	private List<String> readRevisionInfo(ServletContext context)
-			throws IOException {
-		BufferedReader reader = null;
-		try {
-			reader = openRevisionInfoReader(context);
-			return readSignificantLines(reader);
-		} finally {
-			closeReader(reader);
-		}
-	}
+    private List<String> readSignificantLines(BufferedReader reader)
+        throws IOException {
+        List<String> lines = new ArrayList<String>();
 
-	private BufferedReader openRevisionInfoReader(ServletContext context)
-			throws FileNotFoundException {
-		InputStream stream = context.getResourceAsStream(RESOURCE_PATH);
-		if (stream == null) {
-			throw new FileNotFoundException(
-					"Can't find a resource in the webapp at '" + RESOURCE_PATH
-							+ "'.");
-		} else {
-			return new BufferedReader(new InputStreamReader(stream));
-		}
-	}
+        String line = null;
+        while (null != (line = reader.readLine())) {
+            line = line.trim();
+            if ((!line.isEmpty()) && (!line.startsWith("#"))) {
+                lines.add(line);
+            }
+        }
 
-	private List<String> readSignificantLines(BufferedReader reader)
-			throws IOException {
-		List<String> lines = new ArrayList<String>();
+        return lines;
+    }
 
-		String line = null;
-		while (null != (line = reader.readLine())) {
-			line = line.trim();
-			if ((!line.isEmpty()) && (!line.startsWith("#"))) {
-				lines.add(line);
-			}
-		}
+    private void closeReader(Reader reader) {
+        if (reader != null) {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-		return lines;
-	}
+    private RevisionInfoBean parseRevisionInformation(List<String> lines)
+        throws ParseException {
+        checkValidNumberOfLines(lines);
+        String dateLine = lines.get(0);
+        List<String> levelLines = lines.subList(1, lines.size());
 
-	private void closeReader(Reader reader) {
-		if (reader != null) {
-			try {
-				reader.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+        Date buildDate = parseDateLine(dateLine);
+        List<LevelRevisionInfo> levelInfos = parseLevelLines(levelLines);
+        return new RevisionInfoBean(buildDate, levelInfos);
+    }
 
-	private RevisionInfoBean parseRevisionInformation(List<String> lines)
-			throws ParseException {
-		checkValidNumberOfLines(lines);
-		String dateLine = lines.get(0);
-		List<String> levelLines = lines.subList(1, lines.size());
+    private void checkValidNumberOfLines(List<String> lines)
+        throws ParseException {
+        if (lines.isEmpty()) {
+            throw new ParseException(
+                "The revision info resource file contains no data.", 0);
+        }
+    }
 
-		Date buildDate = parseDateLine(dateLine);
-		List<LevelRevisionInfo> levelInfos = parseLevelLines(levelLines);
-		return new RevisionInfoBean(buildDate, levelInfos);
-	}
+    private Date parseDateLine(String dateLine) throws ParseException {
+        return new SimpleDateFormat(DATE_FORMAT).parse(dateLine);
+    }
 
-	private void checkValidNumberOfLines(List<String> lines)
-			throws ParseException {
-		if (lines.isEmpty()) {
-			throw new ParseException(
-					"The revision info resource file contains no data.", 0);
-		}
-	}
+    private List<LevelRevisionInfo> parseLevelLines(List<String> levelLines)
+        throws ParseException {
+        List<LevelRevisionInfo> infos = new ArrayList<LevelRevisionInfo>();
+        for (String line : levelLines) {
+            Matcher m = LEVEL_INFO_PATTERN.matcher(line);
+            if (m.matches()) {
+                String name = m.group(1).trim();
+                String release = m.group(2).trim();
+                String revision = m.group(3).trim();
+                infos.add(new LevelRevisionInfo(name, release, revision));
+            } else {
+                throw new ParseException(
+                    "Failed to parse the revision info in '" + line + "'",
+                    0);
+            }
+        }
+        return infos;
+    }
 
-	private Date parseDateLine(String dateLine) throws ParseException {
-		return new SimpleDateFormat(DATE_FORMAT).parse(dateLine);
-	}
-
-	private List<LevelRevisionInfo> parseLevelLines(List<String> levelLines)
-			throws ParseException {
-		List<LevelRevisionInfo> infos = new ArrayList<LevelRevisionInfo>();
-		for (String line : levelLines) {
-			Matcher m = LEVEL_INFO_PATTERN.matcher(line);
-			if (m.matches()) {
-				String name = m.group(1).trim();
-				String release = m.group(2).trim();
-				String revision = m.group(3).trim();
-				infos.add(new LevelRevisionInfo(name, release, revision));
-			} else {
-				throw new ParseException(
-						"Failed to parse the revision info in '" + line + "'",
-						0);
-			}
-		}
-		return infos;
-	}
-
-	/** On shutdown, clean up. */
-	@Override
-	public void contextDestroyed(ServletContextEvent sce) {
-		RevisionInfoBean.removeBean(sce.getServletContext());
-	}
+    /**
+     * On shutdown, clean up.
+     */
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) {
+        RevisionInfoBean.removeBean(sce.getServletContext());
+    }
 
 }

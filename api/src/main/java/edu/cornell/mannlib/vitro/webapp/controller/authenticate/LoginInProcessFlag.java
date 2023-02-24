@@ -7,48 +7,48 @@ import javax.servlet.http.HttpSession;
 
 /**
  * This sits in the session to say that a login is in process.
- *
+ * <p>
  * Authenticate sets the flag each time it redirects to the login widget, and
  * the login widget inspects the flag and resets it.
- *
+ * <p>
  * If ever the login widget finds that the flag is already reset, it knows that
  * the user navigated to the widget directly, rather than coming through
  * Authenticate, and so it discards any existing LoginProcessBean as obsolete.
  */
 public class LoginInProcessFlag {
-	private static final String ATTRIBUTE_NAME = LoginInProcessFlag.class
-			.getName();
+    private static final String ATTRIBUTE_NAME = LoginInProcessFlag.class
+        .getName();
 
-	/**
-	 * Set the flag, saying that a login session is in process.
-	 */
-	public static void set(HttpServletRequest request) {
-		if (request == null) {
-			throw new NullPointerException("request may not be null.");
-		}
+    /**
+     * Set the flag, saying that a login session is in process.
+     */
+    public static void set(HttpServletRequest request) {
+        if (request == null) {
+            throw new NullPointerException("request may not be null.");
+        }
 
-		request.getSession().setAttribute(ATTRIBUTE_NAME, Boolean.TRUE);
-	}
+        request.getSession().setAttribute(ATTRIBUTE_NAME, Boolean.TRUE);
+    }
 
-	/**
-	 * Check to see whether the flag is set. Reset it.
-	 */
-	public static boolean checkAndReset(HttpServletRequest request) {
-		if (request == null) {
-			throw new NullPointerException("request may not be null.");
-		}
+    /**
+     * Check to see whether the flag is set. Reset it.
+     */
+    public static boolean checkAndReset(HttpServletRequest request) {
+        if (request == null) {
+            throw new NullPointerException("request may not be null.");
+        }
 
-		HttpSession session = request.getSession(false);
-		if (session == null) {
-			return false;
-		}
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return false;
+        }
 
-		Object flag = session.getAttribute(ATTRIBUTE_NAME);
-		if (flag == null) {
-			return false;
-		}
+        Object flag = session.getAttribute(ATTRIBUTE_NAME);
+        if (flag == null) {
+            return false;
+        }
 
-		session.removeAttribute(ATTRIBUTE_NAME);
-		return true;
-	}
+        session.removeAttribute(ATTRIBUTE_NAME);
+        return true;
+    }
 }

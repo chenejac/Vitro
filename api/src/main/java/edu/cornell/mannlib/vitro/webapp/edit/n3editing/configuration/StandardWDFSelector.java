@@ -10,10 +10,11 @@ import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 
 public class StandardWDFSelector implements WDFSelector {
 
-    public static final WDFSelector selector = new StandardWDFSelector();;
+    public static final WDFSelector selector = new StandardWDFSelector();
+    ;
 
     public WebappDaoFactory getWdf(HttpServletRequest request,
-            ServletContext context) {
+                                   ServletContext context) {
         VitroRequest vreq = new VitroRequest(request);
         return vreq.getWebappDaoFactory();
     }

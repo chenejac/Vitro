@@ -4,82 +4,90 @@ package edu.cornell.mannlib.vitro.webapp.controller.json;
 
 import static edu.cornell.mannlib.vitro.webapp.controller.json.JsonServlet.REPLY_SIZE;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpSession;
-
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  *
  */
 public class GetEntitiesByVClassContinuation extends JsonArrayProducer {
-	private static final Log log = LogFactory
-		.getLog(GetEntitiesByVClassContinuation.class);
+    private static final Log log = LogFactory
+        .getLog(GetEntitiesByVClassContinuation.class);
 
-	protected GetEntitiesByVClassContinuation(VitroRequest vreq) {
-		super(vreq);
-	}
+    protected GetEntitiesByVClassContinuation(VitroRequest vreq) {
+        super(vreq);
+    }
 
-	@Override
-	protected ArrayNode process() throws ServletException {
+    @Override
+    protected ArrayNode process() throws ServletException {
         log.debug("in getEntitiesByVClassContinuation()");
         String resKey = vreq.getParameter("resultKey");
-        if( resKey == null )
+        if (resKey == null) {
             throw new ServletException("Could not get resultKey");
+        }
         HttpSession session = vreq.getSession();
-        if( session == null )
+        if (session == null) {
             throw new ServletException("there is no session to get the pervious results from");
+        }
         @SuppressWarnings("unchecked")
         List<Individual> entsInVClass = (List<Individual>) session.getAttribute(resKey);
-        if( entsInVClass == null )
+        if (entsInVClass == null) {
             throw new ServletException("Could not find List<Individual> for resultKey " + resKey);
+        }
 
         List<Individual> entsToReturn = new ArrayList<Individual>(REPLY_SIZE);
         boolean more = false;
         int count = 0;
         /* we have a large number of items to send back so we need to stash the list in the session scope */
-        if( entsInVClass.size() > REPLY_SIZE){
+        if (entsInVClass.size() > REPLY_SIZE) {
             more = true;
             ListIterator<Individual> entsFromVclass = entsInVClass.listIterator();
-            while ( entsFromVclass.hasNext() && count <= REPLY_SIZE ){
-                entsToReturn.add( entsFromVclass.next());
+            while (entsFromVclass.hasNext() && count <= REPLY_SIZE) {
+                entsToReturn.add(entsFromVclass.next());
                 entsFromVclass.remove();
                 count++;
             }
-            if( log.isDebugEnabled() ) log.debug("getEntitiesByVClassContinuation(): Creating reply with continue token," +
-            		" sending in this reply: " + count +", remaing to send: " + entsInVClass.size() );
+            if (log.isDebugEnabled()) {
+                log.debug("getEntitiesByVClassContinuation(): Creating reply with continue token," +
+                    " sending in this reply: " + count + ", remaing to send: " +
+                    entsInVClass.size());
+            }
         } else {
             //send out reply with no continuation
             entsToReturn = entsInVClass;
             count = entsToReturn.size();
             session.removeAttribute(resKey);
-            if( log.isDebugEnabled()) log.debug("getEntitiesByVClassContinuation(): sending " + count + " Ind without continue token");
+            if (log.isDebugEnabled()) {
+                log.debug(
+                    "getEntitiesByVClassContinuation(): sending " + count +
+                        " Ind without continue token");
+            }
         }
 
         //put all the entities on the JSON array
-        ArrayNode ja =  individualsToJson( entsToReturn );
+        ArrayNode ja = individualsToJson(entsToReturn);
 
         //put the responseGroup number on the end of the JSON array
-        if( more ){
+        if (more) {
             ObjectNode obj = JsonNodeFactory.instance.objectNode();
             obj.put("resultGroup", "true");
             obj.put("size", count);
 
             StringBuffer nextUrlStr = vreq.getRequestURL();
             nextUrlStr.append("?")
-                    .append("getEntitiesByVClass").append( "=1&" )
-                    .append("resultKey=").append( resKey );
+                .append("getEntitiesByVClass").append("=1&")
+                .append("resultKey=").append(resKey);
             obj.put("nextUrl", nextUrlStr.toString());
 
             ja.add(obj);

@@ -15,16 +15,16 @@ import edu.cornell.mannlib.vitro.webapp.utils.http.NotAcceptableException;
  */
 public class SparqlQueryApiConstructExecutor extends SparqlQueryApiRdfProducer {
 
-	public SparqlQueryApiConstructExecutor(RDFService rdfService,
-			String queryString, String acceptHeader)
-			throws AcceptHeaderParsingException, NotAcceptableException {
-		super(rdfService, queryString, acceptHeader);
-	}
+    public SparqlQueryApiConstructExecutor(RDFService rdfService,
+                                           String queryString, String acceptHeader)
+        throws AcceptHeaderParsingException, NotAcceptableException {
+        super(rdfService, queryString, acceptHeader);
+    }
 
-	@Override
-	protected InputStream getRawResultStream() throws RDFServiceException {
-		ModelSerializationFormat format = ModelSerializationFormat
-				.valueOf(mediaType.getSerializationFormat());
-		return rdfService.sparqlConstructQuery(queryString, format);
-	}
+    @Override
+    protected InputStream getRawResultStream() throws RDFServiceException {
+        ModelSerializationFormat format = ModelSerializationFormat
+            .valueOf(mediaType.getSerializationFormat());
+        return rdfService.sparqlConstructQuery(queryString, format);
+    }
 }

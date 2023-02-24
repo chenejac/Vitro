@@ -20,51 +20,51 @@ import edu.cornell.mannlib.vitro.webapp.dao.DisplayVocabulary;
  */
 public class RestrictHomeMenuItemEditingPolicy implements PolicyIface {
 
-	@Override
-	public PolicyDecision isAuthorized(IdentifierBundle whoToAuth,
-			RequestedAction whatToAuth) {
-		if (whatToAuth instanceof EditObjectPropertyStatement) {
-			return isAuthorized((EditObjectPropertyStatement) whatToAuth);
-		} else if (whatToAuth instanceof DropObjectPropertyStatement) {
-			return isAuthorized((DropObjectPropertyStatement) whatToAuth);
-		} else {
-			return notHandled();
-		}
-	}
+    @Override
+    public PolicyDecision isAuthorized(IdentifierBundle whoToAuth,
+                                       RequestedAction whatToAuth) {
+        if (whatToAuth instanceof EditObjectPropertyStatement) {
+            return isAuthorized((EditObjectPropertyStatement) whatToAuth);
+        } else if (whatToAuth instanceof DropObjectPropertyStatement) {
+            return isAuthorized((DropObjectPropertyStatement) whatToAuth);
+        } else {
+            return notHandled();
+        }
+    }
 
-	private PolicyDecision isAuthorized(
-			AbstractObjectPropertyStatementAction whatToAuth) {
-		if (whatToAuth.getPredicateUri()
-				.equals(DisplayVocabulary.HAS_ELEMENT)
-				&& whatToAuth.getObjectUri().equals(
-						DisplayVocabulary.HOME_MENU_ITEM)) {
-			return notAuthorized();
-		} else {
-			return notHandled();
-		}
-	}
+    private PolicyDecision isAuthorized(
+        AbstractObjectPropertyStatementAction whatToAuth) {
+        if (whatToAuth.getPredicateUri()
+            .equals(DisplayVocabulary.HAS_ELEMENT)
+            && whatToAuth.getObjectUri().equals(
+            DisplayVocabulary.HOME_MENU_ITEM)) {
+            return notAuthorized();
+        } else {
+            return notHandled();
+        }
+    }
 
-	private BasicPolicyDecision notHandled() {
-		return new BasicPolicyDecision(Authorization.INCONCLUSIVE,
-				"Doesn't handle this type of request");
-	}
+    private BasicPolicyDecision notHandled() {
+        return new BasicPolicyDecision(Authorization.INCONCLUSIVE,
+            "Doesn't handle this type of request");
+    }
 
-	private BasicPolicyDecision notAuthorized() {
-		return new BasicPolicyDecision(Authorization.UNAUTHORIZED,
-				"Can't edit home menu item.");
-	}
+    private BasicPolicyDecision notAuthorized() {
+        return new BasicPolicyDecision(Authorization.UNAUTHORIZED,
+            "Can't edit home menu item.");
+    }
 
-	public static class Setup implements ServletContextListener {
-		@Override
-		public void contextInitialized(ServletContextEvent sce) {
-			ServletPolicyList.addPolicyAtFront(sce.getServletContext(),
-					new RestrictHomeMenuItemEditingPolicy());
-		}
+    public static class Setup implements ServletContextListener {
+        @Override
+        public void contextInitialized(ServletContextEvent sce) {
+            ServletPolicyList.addPolicyAtFront(sce.getServletContext(),
+                new RestrictHomeMenuItemEditingPolicy());
+        }
 
-		@Override
-		public void contextDestroyed(ServletContextEvent ctx) {
-			// Nothing to do here.
-		}
+        @Override
+        public void contextDestroyed(ServletContextEvent ctx) {
+            // Nothing to do here.
+        }
 
-	}
+    }
 }

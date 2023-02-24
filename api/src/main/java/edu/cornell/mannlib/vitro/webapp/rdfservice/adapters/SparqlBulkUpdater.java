@@ -2,6 +2,8 @@
 
 package edu.cornell.mannlib.vitro.webapp.rdfservice.adapters;
 
+import java.io.StringWriter;
+
 import edu.cornell.mannlib.vitro.webapp.dao.jena.SparqlGraph;
 import org.apache.jena.graph.GraphEvents;
 import org.apache.jena.graph.GraphUtil;
@@ -10,8 +12,6 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.util.iterator.ExtendedIterator;
-
-import java.io.StringWriter;
 
 public class SparqlBulkUpdater extends AbstractBulkUpdater {
     private SparqlGraph graph;
@@ -44,7 +44,8 @@ public class SparqlBulkUpdater extends AbstractBulkUpdater {
                     m.write(sw, "N-TRIPLE");
                     StringBuilder updateStringBuff = new StringBuilder();
                     String graphURI = graph.getGraphURI();
-                    updateStringBuff.append(verb).append(" DATA { ").append((graphURI != null) ? "GRAPH <" + graphURI + "> { " : "");
+                    updateStringBuff.append(verb).append(" DATA { ")
+                        .append((graphURI != null) ? "GRAPH <" + graphURI + "> { " : "");
                     updateStringBuff.append(sw);
                     updateStringBuff.append((graphURI != null) ? " } " : "").append(" }");
 

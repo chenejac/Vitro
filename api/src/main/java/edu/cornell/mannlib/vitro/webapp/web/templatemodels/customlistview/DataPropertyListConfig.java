@@ -7,17 +7,15 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Set;
 
-import edu.cornell.mannlib.vitro.webapp.config.ConfigurationProperties;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.individual.DataPropertyTemplateModel;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.individual.DataPropertyTemplateModel.ConfigError;
 import freemarker.cache.TemplateLoader;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class DataPropertyListConfig {
     private static final Log log = LogFactory.getLog(DataPropertyListConfig.class);
@@ -43,44 +41,48 @@ public class DataPropertyListConfig {
     private String selectQuery;
     private String templateName;
 
-    public DataPropertyListConfig(DataPropertyTemplateModel dptm, TemplateLoader templateLoader, VitroRequest vreq,
-    		DataProperty dp, boolean editing)
+    public DataPropertyListConfig(DataPropertyTemplateModel dptm, TemplateLoader templateLoader,
+                                  VitroRequest vreq,
+                                  DataProperty dp, boolean editing)
         throws InvalidConfigurationException {
-    	this.dptm = dptm;
-    	this.vreq = vreq;
-    	WebappDaoFactory wadf = vreq.getWebappDaoFactory();
-    	this.templateLoader = templateLoader;
+        this.dptm = dptm;
+        this.vreq = vreq;
+        WebappDaoFactory wadf = vreq.getWebappDaoFactory();
+        this.templateLoader = templateLoader;
 
         // Get the custom config filename
         String configFileName = wadf.getDataPropertyDao().getCustomListViewConfigFileName(dp);
         if (configFileName == null) { // no custom config; use default config
             configFileName = DEFAULT_CONFIG_FILE_NAME;
         }
-        log.debug("Using list view config file " + configFileName + " for data property " + dp.getURI());
+        log.debug(
+            "Using list view config file " + configFileName + " for data property " + dp.getURI());
 
         String configFilePath = getConfigFilePath(configFileName);
 
         try {
             File config = new File(configFilePath);
-            if ( ! isDefaultConfig(configFileName) && ! config.exists() ) {
-                log.warn("Can't find config file " + configFilePath + " for data property " + dp.getURI() + "\n" +
-                        ". Using default config file instead.");
+            if (!isDefaultConfig(configFileName) && !config.exists()) {
+                log.warn("Can't find config file " + configFilePath + " for data property " +
+                    dp.getURI() + "\n" +
+                    ". Using default config file instead.");
                 configFilePath = getConfigFilePath(DEFAULT_CONFIG_FILE_NAME);
                 // Should we test for the existence of the default, and throw an error if it doesn't exist?
             }
             setValuesFromConfigFile(configFilePath, wadf, editing);
 
         } catch (Exception e) {
-            log.error("Error processing config file " + configFilePath + " for data property " + dp.getURI(), e);
+            log.error("Error processing config file " + configFilePath + " for data property " +
+                dp.getURI(), e);
             // What should we do here?
         }
 
-        if ( ! isDefaultConfig(configFileName) ) {
+        if (!isDefaultConfig(configFileName)) {
             ConfigError configError = checkConfiguration();
-            if ( configError != null ) { // the configuration contains an error
+            if (configError != null) { // the configuration contains an error
                 log.warn("Invalid list view config for data property " + dp.getURI() +
-                        " in " + configFilePath + ":\n" +
-                        configError + " Using default config instead.");
+                    " in " + configFilePath + ":\n" +
+                    configError + " Using default config instead.");
                 configFilePath = getConfigFilePath(DEFAULT_CONFIG_FILE_NAME);
                 setValuesFromConfigFile(configFilePath, wadf, editing);
             }
@@ -104,12 +106,12 @@ public class DataPropertyListConfig {
             return ConfigError.NO_SELECT_QUERY;
         }
 
-        if ( StringUtils.isBlank(templateName)) {
-           return ConfigError.NO_TEMPLATE;
+        if (StringUtils.isBlank(templateName)) {
+            return ConfigError.NO_TEMPLATE;
         }
 
         try {
-            if ( templateLoader.findTemplateSource(templateName) == null ) {
+            if (templateLoader.findTemplateSource(templateName) == null) {
                 return ConfigError.TEMPLATE_NOT_FOUND;
             }
         } catch (IOException e) {
@@ -120,38 +122,39 @@ public class DataPropertyListConfig {
     }
 
     private void setValuesFromConfigFile(String configFilePath, WebappDaoFactory wdf,
-            boolean editing) {
-		try {
-			FileReader reader = new FileReader(configFilePath);
-			CustomListViewConfigFile configFileContents = new CustomListViewConfigFile(reader);
+                                         boolean editing) {
+        try {
+            FileReader reader = new FileReader(configFilePath);
+            CustomListViewConfigFile configFileContents = new CustomListViewConfigFile(reader);
 
-			selectQuery = configFileContents.getSelectQuery(false, editing, ListConfigUtils.getUsePreciseSubquery(vreq));
-			templateName = configFileContents.getTemplateName();
-			constructQueries = configFileContents.getConstructQueries();
+            selectQuery = configFileContents
+                .getSelectQuery(false, editing, ListConfigUtils.getUsePreciseSubquery(vreq));
+            templateName = configFileContents.getTemplateName();
+            constructQueries = configFileContents.getConstructQueries();
 
-		} catch (Exception e) {
-			log.error("Error processing config file " + configFilePath, e);
-		}
+        } catch (Exception e) {
+            log.error("Error processing config file " + configFilePath, e);
+        }
     }
 
     private String getConfigFilePath(String filename) {
         return vreq.getSession().getServletContext().getRealPath(CONFIG_FILE_PATH + filename);
     }
 
-	public String getSelectQuery() {
-		return this.selectQuery;
-	}
+    public String getSelectQuery() {
+        return this.selectQuery;
+    }
 
-	public Set<String> getConstructQueries() {
-		return this.constructQueries;
-	}
+    public Set<String> getConstructQueries() {
+        return this.constructQueries;
+    }
 
-	public String getTemplateName() {
-		return this.templateName;
-	}
+    public String getTemplateName() {
+        return this.templateName;
+    }
 
-	public boolean isDefaultListView() {
-		return this.isDefaultConfig;
-	}
+    public boolean isDefaultListView() {
+        return this.isDefaultConfig;
+    }
 
 }

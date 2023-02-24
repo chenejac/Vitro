@@ -13,14 +13,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.jena.ontology.OntModel;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.Resource;
-
 import edu.cornell.mannlib.vitro.webapp.dao.jena.event.EditEvent;
 import edu.cornell.mannlib.vitro.webapp.modules.tboxreasoner.TBoxReasonerStatus;
 import edu.cornell.mannlib.vitro.webapp.tboxreasoner.ConfiguredReasonerListener;
@@ -36,218 +28,224 @@ import edu.cornell.mannlib.vitro.webapp.utils.jena.criticalsection.LockableModel
 import edu.cornell.mannlib.vitro.webapp.utils.jena.criticalsection.LockableOntModel;
 import edu.cornell.mannlib.vitro.webapp.utils.jena.criticalsection.LockedOntModel;
 import edu.cornell.mannlib.vitro.webapp.utils.threads.VitroBackgroundThread;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.jena.ontology.OntModel;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
 
 /**
  * The basic implementation of the TBoxReasonerDriver. It gets help from a
  * listener, an executor, and a reasoner.
- *
+ * <p>
  * Create a listener that listens for changes to the TBox, but filters them
  * according to a ReasonerConfiguration object. The listener accumulates the
  * changes it likes, until it detects an ending EditEvent. Then it passes the
  * change set back to the driver.
- *
+ * <p>
  * Each time a change set is received, a task is created and given to the
  * executor to run. The executor is single-threaded, so the change sets are
  * processed in sequence.
- *
+ * <p>
  * Processing involves the following steps:
- *
+ * <p>
  * 1. Telling the reasoner about the changes, so it can update its own internal
  * ontology model.
- *
+ * <p>
  * 2. Telling the reasoner to re-inference its model. A status is returned.
- *
+ * <p>
  * 3. Asking the reasoner for the inferences from its model. As with the initial
  * changes, these inferences are filtered according to the
  * ReasonerConfiguration.
- *
+ * <p>
  * 4. Synchronizing the applications TBox inferences model with the inferences
  * obtained from the reasoner.
- *
+ * <p>
  * ----------------------
- *
+ * <p>
  * Possible optimization: if change sets come in quickly enough that the third
  * set is received while the first is still being processed, it would be
  * reasonable to merge the second and third sets into one.
  */
 public class BasicTBoxReasonerDriver implements TBoxReasonerDriver {
-	private static final Log log = LogFactory
-			.getLog(BasicTBoxReasonerDriver.class);
+    private static final Log log = LogFactory
+        .getLog(BasicTBoxReasonerDriver.class);
 
-	private final LockableOntModel lockableAssertionsModel;
-	private final LockableModel lockableInferencesModel;
-	private final LockableOntModel lockableFullModel;
+    private final LockableOntModel lockableAssertionsModel;
+    private final LockableModel lockableInferencesModel;
+    private final LockableOntModel lockableFullModel;
 
-	private final ReasonerConfiguration reasonerConfiguration;
+    private final ReasonerConfiguration reasonerConfiguration;
 
-	private final ConfiguredReasonerListener listener;
+    private final ConfiguredReasonerListener listener;
 
-	private final Set<TBoxChanges> pendingChangeSets;
+    private final Set<TBoxChanges> pendingChangeSets;
 
-	private final ExecutorService executorService;
+    private final ExecutorService executorService;
 
-	private final TBoxReasoner reasoner;
+    private final TBoxReasoner reasoner;
 
-	private TBoxReasoner.Status innerStatus;
+    private TBoxReasoner.Status innerStatus;
 
-	public BasicTBoxReasonerDriver(OntModel assertionsModel,
-			Model inferencesModel, OntModel fullModel, TBoxReasoner reasoner,
-			ReasonerConfiguration reasonerConfiguration) {
-		this.lockableAssertionsModel = new LockableOntModel(assertionsModel);
-		this.lockableInferencesModel = new LockableModel(inferencesModel);
-		this.lockableFullModel = new LockableOntModel(fullModel);
-		this.reasoner = reasoner;
-		this.reasonerConfiguration = reasonerConfiguration;
+    public BasicTBoxReasonerDriver(OntModel assertionsModel,
+                                   Model inferencesModel, OntModel fullModel, TBoxReasoner reasoner,
+                                   ReasonerConfiguration reasonerConfiguration) {
+        this.lockableAssertionsModel = new LockableOntModel(assertionsModel);
+        this.lockableInferencesModel = new LockableModel(inferencesModel);
+        this.lockableFullModel = new LockableOntModel(fullModel);
+        this.reasoner = reasoner;
+        this.reasonerConfiguration = reasonerConfiguration;
 
-		this.listener = new ConfiguredReasonerListener(reasonerConfiguration,
-				this);
+        this.listener = new ConfiguredReasonerListener(reasonerConfiguration,
+            this);
 
-		this.pendingChangeSets = Collections
-				.synchronizedSet(new HashSet<TBoxChanges>());
+        this.pendingChangeSets = Collections
+            .synchronizedSet(new HashSet<TBoxChanges>());
 
-		this.executorService = Executors.newFixedThreadPool(1,
-				new VitroBackgroundThread.Factory("TBoxReasoner"));
+        this.executorService = Executors.newFixedThreadPool(1,
+            new VitroBackgroundThread.Factory("TBoxReasoner"));
 
-		assertionsModel.getBaseModel().register(listener);
-		fullModel.getBaseModel().register(listener);
+        assertionsModel.getBaseModel().register(listener);
+        fullModel.getBaseModel().register(listener);
 
-		doInitialReasoning();
-	}
+        doInitialReasoning();
+    }
 
-	private void doInitialReasoning() {
-		try (LockedOntModel assertionsModel = lockableAssertionsModel.read()) {
-			for (ReasonerStatementPattern pat : reasonerConfiguration
-					.getInferenceDrivingPatternAllowSet()) {
-				listener.addedStatements(assertionsModel.listStatements(
-						(Resource) null, pat.getPredicate(), (RDFNode) null));
-			}
-		}
-		listener.notifyEvent(null, new EditEvent(null, false));
-	}
+    private void doInitialReasoning() {
+        try (LockedOntModel assertionsModel = lockableAssertionsModel.read()) {
+            for (ReasonerStatementPattern pat : reasonerConfiguration
+                .getInferenceDrivingPatternAllowSet()) {
+                listener.addedStatements(assertionsModel.listStatements(
+                    (Resource) null, pat.getPredicate(), (RDFNode) null));
+            }
+        }
+        listener.notifyEvent(null, new EditEvent(null, false));
+    }
 
-	@Override
-	public TBoxReasonerStatus getStatus() {
-		return new FullStatus(innerStatus, !pendingChangeSets.isEmpty());
-	}
+    @Override
+    public TBoxReasonerStatus getStatus() {
+        return new FullStatus(innerStatus, !pendingChangeSets.isEmpty());
+    }
 
-	@Override
-	public void runSynchronizer(TBoxChanges changeSet) {
-		if (!changeSet.isEmpty()) {
-			executorService.execute(new ReasoningTask(changeSet));
-		}
-	}
+    @Override
+    public void runSynchronizer(TBoxChanges changeSet) {
+        if (!changeSet.isEmpty()) {
+            executorService.execute(new ReasoningTask(changeSet));
+        }
+    }
 
-	/**
-	 * Shut down the thread that runs the reasoning tasks. Don't wait longer
-	 * than 1 minute.
-	 */
-	public void shutdown() {
-		executorService.shutdown();
-		int waited = 0;
-		while (waited < 60 && !executorService.isTerminated()) {
-			try {
-				log.info("Waiting for TBox reasoner to terminate.");
-				executorService.awaitTermination(5, TimeUnit.SECONDS);
-				waited += 5;
-			} catch (InterruptedException e) {
-				// Should never happen.
-				e.printStackTrace();
-				break;
-			}
-		}
-		if (!executorService.isTerminated()) {
-			log.warn("Forcing TBox reasoner to terminate.");
-			executorService.shutdownNow();
-		}
-		if (!executorService.isTerminated()) {
-			log.error("TBox reasoner did not terminate.");
-		}
-	}
+    /**
+     * Shut down the thread that runs the reasoning tasks. Don't wait longer
+     * than 1 minute.
+     */
+    public void shutdown() {
+        executorService.shutdown();
+        int waited = 0;
+        while (waited < 60 && !executorService.isTerminated()) {
+            try {
+                log.info("Waiting for TBox reasoner to terminate.");
+                executorService.awaitTermination(5, TimeUnit.SECONDS);
+                waited += 5;
+            } catch (InterruptedException e) {
+                // Should never happen.
+                e.printStackTrace();
+                break;
+            }
+        }
+        if (!executorService.isTerminated()) {
+            log.warn("Forcing TBox reasoner to terminate.");
+            executorService.shutdownNow();
+        }
+        if (!executorService.isTerminated()) {
+            log.error("TBox reasoner did not terminate.");
+        }
+    }
 
-	private class ReasoningTask implements Runnable {
-		private final TBoxChanges changes;
-		private List<ReasonerStatementPattern> patternList;
+    private static class FullStatus implements TBoxReasonerStatus {
+        private final TBoxReasoner.Status reasonerStatus;
+        private final boolean reasoning;
 
-		public ReasoningTask(TBoxChanges changes) {
-			this.changes = changes;
-			pendingChangeSets.add(changes);
-		}
+        public FullStatus(Status reasonerStatus, boolean reasoning) {
+            this.reasonerStatus = reasonerStatus;
+            this.reasoning = reasoning;
+        }
 
-		@Override
-		public void run() {
-			try {
-				setWorking();
+        @Override
+        public boolean isReasoning() {
+            return reasoning;
+        }
 
-				reasoner.updateReasonerModel(changes);
-				innerStatus = reasoner.performReasoning();
+        @Override
+        public boolean isConsistent() {
+            return reasonerStatus.isConsistent();
+        }
 
-				buildPatternList();
-				updateInferencesModel();
+        @Override
+        public boolean isInErrorState() {
+            return reasonerStatus.isInErrorState();
+        }
 
-				setIdle();
-			} finally {
-				pendingChangeSets.remove(changes);
-			}
-		}
+        @Override
+        public String getExplanation() {
+            String explanation = reasonerStatus.getExplanation();
+            return explanation == null ? "" : explanation;
+        }
 
-		private void setWorking() {
-			Thread current = Thread.currentThread();
-			if (current instanceof VitroBackgroundThread) {
-				((VitroBackgroundThread) current).setWorkLevel(WORKING);
-			}
-		}
+    }
 
-		private void setIdle() {
-			Thread current = Thread.currentThread();
-			if (current instanceof VitroBackgroundThread) {
-				((VitroBackgroundThread) current).setWorkLevel(IDLE);
-			}
-		}
+    private class ReasoningTask implements Runnable {
+        private final TBoxChanges changes;
+        private List<ReasonerStatementPattern> patternList;
 
-		private void buildPatternList() {
-			PatternListBuilder patternListBuilder = new PatternListBuilder(
-					reasonerConfiguration, reasoner, changes);
-			this.patternList = patternListBuilder.build();
-		}
+        public ReasoningTask(TBoxChanges changes) {
+            this.changes = changes;
+            pendingChangeSets.add(changes);
+        }
 
-		private void updateInferencesModel() {
-			InferenceModelUpdater inferenceModelUpdater = new InferenceModelUpdater(
-					reasoner, lockableInferencesModel, lockableFullModel,
-					listener);
-			inferenceModelUpdater.update(patternList);
-		}
-	}
+        @Override
+        public void run() {
+            try {
+                setWorking();
 
-	private static class FullStatus implements TBoxReasonerStatus {
-		private final TBoxReasoner.Status reasonerStatus;
-		private final boolean reasoning;
+                reasoner.updateReasonerModel(changes);
+                innerStatus = reasoner.performReasoning();
 
-		public FullStatus(Status reasonerStatus, boolean reasoning) {
-			this.reasonerStatus = reasonerStatus;
-			this.reasoning = reasoning;
-		}
+                buildPatternList();
+                updateInferencesModel();
 
-		@Override
-		public boolean isReasoning() {
-			return reasoning;
-		}
+                setIdle();
+            } finally {
+                pendingChangeSets.remove(changes);
+            }
+        }
 
-		@Override
-		public boolean isConsistent() {
-			return reasonerStatus.isConsistent();
-		}
+        private void setWorking() {
+            Thread current = Thread.currentThread();
+            if (current instanceof VitroBackgroundThread) {
+                ((VitroBackgroundThread) current).setWorkLevel(WORKING);
+            }
+        }
 
-		@Override
-		public boolean isInErrorState() {
-			return reasonerStatus.isInErrorState();
-		}
+        private void setIdle() {
+            Thread current = Thread.currentThread();
+            if (current instanceof VitroBackgroundThread) {
+                ((VitroBackgroundThread) current).setWorkLevel(IDLE);
+            }
+        }
 
-		@Override
-		public String getExplanation() {
-			String explanation = reasonerStatus.getExplanation();
-			return explanation == null ? "" : explanation;
-		}
+        private void buildPatternList() {
+            PatternListBuilder patternListBuilder = new PatternListBuilder(
+                reasonerConfiguration, reasoner, changes);
+            this.patternList = patternListBuilder.build();
+        }
 
-	}
+        private void updateInferencesModel() {
+            InferenceModelUpdater inferenceModelUpdater = new InferenceModelUpdater(
+                reasoner, lockableInferencesModel, lockableFullModel,
+                listener);
+            inferenceModelUpdater.update(patternList);
+        }
+    }
 
 }

@@ -2,11 +2,10 @@
 
 package edu.cornell.mannlib.vitro.webapp.web.templatemodels.individuallist;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class ListedIndividual extends BaseListedIndividual {
 

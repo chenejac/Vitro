@@ -3,10 +3,8 @@
 package edu.cornell.mannlib.vitro.webapp.beans;
 
 /**
- *
  * a class representing a direct subsumption relationship
  * between two ontology classes
- *
  */
 public class Classes2Classes {
 
@@ -18,22 +16,52 @@ public class Classes2Classes {
     private String subclassNamespace = null;
     private String subclassLocalName = null;
 
-    public String getSuperclassURI(){ return superclassURI;}
-    public void setSuperclassURI(String in){ superclassURI=in;}
+    public String getSuperclassURI() {
+        return superclassURI;
+    }
 
-    public String getSuperclassNamespace(){ return superclassNamespace; }
-    public void setSuperclassNamespace(String superclassNamespace){ this.superclassNamespace=superclassNamespace;}
+    public void setSuperclassURI(String in) {
+        superclassURI = in;
+    }
 
-    public String getSuperclassLocalName(){ return superclassLocalName; }
-    public void setSuperclassLocalName(String superclassLocalName){ this.superclassLocalName=superclassLocalName;}
+    public String getSuperclassNamespace() {
+        return superclassNamespace;
+    }
 
-    public String getSubclassURI(){ return subclassURI;}
-    public void setSubclassURI(String in){ subclassURI=in;}
+    public void setSuperclassNamespace(String superclassNamespace) {
+        this.superclassNamespace = superclassNamespace;
+    }
 
-    public String getSubclassNamespace(){ return subclassNamespace; }
-    public void setSubclassNamespace(String subclassNamespace){ this.subclassNamespace=subclassNamespace;}
+    public String getSuperclassLocalName() {
+        return superclassLocalName;
+    }
 
-    public String getSubclassLocalName(){ return subclassLocalName; }
-    public void setSubclassLocalName(String subclassLocalName){ this.subclassLocalName=subclassLocalName;}
+    public void setSuperclassLocalName(String superclassLocalName) {
+        this.superclassLocalName = superclassLocalName;
+    }
+
+    public String getSubclassURI() {
+        return subclassURI;
+    }
+
+    public void setSubclassURI(String in) {
+        subclassURI = in;
+    }
+
+    public String getSubclassNamespace() {
+        return subclassNamespace;
+    }
+
+    public void setSubclassNamespace(String subclassNamespace) {
+        this.subclassNamespace = subclassNamespace;
+    }
+
+    public String getSubclassLocalName() {
+        return subclassLocalName;
+    }
+
+    public void setSubclassLocalName(String subclassLocalName) {
+        this.subclassLocalName = subclassLocalName;
+    }
 
 }

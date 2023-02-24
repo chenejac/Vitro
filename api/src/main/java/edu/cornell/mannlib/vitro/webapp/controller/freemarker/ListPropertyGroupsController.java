@@ -2,15 +2,12 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 
+import javax.servlet.annotation.WebServlet;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.AuthorizationRequest;
@@ -23,10 +20,11 @@ import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.Res
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.TemplateResponseValues;
 import edu.cornell.mannlib.vitro.webapp.dao.PropertyGroupDao;
 import edu.cornell.mannlib.vitro.webapp.utils.json.JacksonUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import javax.servlet.annotation.WebServlet;
-
-@WebServlet(name = "ListPropertyGroupsController", urlPatterns = {"/listPropertyGroups"} )
+@WebServlet(name = "ListPropertyGroupsController", urlPatterns = {"/listPropertyGroups"})
 public class ListPropertyGroupsController extends FreemarkerHttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -35,12 +33,12 @@ public class ListPropertyGroupsController extends FreemarkerHttpServlet {
     private static final String TEMPLATE_NAME = "siteAdmin-objectPropHierarchy.ftl";
 
     @Override
-	protected AuthorizationRequest requiredActions(VitroRequest vreq) {
-		return SimplePermission.EDIT_ONTOLOGY.ACTION;
-	}
+    protected AuthorizationRequest requiredActions(VitroRequest vreq) {
+        return SimplePermission.EDIT_ONTOLOGY.ACTION;
+    }
 
     @Override
-	protected ResponseValues processRequest(VitroRequest vreq) {
+    protected ResponseValues processRequest(VitroRequest vreq) {
 
         Map<String, Object> body = new HashMap<String, Object>();
         try {
@@ -51,77 +49,85 @@ public class ListPropertyGroupsController extends FreemarkerHttpServlet {
             PropertyGroupDao dao = vreq.getUnfilteredWebappDaoFactory().getPropertyGroupDao();
 
             List<PropertyGroup> groups = dao.getPublicGroups(WITH_PROPERTIES);
-                StringBuilder json = new StringBuilder();
-                int counter = 0;
+            StringBuilder json = new StringBuilder();
+            int counter = 0;
 
-                if (groups != null) {
-                	for(PropertyGroup pg: groups) {
-                        if ( counter > 0 ) {
-                            json.append(", ");
-                        }
-                        String publicName = pg.getName();
-                        if ( StringUtils.isBlank(publicName) ) {
-                            publicName = "(unnamed group)";
-                        }
-                        try {
-                            json.append("{ \"name\": ").append(JacksonUtils.quote("<a href='./editForm?uri=" + URLEncoder.encode(pg.getURI(), "UTF-8") + "&amp;controller=PropertyGroup'>" + publicName + "</a>")).append(", ");
-                        } catch (Exception e) {
-                            json.append("{ \"name\": ").append(JacksonUtils.quote(publicName)).append(", ");
-                        }
-                        Integer t;
+            if (groups != null) {
+                for (PropertyGroup pg : groups) {
+                    if (counter > 0) {
+                        json.append(", ");
+                    }
+                    String publicName = pg.getName();
+                    if (StringUtils.isBlank(publicName)) {
+                        publicName = "(unnamed group)";
+                    }
+                    try {
+                        json.append("{ \"name\": ").append(JacksonUtils.quote(
+                            "<a href='./editForm?uri=" + URLEncoder.encode(pg.getURI(), "UTF-8") +
+                                "&amp;controller=PropertyGroup'>" + publicName + "</a>"))
+                            .append(", ");
+                    } catch (Exception e) {
+                        json.append("{ \"name\": ").append(JacksonUtils.quote(publicName))
+                            .append(", ");
+                    }
+                    Integer t;
 
-                        json.append("\"data\": { \"displayRank\": \"").append(((t = Integer.valueOf(pg.getDisplayRank())) != -1) ? t.toString() : "").append("\"}, ");
+                    json.append("\"data\": { \"displayRank\": \"").append(
+                        ((t = Integer.valueOf(pg.getDisplayRank())) != -1) ? t.toString() : "")
+                        .append("\"}, ");
 
-                        List<Property> propertyList = pg.getPropertyList();
-                        if (propertyList != null && propertyList.size()>0) {
-                            json.append("\"children\": [");
-                            Iterator<Property> propIt = propertyList.iterator();
-                            while (propIt.hasNext()) {
-                                Property prop = propIt.next();
-                                String controllerStr = "propertyEdit";
-                                String nameStr =
-                                	   (prop.getLabel() == null)
-                                	           ? ""
-                                	           : prop.getLabel();
-                                if (prop instanceof ObjectProperty) {
-                                	nameStr = ((ObjectProperty) prop).getDomainPublic();
-                                } else if (prop instanceof DataProperty) {
-                                	controllerStr = "datapropEdit";
-                                	nameStr = ((DataProperty) prop).getName();
+                    List<Property> propertyList = pg.getPropertyList();
+                    if (propertyList != null && propertyList.size() > 0) {
+                        json.append("\"children\": [");
+                        Iterator<Property> propIt = propertyList.iterator();
+                        while (propIt.hasNext()) {
+                            Property prop = propIt.next();
+                            String controllerStr = "propertyEdit";
+                            String nameStr =
+                                (prop.getLabel() == null)
+                                    ? ""
+                                    : prop.getLabel();
+                            if (prop instanceof ObjectProperty) {
+                                nameStr = ((ObjectProperty) prop).getDomainPublic();
+                            } else if (prop instanceof DataProperty) {
+                                controllerStr = "datapropEdit";
+                                nameStr = ((DataProperty) prop).getName();
+                            }
+                            if (prop.getURI() != null) {
+                                try {
+                                    json.append("{ \"name\": ")
+                                        .append(JacksonUtils.quote("<a href='" + controllerStr
+                                            + "?uri=" + URLEncoder.encode(prop.getURI(), "UTF-8") +
+                                            "'>" + nameStr + "</a>")).append(", ");
+                                } catch (Exception e) {
+                                    json.append(JacksonUtils.quote(nameStr)).append(", ");
                                 }
-                                if (prop.getURI() != null) {
-                                    try {
-                                        json.append("{ \"name\": ").append(JacksonUtils.quote("<a href='" + controllerStr
-                                                + "?uri=" + URLEncoder.encode(prop.getURI(), "UTF-8") + "'>" + nameStr + "</a>")).append(", ");
-                                    } catch (Exception e) {
-                                        json.append(JacksonUtils.quote(nameStr)).append(", ");
-                                    }
-                                } else {
-                                    json.append("\"\", ");
-                                }
+                            } else {
+                                json.append("\"\", ");
+                            }
 
-                                json.append("\"data\": { \"shortDef\": \"\"}, \"children\": [] ");
-                                if (propIt.hasNext())
-                                    json.append("} , ");
-                                else
-                                    json.append("}] ");
+                            json.append("\"data\": { \"shortDef\": \"\"}, \"children\": [] ");
+                            if (propIt.hasNext()) {
+                                json.append("} , ");
+                            } else {
+                                json.append("}] ");
                             }
                         }
-                        else {
-                            json.append("\"children\": [] ");
-                        }
-                        json.append("} ");
-                        counter += 1;
+                    } else {
+                        json.append("\"children\": [] ");
                     }
+                    json.append("} ");
+                    counter += 1;
                 }
-
-                body.put("jsonTree", json.toString());
-                log.debug("json = " + json);
-            } catch (Throwable t) {
-                    t.printStackTrace();
             }
 
-            return new TemplateResponseValues(TEMPLATE_NAME, body);
+            body.put("jsonTree", json.toString());
+            log.debug("json = " + json);
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
+
+        return new TemplateResponseValues(TEMPLATE_NAME, body);
+    }
 
 }

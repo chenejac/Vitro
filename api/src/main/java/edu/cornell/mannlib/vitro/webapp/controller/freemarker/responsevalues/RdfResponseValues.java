@@ -2,9 +2,8 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues;
 
-import org.apache.jena.rdf.model.Model;
-
 import edu.cornell.mannlib.vitro.webapp.web.ContentType;
+import org.apache.jena.rdf.model.Model;
 
 public class RdfResponseValues extends BaseResponseValues {
     private final Model model;
@@ -21,6 +20,6 @@ public class RdfResponseValues extends BaseResponseValues {
 
     @Override
     public Model getModel() {
-       return model;
+        return model;
     }
 }

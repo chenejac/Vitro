@@ -10,19 +10,17 @@ import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.EditConfigurationVTw
 
 /**
  * Auto complete object property form generator folded into DefualtObjectPropertyFormGenerator.java
- *
  */
 public class AutocompleteObjectPropertyFormGenerator extends DefaultObjectPropertyFormGenerator {
 
-	@Override
-	public EditConfigurationVTwo getEditConfiguration(VitroRequest vreq,
-			HttpSession session) throws Exception {
-		//force auto complete
-		doAutoComplete = true;
+    @Override
+    public EditConfigurationVTwo getEditConfiguration(VitroRequest vreq,
+                                                      HttpSession session) throws Exception {
+        //force auto complete
+        doAutoComplete = true;
 
-		return super.getEditConfiguration(vreq, session);
-	}
-
+        return super.getEditConfiguration(vreq, session);
+    }
 
 
 }

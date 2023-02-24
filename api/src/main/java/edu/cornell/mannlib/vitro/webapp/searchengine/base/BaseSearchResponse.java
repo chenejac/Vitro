@@ -15,43 +15,43 @@ import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchResultDocumen
  * A foundation class for implementing SearchResponse;
  */
 public class BaseSearchResponse implements SearchResponse {
-	private final Map<String, Map<String, List<String>>> highlighting;
-	private final Map<String, SearchFacetField> facetFields;
-	private final SearchResultDocumentList results;
+    private final Map<String, Map<String, List<String>>> highlighting;
+    private final Map<String, SearchFacetField> facetFields;
+    private final SearchResultDocumentList results;
 
-	public BaseSearchResponse(
-			Map<String, Map<String, List<String>>> highlighting,
-			Map<String, SearchFacetField> facetFields,
-			SearchResultDocumentList results) {
-		this.highlighting = highlighting;
-		this.facetFields = facetFields;
-		this.results = results;
-	}
+    public BaseSearchResponse(
+        Map<String, Map<String, List<String>>> highlighting,
+        Map<String, SearchFacetField> facetFields,
+        SearchResultDocumentList results) {
+        this.highlighting = highlighting;
+        this.facetFields = facetFields;
+        this.results = results;
+    }
 
-	@Override
-	public SearchResultDocumentList getResults() {
-		return results;
-	}
+    @Override
+    public SearchResultDocumentList getResults() {
+        return results;
+    }
 
-	@Override
-	public Map<String, Map<String, List<String>>> getHighlighting() {
-		return Collections.unmodifiableMap(highlighting);
-	}
+    @Override
+    public Map<String, Map<String, List<String>>> getHighlighting() {
+        return Collections.unmodifiableMap(highlighting);
+    }
 
-	@Override
-	public SearchFacetField getFacetField(String name) {
-		return facetFields.get(name);
-	}
+    @Override
+    public SearchFacetField getFacetField(String name) {
+        return facetFields.get(name);
+    }
 
-	@Override
-	public List<SearchFacetField> getFacetFields() {
-		return new ArrayList<>(facetFields.values());
-	}
+    @Override
+    public List<SearchFacetField> getFacetFields() {
+        return new ArrayList<>(facetFields.values());
+    }
 
-	@Override
-	public String toString() {
-		return "BaseSearchResponse[highlighting=" + highlighting
-				+ ", facetFields=" + facetFields + ", results=" + results + "]";
-	}
+    @Override
+    public String toString() {
+        return "BaseSearchResponse[highlighting=" + highlighting
+            + ", facetFields=" + facetFields + ", results=" + results + "]";
+    }
 
 }

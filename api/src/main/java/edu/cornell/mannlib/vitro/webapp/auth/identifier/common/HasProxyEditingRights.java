@@ -13,29 +13,29 @@ import edu.cornell.mannlib.vitro.webapp.auth.identifier.IdentifierBundle;
  * proxy editing rights relating to it.
  */
 public class HasProxyEditingRights extends HasAssociatedIndividual {
-	private static Collection<HasProxyEditingRights> getIdentifiers(IdentifierBundle ids) {
-		return getIdentifiersForClass(ids, HasProxyEditingRights.class);
-	}
+    public HasProxyEditingRights(String associatedIndividualUri) {
+        super(associatedIndividualUri);
+    }
 
-	public static Collection<String> getProxiedPageUris(IdentifierBundle ids) {
-		Set<String> set = new HashSet<String>();
-		for (HasProxyEditingRights id : getIdentifiers(ids)) {
-			set.add(id.getAssociatedIndividualUri());
-		}
-		return set;
-	}
+    private static Collection<HasProxyEditingRights> getIdentifiers(IdentifierBundle ids) {
+        return getIdentifiersForClass(ids, HasProxyEditingRights.class);
+    }
 
-	public HasProxyEditingRights(String associatedIndividualUri) {
-		super(associatedIndividualUri);
-	}
+    public static Collection<String> getProxiedPageUris(IdentifierBundle ids) {
+        Set<String> set = new HashSet<String>();
+        for (HasProxyEditingRights id : getIdentifiers(ids)) {
+            set.add(id.getAssociatedIndividualUri());
+        }
+        return set;
+    }
 
-	public String getProxiedPageUri() {
-		return getAssociatedIndividualUri();
-	}
+    public String getProxiedPageUri() {
+        return getAssociatedIndividualUri();
+    }
 
-	@Override
-	public String toString() {
-		return "HasProxyEditingRights[" + getAssociatedIndividualUri() + "]";
-	}
+    @Override
+    public String toString() {
+        return "HasProxyEditingRights[" + getAssociatedIndividualUri() + "]";
+    }
 
 }

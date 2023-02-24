@@ -14,19 +14,19 @@ import edu.cornell.mannlib.vitro.webapp.utils.http.NotAcceptableException;
  * Process SELECT queries.
  */
 public class SparqlQueryApiSelectExecutor extends
-		SparqlQueryApiResultSetProducer {
+    SparqlQueryApiResultSetProducer {
 
-	public SparqlQueryApiSelectExecutor(RDFService rdfService,
-			String queryString, String acceptHeader)
-			throws AcceptHeaderParsingException, NotAcceptableException {
-		super(rdfService, queryString, acceptHeader);
-	}
+    public SparqlQueryApiSelectExecutor(RDFService rdfService,
+                                        String queryString, String acceptHeader)
+        throws AcceptHeaderParsingException, NotAcceptableException {
+        super(rdfService, queryString, acceptHeader);
+    }
 
-	@Override
-	protected InputStream getRawResultStream() throws RDFServiceException {
-		ResultFormat format = ResultFormat.valueOf(mediaType
-				.getRdfServiceFormat());
-		return rdfService.sparqlSelectQuery(queryString, format);
-	}
+    @Override
+    protected InputStream getRawResultStream() throws RDFServiceException {
+        ResultFormat format = ResultFormat.valueOf(mediaType
+            .getRdfServiceFormat());
+        return rdfService.sparqlSelectQuery(queryString, format);
+    }
 
 }

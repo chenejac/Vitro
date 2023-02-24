@@ -4,6 +4,7 @@ package edu.cornell.mannlib.vitro.webapp.dao.jena;
 
 import java.util.Set;
 
+import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
 import org.apache.jena.graph.Capabilities;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.GraphEventManager;
@@ -16,8 +17,6 @@ import org.apache.jena.shared.DeleteDeniedException;
 import org.apache.jena.shared.PrefixMapping;
 import org.apache.jena.util.iterator.ExtendedIterator;
 import org.apache.jena.util.iterator.WrappedIterator;
-
-import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
 
 public class DifferenceGraph implements Graph {
 
@@ -55,9 +54,9 @@ public class DifferenceGraph implements Graph {
     }
 
     @Override
-	public void remove(Node arg0, Node arg1, Node arg2) {
-		g.remove(arg0, arg1, arg2);
-	}
+    public void remove(Node arg0, Node arg1, Node arg2) {
+        g.remove(arg0, arg1, arg2);
+    }
 
     @Override
     public boolean dependsOn(Graph arg0) {
@@ -121,16 +120,16 @@ public class DifferenceGraph implements Graph {
         g.add(arg0);
     }
 
-	@Override
-	public void clear() {
-		g.clear();
-	}
+    @Override
+    public void clear() {
+        g.clear();
+    }
 
-	@Override
-	public String toString() {
-		return "DifferenceGraph[" + ToString.hashHex(this) + ", g="
-				+ ToString.graphToString(g) + ", subtract="
-				+ ToString.graphToString(subtract) + "]";
-	}
+    @Override
+    public String toString() {
+        return "DifferenceGraph[" + ToString.hashHex(this) + ", g="
+            + ToString.graphToString(g) + ", subtract="
+            + ToString.graphToString(subtract) + "]";
+    }
 
 }

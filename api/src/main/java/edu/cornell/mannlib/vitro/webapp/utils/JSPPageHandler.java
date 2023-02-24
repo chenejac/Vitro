@@ -2,12 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.utils;
 
-import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
-import edu.cornell.mannlib.vitro.webapp.controller.freemarker.FreemarkerHttpServlet;
-import edu.cornell.mannlib.vitro.webapp.controller.freemarker.TemplateProcessingHelper;
-import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.ResponseValues;
-import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.TemplateResponseValues;
-
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -23,13 +17,20 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
+import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
+import edu.cornell.mannlib.vitro.webapp.controller.freemarker.FreemarkerHttpServlet;
+import edu.cornell.mannlib.vitro.webapp.controller.freemarker.TemplateProcessingHelper;
+import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.ResponseValues;
+import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.TemplateResponseValues;
+
 public class JSPPageHandler {
-    public static void renderBasicPage(HttpServletRequest req, HttpServletResponse res, String bodyJsp) throws ServletException, IOException {
+    public static void renderBasicPage(HttpServletRequest req, HttpServletResponse res,
+                                       String bodyJsp) throws ServletException, IOException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("jspBody", renderToString(req, res, bodyJsp));
 
         if (req.getAttribute("scripts") instanceof String) {
-            map.put("jspScripts", renderToString(req, res, (String)req.getAttribute("scripts")));
+            map.put("jspScripts", renderToString(req, res, (String) req.getAttribute("scripts")));
         }
 
         if (req.getAttribute("title") instanceof String) {
@@ -41,19 +42,22 @@ public class JSPPageHandler {
         new FreemarkerWrapper().wrap(req, res, values);
     }
 
-    private static String renderToString(HttpServletRequest req, HttpServletResponse res, String jsp) throws ServletException, IOException {
-        StringBufferResponse customResponse  = new StringBufferResponse(res);
+    private static String renderToString(HttpServletRequest req, HttpServletResponse res,
+                                         String jsp) throws ServletException, IOException {
+        StringBufferResponse customResponse = new StringBufferResponse(res);
         RequestDispatcher rd = req.getRequestDispatcher(jsp);
         rd.include(req, customResponse);
         return customResponse.getOutput();
     }
 
-    public static void renderPlainInclude(HttpServletRequest req, HttpServletResponse res, String pageJsp) throws ServletException, IOException {
+    public static void renderPlainInclude(HttpServletRequest req, HttpServletResponse res,
+                                          String pageJsp) throws ServletException, IOException {
         RequestDispatcher rd = req.getRequestDispatcher(pageJsp);
         rd.include(req, res);
     }
 
-    public static void renderPlainPage(HttpServletRequest req, HttpServletResponse res, String pageJsp) throws ServletException, IOException {
+    public static void renderPlainPage(HttpServletRequest req, HttpServletResponse res,
+                                       String pageJsp) throws ServletException, IOException {
         RequestDispatcher rd = req.getRequestDispatcher(pageJsp);
         rd.forward(req, res);
     }

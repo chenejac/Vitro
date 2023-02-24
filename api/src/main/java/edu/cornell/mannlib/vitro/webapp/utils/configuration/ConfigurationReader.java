@@ -9,5 +9,5 @@ import edu.cornell.mannlib.vitro.webapp.config.ConfigurationProperties;
  * call this method, supplying ConfigurationProperties.
  */
 public interface ConfigurationReader {
-	void setConfigurationProperties(ConfigurationProperties properties);
+    void setConfigurationProperties(ConfigurationProperties properties);
 }

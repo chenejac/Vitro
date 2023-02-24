@@ -2,6 +2,8 @@
 
 package edu.cornell.mannlib.vitro.webapp.web.widgets;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -9,18 +11,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.Tags;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import freemarker.core.Environment;
 import freemarker.core.Macro;
 import freemarker.template.Template;
 import freemarker.template.TemplateHashModel;
 import freemarker.template.TemplateModelException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public abstract class Widget {
 
@@ -28,7 +26,8 @@ public abstract class Widget {
 
     /* Widget implementations don't get any state when they get constructed so that they
      * can be reused. */
-    public Widget() { }
+    public Widget() {
+    }
 
     public String doAssets(Environment env, Map params) {
         String widgetName = params.get("name").toString(); //getWidgetName();
@@ -105,9 +104,11 @@ public abstract class Widget {
 //    }
 
     protected abstract WidgetTemplateValues process(Environment env, Map params,
-            HttpServletRequest request, ServletContext context) throws Exception;
+                                                    HttpServletRequest request,
+                                                    ServletContext context) throws Exception;
 
-    private String processMacroToString(Environment env, String widgetName, Macro macro, Map<String, Object> map) {
+    private String processMacroToString(Environment env, String widgetName, Macro macro,
+                                        Map<String, Object> map) {
         StringWriter out = new StringWriter();
 
         try {
@@ -120,7 +121,8 @@ public abstract class Widget {
             // the same key, e.g., "widgetTemplate", since one putTemplate() call will clobber a previous one.
             // We need to give each widget macro template a unique key in the StringTemplateLoader, and check
             // if it's already there or else add it. Leave this for later.
-            Template template = new Template("widget", new StringReader(templateString), env.getConfiguration());
+            Template template =
+                new Template("widget", new StringReader(templateString), env.getConfiguration());
             template.process(map, out);
         } catch (Exception e) {
             log.error("Could not process widget " + widgetName, e);
@@ -130,12 +132,14 @@ public abstract class Widget {
         return output;
     }
 
-    private String processMacroToString(Environment env, String widgetName, String macroName, Map<String, Object> map) {
+    private String processMacroToString(Environment env, String widgetName, String macroName,
+                                        Map<String, Object> map) {
         Macro macro = getMacroFromTemplate(macroName, widgetName, env);
         return processMacroToString(env, widgetName, macro, map);
     }
 
-    private String processMacroToString(Environment env, String widgetName, WidgetTemplateValues values) {
+    private String processMacroToString(Environment env, String widgetName,
+                                        WidgetTemplateValues values) {
         return processMacroToString(env, widgetName, values.getMacroName(), values.getMap());
     }
 
@@ -145,7 +149,7 @@ public abstract class Widget {
         Macro macro = null;
         try {
             template = env.getConfiguration().getTemplate(templateName);
-            macro = (Macro)template.getMacros().get(macroName);
+            macro = (Macro) template.getMacros().get(macroName);
         } catch (IOException e) {
             log.error("Cannot get template " + templateName);
         }

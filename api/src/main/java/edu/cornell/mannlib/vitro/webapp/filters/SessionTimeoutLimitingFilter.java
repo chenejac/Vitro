@@ -2,8 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.filters;
 
-import java.io.IOException;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -13,6 +11,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 
 import edu.cornell.mannlib.vedit.beans.LoginStatusBean;
 
@@ -26,50 +25,52 @@ import edu.cornell.mannlib.vedit.beans.LoginStatusBean;
  */
 @WebFilter(filterName = "Session Timeout Limiting Filter", urlPatterns = {"/*"})
 public class SessionTimeoutLimitingFilter implements Filter {
-	/** Maximum inactive interval for a trivial session object, in seconds. */
-	private static final int TRIVIAL_SESSION_LIFETIME = 120;
+    /**
+     * Maximum inactive interval for a trivial session object, in seconds.
+     */
+    private static final int TRIVIAL_SESSION_LIFETIME = 120;
 
-	@Override
-	public void init(FilterConfig filterConfig) throws ServletException {
-		// nothing to do here.
-	}
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        // nothing to do here.
+    }
 
-	@Override
-	public void doFilter(ServletRequest servletRequest,
-			ServletResponse servletResponse, FilterChain filterChain)
-			throws IOException, ServletException {
-		filterChain.doFilter(servletRequest, servletResponse);
+    @Override
+    public void doFilter(ServletRequest servletRequest,
+                         ServletResponse servletResponse, FilterChain filterChain)
+        throws IOException, ServletException {
+        filterChain.doFilter(servletRequest, servletResponse);
 
-		limitTrivialSession(servletRequest);
-	}
+        limitTrivialSession(servletRequest);
+    }
 
-	/**
-	 * If this request has a trivial session object -- that is, the user is not
-	 * logged in -- then give it a short expiration interval.
-	 */
-	private void limitTrivialSession(ServletRequest servletRequest) {
-		if (!(servletRequest instanceof HttpServletRequest)) {
-			return;
-		}
-		HttpServletRequest request = (HttpServletRequest) servletRequest;
+    /**
+     * If this request has a trivial session object -- that is, the user is not
+     * logged in -- then give it a short expiration interval.
+     */
+    private void limitTrivialSession(ServletRequest servletRequest) {
+        if (!(servletRequest instanceof HttpServletRequest)) {
+            return;
+        }
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
 
-		// If no session object, nothing to do.
-		HttpSession session = request.getSession(false);
-		if (session == null) {
-			return;
-		}
+        // If no session object, nothing to do.
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return;
+        }
 
-		// If logged in, leave it alone.
-		if (LoginStatusBean.getBean(request).isLoggedIn()) {
-			return;
-		}
+        // If logged in, leave it alone.
+        if (LoginStatusBean.getBean(request).isLoggedIn()) {
+            return;
+        }
 
-		// Otherwise, it's trivial, so shorten its life-span.
-		session.setMaxInactiveInterval(TRIVIAL_SESSION_LIFETIME);
-	}
+        // Otherwise, it's trivial, so shorten its life-span.
+        session.setMaxInactiveInterval(TRIVIAL_SESSION_LIFETIME);
+    }
 
-	@Override
-	public void destroy() {
-		// nothing to clean up.
-	}
+    @Override
+    public void destroy() {
+        // nothing to clean up.
+    }
 }

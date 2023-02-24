@@ -6,8 +6,8 @@ import javax.servlet.ServletContext;
 
 public class NamespaceMapperFactory {
 
-	public static NamespaceMapper getNamespaceMapper(ServletContext servletContext) {
-		return (NamespaceMapper) servletContext.getAttribute("NamespaceMapper");
-	}
+    public static NamespaceMapper getNamespaceMapper(ServletContext servletContext) {
+        return (NamespaceMapper) servletContext.getAttribute("NamespaceMapper");
+    }
 
 }

@@ -12,9 +12,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.beans.VClass;
@@ -33,18 +30,20 @@ import edu.cornell.mannlib.vitro.webapp.searchindex.SearchIndexerImpl.WorkerThre
 import edu.cornell.mannlib.vitro.webapp.searchindex.documentBuilding.DocumentModifierList;
 import edu.cornell.mannlib.vitro.webapp.searchindex.exclusions.SearchIndexExcluder;
 import edu.cornell.mannlib.vitro.webapp.searchindex.exclusions.SearchIndexExcluderList;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Given a list of URIs, remove the ones that don't belong in the index and
  * update the ones that do belong.
- *
+ * <p>
  * A URI doesn't belong in the index if there is no individual with that URI, or
  * if the individual has no VClasses assigned to it, or if the individual is
  * excluded by one of the excluders.
- *
+ * <p>
  * Deletions are done synchronously, but updates are scheduled to run on the
  * thread pool.
- *
+ * <p>
  * Commit requests are issued to the SearchEngine at each progress event and
  * again at the end of the task.
  */
@@ -52,9 +51,8 @@ public class UpdateUrisTask implements Task {
     private static final Log log = LogFactory.getLog(UpdateUrisTask.class);
 
     private final IndexerConfig config;
-    private UpdateUrisTaskImpl impl;
-
     private final Collection<String> uris;
+    private UpdateUrisTaskImpl impl;
     private Date since = new Date();
 
     public UpdateUrisTask(IndexerConfig config, Collection<String> uris) {
@@ -62,13 +60,13 @@ public class UpdateUrisTask implements Task {
         this.uris = new HashSet<>(uris);
     }
 
-	static void runNow(Collection<String> uris,
-			SearchIndexExcluderList excluders, DocumentModifierList modifiers,
-			IndividualDao indDao, ListenerList listeners, WorkerThreadPool pool) {
-		UpdateUrisTaskImpl impl = new UpdateUrisTaskImpl(uris, excluders,
-				modifiers, indDao, listeners, pool);
-		impl.run();
-	}
+    static void runNow(Collection<String> uris,
+                       SearchIndexExcluderList excluders, DocumentModifierList modifiers,
+                       IndividualDao indDao, ListenerList listeners, WorkerThreadPool pool) {
+        UpdateUrisTaskImpl impl = new UpdateUrisTaskImpl(uris, excluders,
+            modifiers, indDao, listeners, pool);
+        impl.run();
+    }
 
     @Override
     public void run() {
@@ -78,7 +76,7 @@ public class UpdateUrisTask implements Task {
 
     @Override
     public SearchIndexerStatus getStatus() {
-    	return (impl == null) ? SearchIndexerStatus.idle() : impl.getStatus();
+        return (impl == null) ? SearchIndexerStatus.idle() : impl.getStatus();
     }
 
     @Override
@@ -112,12 +110,12 @@ public class UpdateUrisTask implements Task {
             this.searchEngine = ApplicationUtils.instance().getSearchEngine();
         }
 
-		public UpdateUrisTaskImpl(Collection<String> uris,
-				SearchIndexExcluderList excluders,
-				DocumentModifierList modifiers, IndividualDao indDao,
-				ListenerList listeners, WorkerThreadPool pool) {
-			log.debug("Updating " + uris.size() + " uris.");
-        	this.uris = uris;
+        public UpdateUrisTaskImpl(Collection<String> uris,
+                                  SearchIndexExcluderList excluders,
+                                  DocumentModifierList modifiers, IndividualDao indDao,
+                                  ListenerList listeners, WorkerThreadPool pool) {
+            log.debug("Updating " + uris.size() + " uris.");
+            this.uris = uris;
             this.excluders = excluders;
             this.modifiers = modifiers;
             this.indDao = indDao;
@@ -189,7 +187,7 @@ public class UpdateUrisTask implements Task {
                 log.debug("deleted '" + uri + "' from search index.");
             } catch (SearchEngineNotRespondingException e) {
                 log.warn("Failed to delete '" + uri + "' from search index: "
-                        + "the search engine is not responding.");
+                    + "the search engine is not responding.");
             } catch (Exception e) {
                 log.warn("Failed to delete '" + uri + "' from search index", e);
             }
@@ -205,7 +203,7 @@ public class UpdateUrisTask implements Task {
                 log.debug("excluded '" + uri + "' from search index.");
             } catch (SearchEngineNotRespondingException e) {
                 log.warn("Failed to exclude '" + uri + "' from search index: "
-                        + "the search engine is not responding.", e);
+                    + "the search engine is not responding.", e);
             } catch (Exception e) {
                 log.warn("Failed to exclude '" + uri + "' from search index", e);
             }
@@ -232,7 +230,7 @@ public class UpdateUrisTask implements Task {
         @Override
         public void notifyWorkUnitCompletion(Runnable workUnit) {
             log.debug("completed update to "
-                    + ((UpdateDocumentWorkUnit) workUnit).getInd());
+                + ((UpdateDocumentWorkUnit) workUnit).getInd());
             status.incrementUpdates();
         }
 
@@ -285,7 +283,7 @@ public class UpdateUrisTask implements Task {
             public synchronized SearchIndexerStatus getSearchIndexerStatus() {
                 int remaining = total - updated - deleted - excluded;
                 return new SearchIndexerStatus(PROCESSING_URIS, since,
-                        new UriCounts(excluded, deleted, updated, remaining, total));
+                    new UriCounts(excluded, deleted, updated, remaining, total));
             }
         }
     }
@@ -293,6 +291,7 @@ public class UpdateUrisTask implements Task {
     // ----------------------------------------------------------------------
     // helper classes
     // ----------------------------------------------------------------------
+
     /**
      * This will be first in the list of SearchIndexExcluders.
      */
@@ -310,5 +309,5 @@ public class UpdateUrisTask implements Task {
         public String toString() {
             return "Internal: ExcludeIfNoVClasses";
         }
-   }
+    }
 }

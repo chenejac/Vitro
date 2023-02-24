@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.logging.Log;
@@ -20,7 +20,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Brian Caruso with changes contributed by David Cliff, 2010-11-03
  * Before 2010-11 this was a private class of URLRewritingHttpServletResponse.java.
- *
+ * <p>
  * Useful reference:
  * http://labs.apache.org/webarch/uri/rfc/rfc3986.html
  */
@@ -29,35 +29,37 @@ class VitroURL {
     // annoyingness of java.net.URL
     // and to handle general weirdness
 
-    private String characterEncoding;
-
+    private final static Log log = LogFactory.getLog(VitroURL.class);
     public String protocol;
     public String host;
     public String port;
     public List<String> pathParts;
     public List<String[]> queryParams;
     public String fragment;
-
+    public boolean pathBeginsWithSlash = false;
+    public boolean pathEndsInSlash = false;
+    public boolean wasXMLEscaped = false;
+    private String characterEncoding;
     /**
      * Pattern to get the path and query of a relative URL
      * ex.
-     *   /entity -> /entity
-     *   /entity?query=abc -> /entity query=abc
+     * /entity -> /entity
+     * /entity?query=abc -> /entity query=abc
      */
     private Pattern pathPattern = Pattern.compile("([^\\?]*)\\??(.*)");
-
     private Pattern commaPattern = Pattern.compile("/");
     private Pattern equalsSignPattern = Pattern.compile("=");
     private Pattern ampersandPattern = Pattern.compile("&");
-    public  boolean pathBeginsWithSlash = false;
-    public  boolean pathEndsInSlash = false;
-    public  boolean wasXMLEscaped = false;
+    /**
+     * Query for simple query param at start of string.
+     */
+    private Pattern simpleQueryParamPattern = Pattern.compile("^([^\\=]*)=([^\\&]*)");
+    private Pattern finalQueryParamPattern = Pattern.compile("^(uri)=(.*)");
 
-    private final static Log log = LogFactory.getLog(VitroURL.class);
 
     public VitroURL(String urlStr, String characterEncoding) {
         this.characterEncoding = characterEncoding;
-        if (urlStr.indexOf("&amp;")>-1) {
+        if (urlStr.indexOf("&amp;") > -1) {
             wasXMLEscaped = true;
             urlStr = StringEscapeUtils.unescapeXml(urlStr);
         }
@@ -77,47 +79,49 @@ class VitroURL {
             // This is likely to be a bad assumption, but let's roll with it.
             Matcher m = pathPattern.matcher(urlStr);
             String[] urlParts = new String[2];
-            if( m.matches() ){
-                urlParts[0]= m.group(1);
-                if( m.groupCount() == 2 )
+            if (m.matches()) {
+                urlParts[0] = m.group(1);
+                if (m.groupCount() == 2) {
                     urlParts[1] = m.group(2);
-            }else{
+                }
+            } else {
                 //???
             }
 
             try {
-                this.pathParts = splitPath(URLDecoder.decode(getPath(urlStr),characterEncoding));
+                this.pathParts = splitPath(URLDecoder.decode(getPath(urlStr), characterEncoding));
                 this.pathBeginsWithSlash = beginsWithSlash(urlParts[0]);
                 this.pathEndsInSlash = endsInSlash(urlParts[0]);
-                if (urlParts.length>1) {
-                    this.queryParams = parseQueryParams(URLDecoder.decode(urlParts[1],characterEncoding));
+                if (urlParts.length > 1) {
+                    this.queryParams =
+                        parseQueryParams(URLDecoder.decode(urlParts[1], characterEncoding));
                 }
             } catch (UnsupportedEncodingException uee) {
-                log.error("Unable to use character encoding "+characterEncoding, uee);
+                log.error("Unable to use character encoding " + characterEncoding, uee);
             }
         }
     }
 
-    private String getPath(String urlStr){
+    private String getPath(String urlStr) {
         Matcher m = pathPattern.matcher(urlStr);
-        if( m.matches() )
+        if (m.matches()) {
             return m.group(1);
-        else
+        } else {
             return "";
+        }
     }
-
 
     private List<String> splitPath(String pathStr) {
         String[] splitStr = commaPattern.split(pathStr);
-        if (splitStr.length>0) {
+        if (splitStr.length > 0) {
             int len = splitStr.length;
             if (splitStr[0].equals("")) {
                 len--;
             }
-            if (splitStr[splitStr.length-1].equals("")) {
+            if (splitStr[splitStr.length - 1].equals("")) {
                 len--;
             }
-            if (len>0) {
+            if (len > 0) {
                 String[] temp = new String[len];
                 int tempI = 0;
                 for (String aSplitStr : splitStr) {
@@ -146,9 +150,8 @@ class VitroURL {
         if (pathStr.length() == 0) {
             return false;
         }
-        return (pathStr.charAt(pathStr.length()-1) == '/');
+        return (pathStr.charAt(pathStr.length() - 1) == '/');
     }
-
 
     /**
      * This is attempting to parse query parameters that might not be URLEncoded.
@@ -163,74 +166,71 @@ class VitroURL {
             return queryParamList;
         }
 
-        while ( queryStr.length() > 0 ){
+        while (queryStr.length() > 0) {
             //remove leading & if there was one
-            if( queryStr.startsWith("&"))
+            if (queryStr.startsWith("&")) {
                 queryStr = queryStr.substring(1);
+            }
 
             String[] simplepair = getSimpleQueryMatch(queryStr);
-            if( simplepair != null ){
-                if( simplepair[1].contains("?") ){
+            if (simplepair != null) {
+                if (simplepair[1].contains("?")) {
                     //must be odd final pair
                     String[] finalPair = getFinalPairQueryMatch(queryStr);
-                    if( finalPair != null){
+                    if (finalPair != null) {
                         queryParamList.add(finalPair);
-                        queryStr="";
-                    }else{
+                        queryStr = "";
+                    } else {
                         throw new Error("Cannot parse query string for URL " +
-                        		"queryParams: \"" + queryStr + "\" this only accepts " +
-                        	    "complex parameters in the final position with the key 'uri'.");
+                            "queryParams: \"" + queryStr + "\" this only accepts " +
+                            "complex parameters in the final position with the key 'uri'.");
                     }
-                }else{
+                } else {
                     queryParamList.add(simplepair);
                     // remove found simple key vaule pair from query str
                     queryStr = queryStr.substring(
-                        simplepair[0].length()+simplepair[1].length()+1);
+                        simplepair[0].length() + simplepair[1].length() + 1);
                 }
-            }else{
+            } else {
                 //maybe there is an odd final pair
                 String[] finalPair = getFinalPairQueryMatch(queryStr);
-                if( finalPair != null){
+                if (finalPair != null) {
                     queryParamList.add(finalPair);
-                    queryStr="";
+                    queryStr = "";
                 }
             }
         }
         return queryParamList;
     }
 
-    /** Query for simple query param at start of string. */
-    private Pattern simpleQueryParamPattern = Pattern.compile("^([^\\=]*)=([^\\&]*)");
-
     /**
      * Check for a simple match in a queryParam.
      * May return null.
      */
-    protected String[] getSimpleQueryMatch(String querystr){
+    protected String[] getSimpleQueryMatch(String querystr) {
         Matcher simpleMatch = simpleQueryParamPattern.matcher(querystr);
-        if( simpleMatch.find() ){
+        if (simpleMatch.find()) {
             String[] rv = new String[2];
-            rv[0]=simpleMatch.group(1);
-            rv[1]=simpleMatch.group(2);
+            rv[0] = simpleMatch.group(1);
+            rv[1] = simpleMatch.group(2);
             return rv;
-        }else{
+        } else {
             return null;
         }
     }
 
-    private Pattern finalQueryParamPattern = Pattern.compile("^(uri)=(.*)");
     /**
      * Checks only for uri=.* as the last match of the queryParams.
      * May return null.
      */
-    protected String[] getFinalPairQueryMatch(String querystr){
+    protected String[] getFinalPairQueryMatch(String querystr) {
         Matcher finalMatch = finalQueryParamPattern.matcher(querystr);
-        if( finalMatch.find() ){
+        if (finalMatch.find()) {
             String[] rv = new String[2];
-            rv[0]=finalMatch.group(1);
-            rv[1]=finalMatch.group(2);
+            rv[0] = finalMatch.group(1);
+            rv[1] = finalMatch.group(2);
             return rv;
-        }else{
+        } else {
             return null;
         }
 
@@ -238,7 +238,7 @@ class VitroURL {
 
     public String toString() {
         StringBuilder out = new StringBuilder();
-            try {
+        try {
             if (this.protocol != null) {
                 out.append(this.protocol);
             }
@@ -253,7 +253,7 @@ class VitroURL {
                     out.append("/");
                 }
                 Iterator<String> pathIt = pathParts.iterator();
-                while(pathIt.hasNext()) {
+                while (pathIt.hasNext()) {
                     String part = pathIt.next();
                     out.append(part);
                     if (pathIt.hasNext()) {
@@ -271,9 +271,9 @@ class VitroURL {
                 }
                 while (qpIt.hasNext()) {
                     String[] keyAndValue = qpIt.next();
-                    out.append(URLEncoder.encode(keyAndValue[0],characterEncoding)).append("=");
-                    if (keyAndValue.length>1) {
-                        out.append(URLEncoder.encode(keyAndValue[1],characterEncoding));
+                    out.append(URLEncoder.encode(keyAndValue[0], characterEncoding)).append("=");
+                    if (keyAndValue.length > 1) {
+                        out.append(URLEncoder.encode(keyAndValue[1], characterEncoding));
                     }
                     if (qpIt.hasNext()) {
                         out.append("&");
@@ -281,7 +281,7 @@ class VitroURL {
                 }
             }
         } catch (UnsupportedEncodingException uee) {
-            log.error("Unable to use encoding "+characterEncoding, uee);
+            log.error("Unable to use encoding " + characterEncoding, uee);
         }
         String str = out.toString();
         if (this.wasXMLEscaped) {

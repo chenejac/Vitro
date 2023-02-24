@@ -2,26 +2,24 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 
+import javax.servlet.annotation.WebServlet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.ResponseValues;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.TemplateResponseValues;
-
-import javax.servlet.annotation.WebServlet;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Freemarker controller and template samples.
- * @author rjy7
  *
+ * @author rjy7
  */
-@WebServlet(name = "FreemarkerSamplesController", urlPatterns = {"/freemarkersamples"} )
+@WebServlet(name = "FreemarkerSamplesController", urlPatterns = {"/freemarkersamples"})
 public class SamplesController extends FreemarkerHttpServlet {
 
     private static final long serialVersionUID = 1L;

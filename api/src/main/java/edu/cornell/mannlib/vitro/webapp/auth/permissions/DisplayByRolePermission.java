@@ -2,9 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.auth.permissions;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.auth.policy.bean.PropertyRestrictionBean;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.display.DisplayDataProperty;
@@ -14,114 +11,114 @@ import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.display.DisplayObje
 import edu.cornell.mannlib.vitro.webapp.beans.BaseResourceBean.RoleLevel;
 import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
 import edu.cornell.mannlib.vitro.webapp.beans.Property;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Is the user authorized to display properties that are marked as restricted to
  * a certain "Role Level"?
  */
 public class DisplayByRolePermission extends Permission {
-	private static final Log log = LogFactory
-			.getLog(DisplayByRolePermission.class);
+    public static final String NAMESPACE = "java:"
+        + DisplayByRolePermission.class.getName() + "#";
+    private static final Log log = LogFactory
+        .getLog(DisplayByRolePermission.class);
+    private final String roleName;
+    private final RoleLevel roleLevel;
 
-	public static final String NAMESPACE = "java:"
-			+ DisplayByRolePermission.class.getName() + "#";
+    public DisplayByRolePermission(String roleName, RoleLevel roleLevel) {
+        super(NAMESPACE + roleName);
 
-	private final String roleName;
-	private final RoleLevel roleLevel;
+        if (roleName == null) {
+            throw new NullPointerException("role may not be null.");
+        }
+        if (roleLevel == null) {
+            throw new NullPointerException("roleLevel may not be null.");
+        }
 
-	public DisplayByRolePermission(String roleName, RoleLevel roleLevel) {
-		super(NAMESPACE + roleName);
+        this.roleName = roleName;
+        this.roleLevel = roleLevel;
+    }
 
-		if (roleName == null) {
-			throw new NullPointerException("role may not be null.");
-		}
-		if (roleLevel == null) {
-			throw new NullPointerException("roleLevel may not be null.");
-		}
+    @Override
+    public boolean isAuthorized(RequestedAction whatToAuth) {
+        boolean result;
 
-		this.roleName = roleName;
-		this.roleLevel = roleLevel;
-	}
+        if (whatToAuth instanceof DisplayDataProperty) {
+            result = isAuthorized((DisplayDataProperty) whatToAuth);
+        } else if (whatToAuth instanceof DisplayObjectProperty) {
+            result = isAuthorized((DisplayObjectProperty) whatToAuth);
+        } else if (whatToAuth instanceof DisplayDataPropertyStatement) {
+            result = isAuthorized((DisplayDataPropertyStatement) whatToAuth);
+        } else if (whatToAuth instanceof DisplayObjectPropertyStatement) {
+            result = isAuthorized((DisplayObjectPropertyStatement) whatToAuth);
+        } else {
+            result = false;
+        }
 
-	@Override
-	public boolean isAuthorized(RequestedAction whatToAuth) {
-		boolean result;
+        if (result) {
+            log.debug(this + " authorizes " + whatToAuth);
+        } else {
+            log.debug(this + " does not authorize " + whatToAuth);
+        }
 
-		if (whatToAuth instanceof DisplayDataProperty) {
-			result = isAuthorized((DisplayDataProperty) whatToAuth);
-		} else if (whatToAuth instanceof DisplayObjectProperty) {
-			result = isAuthorized((DisplayObjectProperty) whatToAuth);
-		} else if (whatToAuth instanceof DisplayDataPropertyStatement) {
-			result = isAuthorized((DisplayDataPropertyStatement) whatToAuth);
-		} else if (whatToAuth instanceof DisplayObjectPropertyStatement) {
-			result = isAuthorized((DisplayObjectPropertyStatement) whatToAuth);
-		} else {
-			result = false;
-		}
+        return result;
+    }
 
-		if (result) {
-			log.debug(this + " authorizes " + whatToAuth);
-		} else {
-			log.debug(this + " does not authorize " + whatToAuth);
-		}
+    /**
+     * The user may see this data property if they are allowed to see its
+     * predicate.
+     */
+    private boolean isAuthorized(DisplayDataProperty action) {
+        String predicateUri = action.getDataProperty().getURI();
+        return canDisplayPredicate(new Property(predicateUri));
+    }
 
-		return result;
-	}
+    /**
+     * The user may see this object property if they are allowed to see its
+     * predicate.
+     */
+    private boolean isAuthorized(DisplayObjectProperty action) {
+        return canDisplayPredicate(action.getObjectProperty());
+    }
 
-	/**
-	 * The user may see this data property if they are allowed to see its
-	 * predicate.
-	 */
-	private boolean isAuthorized(DisplayDataProperty action) {
-		String predicateUri = action.getDataProperty().getURI();
-		return canDisplayPredicate(new Property(predicateUri));
-	}
+    /**
+     * The user may see this data property if they are allowed to see its
+     * subject and its predicate.
+     */
+    private boolean isAuthorized(DisplayDataPropertyStatement action) {
+        DataPropertyStatement stmt = action.getDataPropertyStatement();
+        String subjectUri = stmt.getIndividualURI();
+        String predicateUri = stmt.getDatapropURI();
+        return canDisplayResource(subjectUri)
+            && canDisplayPredicate(new Property(predicateUri));
+    }
 
-	/**
-	 * The user may see this object property if they are allowed to see its
-	 * predicate.
-	 */
-	private boolean isAuthorized(DisplayObjectProperty action) {
-		return canDisplayPredicate(action.getObjectProperty());
-	}
+    /**
+     * The user may see this data property if they are allowed to see its
+     * subject, its predicate, and its object.
+     */
+    private boolean isAuthorized(DisplayObjectPropertyStatement action) {
+        String subjectUri = action.getSubjectUri();
+        String objectUri = action.getObjectUri();
+        Property op = action.getProperty();
+        return canDisplayResource(subjectUri) && canDisplayPredicate(op)
+            && canDisplayResource(objectUri);
+    }
 
-	/**
-	 * The user may see this data property if they are allowed to see its
-	 * subject and its predicate.
-	 */
-	private boolean isAuthorized(DisplayDataPropertyStatement action) {
-		DataPropertyStatement stmt = action.getDataPropertyStatement();
-		String subjectUri = stmt.getIndividualURI();
-		String predicateUri = stmt.getDatapropURI();
-		return canDisplayResource(subjectUri)
-				&& canDisplayPredicate(new Property(predicateUri));
-	}
+    private boolean canDisplayResource(String resourceUri) {
+        return PropertyRestrictionBean.getBean().canDisplayResource(
+            resourceUri, this.roleLevel);
+    }
 
-	/**
-	 * The user may see this data property if they are allowed to see its
-	 * subject, its predicate, and its object.
-	 */
-	private boolean isAuthorized(DisplayObjectPropertyStatement action) {
-		String subjectUri = action.getSubjectUri();
-		String objectUri = action.getObjectUri();
-		Property op = action.getProperty();
-		return canDisplayResource(subjectUri) && canDisplayPredicate(op)
-				&& canDisplayResource(objectUri);
-	}
+    private boolean canDisplayPredicate(Property predicate) {
+        return PropertyRestrictionBean.getBean().canDisplayPredicate(predicate,
+            this.roleLevel);
+    }
 
-	private boolean canDisplayResource(String resourceUri) {
-		return PropertyRestrictionBean.getBean().canDisplayResource(
-				resourceUri, this.roleLevel);
-	}
-
-	private boolean canDisplayPredicate(Property predicate) {
-		return PropertyRestrictionBean.getBean().canDisplayPredicate(predicate,
-				this.roleLevel);
-	}
-
-	@Override
-	public String toString() {
-		return "DisplayByRolePermission['" + roleName + "']";
-	}
+    @Override
+    public String toString() {
+        return "DisplayByRolePermission['" + roleName + "']";
+    }
 
 }

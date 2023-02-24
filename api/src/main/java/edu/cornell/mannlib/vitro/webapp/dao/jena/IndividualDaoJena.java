@@ -13,11 +13,19 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
+import edu.cornell.mannlib.vitro.webapp.beans.Individual;
+import edu.cornell.mannlib.vitro.webapp.beans.VClass;
+import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
+import edu.cornell.mannlib.vitro.webapp.dao.InsertException;
+import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
+import edu.cornell.mannlib.vitro.webapp.dao.jena.event.IndividualCreationEvent;
+import edu.cornell.mannlib.vitro.webapp.dao.jena.event.IndividualDeletionEvent;
+import edu.cornell.mannlib.vitro.webapp.dao.jena.event.IndividualUpdateEvent;
+import edu.cornell.mannlib.vitro.webapp.edit.EditLiteral;
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.ontology.OntClass;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntResource;
@@ -38,38 +46,31 @@ import org.apache.jena.vocabulary.OWL;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 
-import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
-import edu.cornell.mannlib.vitro.webapp.beans.Individual;
-import edu.cornell.mannlib.vitro.webapp.beans.VClass;
-import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
-import edu.cornell.mannlib.vitro.webapp.dao.InsertException;
-import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
-import edu.cornell.mannlib.vitro.webapp.dao.jena.event.IndividualCreationEvent;
-import edu.cornell.mannlib.vitro.webapp.dao.jena.event.IndividualDeletionEvent;
-import edu.cornell.mannlib.vitro.webapp.dao.jena.event.IndividualUpdateEvent;
-import edu.cornell.mannlib.vitro.webapp.edit.EditLiteral;
-
 public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
-	//For random number generation, creating it everytime the method is called lead to nextInt being about the same
-	//if calls were made close together in time
-	private Random random = new Random(System.currentTimeMillis());
+    private static final Log log = LogFactory.getLog(IndividualDaoJena.class.getName());
+    //For random number generation, creating it everytime the method is called lead to nextInt being about the same
+    //if calls were made close together in time
+    private Random random = new Random(System.currentTimeMillis());
+
     public IndividualDaoJena(WebappDaoFactoryJena wadf) {
         super(wadf);
     }
-
-    private static final Log log = LogFactory.getLog(IndividualDaoJena.class.getName());
 
     public Collection<DataPropertyStatement> getExternalIds(String individualURI) {
         return this.getExternalIds(individualURI, null);
     }
 
-    public Collection<DataPropertyStatement> getExternalIds(String individualURI, String dataPropertyURI) {
-        Collection<DataPropertyStatement> externalIdStatements = new ArrayList<DataPropertyStatement>();
+    public Collection<DataPropertyStatement> getExternalIds(String individualURI,
+                                                            String dataPropertyURI) {
+        Collection<DataPropertyStatement> externalIdStatements =
+            new ArrayList<DataPropertyStatement>();
         Individual ind = getIndividualByURI(individualURI);
         HashSet<String> externalIdPropURISet = new HashSet<String>();
         HashSet<String> nonExternalIdPropURISet = new HashSet<String>();
         if (ind != null) {
-            Collection<DataPropertyStatement> dpsColl = getWebappDaoFactory().getDataPropertyStatementDao().getDataPropertyStatementsForIndividualByDataPropertyURI(ind, dataPropertyURI);
+            Collection<DataPropertyStatement> dpsColl =
+                getWebappDaoFactory().getDataPropertyStatementDao()
+                    .getDataPropertyStatementsForIndividualByDataPropertyURI(ind, dataPropertyURI);
             for (DataPropertyStatement dps : dpsColl) {
                 if (externalIdPropURISet.contains(dps.getDatapropURI())) {
                     externalIdStatements.add(dps);
@@ -78,7 +79,10 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
                     tboxOntModel.enterCriticalSection(Lock.READ);
                     try {
                         Resource dataprop = tboxOntModel.getResource(dps.getDatapropURI());
-                        if (dataprop != null && (tboxOntModel.contains(dataprop, DATAPROPERTY_ISEXTERNALID, ResourceFactory.createTypedLiteral(true)) || tboxOntModel.contains(dataprop, DATAPROPERTY_ISEXTERNALID, "TRUE"))) {
+                        if (dataprop != null && (tboxOntModel
+                            .contains(dataprop, DATAPROPERTY_ISEXTERNALID,
+                                ResourceFactory.createTypedLiteral(true)) ||
+                            tboxOntModel.contains(dataprop, DATAPROPERTY_ISEXTERNALID, "TRUE"))) {
                             externalIdPropURISet.add(dps.getDatapropURI());
                             externalIdStatements.add(dps);
                         } else {
@@ -94,45 +98,53 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
     }
 
     public void addVClass(String individualURI, String vclassURI) {
-    	OntModel ontModel = getOntModelSelector().getABoxModel();
+        OntModel ontModel = getOntModelSelector().getABoxModel();
         ontModel.enterCriticalSection(Lock.WRITE);
-        ontModel.getBaseModel().notifyEvent(new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(),true,individualURI));
+        ontModel.getBaseModel().notifyEvent(
+            new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(), true, individualURI));
         try {
             Resource indRes = ontModel.getResource(individualURI);
             ontModel.add(indRes, RDF.type, ontModel.getResource(vclassURI));
-            updatePropertyDateTimeValue(indRes, MODTIME, Calendar.getInstance().getTime(),ontModel);
+            updatePropertyDateTimeValue(indRes, MODTIME, Calendar.getInstance().getTime(),
+                ontModel);
         } finally {
-            ontModel.getBaseModel().notifyEvent(new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(),false,individualURI));
+            ontModel.getBaseModel().notifyEvent(
+                new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(), false,
+                    individualURI));
             ontModel.leaveCriticalSection();
         }
     }
 
     public void removeVClass(String individualURI, String vclassURI) {
-    	OntModel ontModel = getOntModelSelector().getABoxModel();
+        OntModel ontModel = getOntModelSelector().getABoxModel();
         ontModel.enterCriticalSection(Lock.WRITE);
-        Object event = new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(),true,individualURI);
+        Object event =
+            new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(), true, individualURI);
         ontModel.getBaseModel().notifyEvent(event);
         try {
             Resource indRes = ontModel.getResource(individualURI);
             getOntModel().remove(indRes, RDF.type, ontModel.getResource(vclassURI));
-            updatePropertyDateTimeValue(indRes, MODTIME, Calendar.getInstance().getTime(), ontModel);
+            updatePropertyDateTimeValue(indRes, MODTIME, Calendar.getInstance().getTime(),
+                ontModel);
         } finally {
-            ontModel.getBaseModel().notifyEvent(new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(),false,individualURI));
+            ontModel.getBaseModel().notifyEvent(
+                new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(), false,
+                    individualURI));
             ontModel.leaveCriticalSection();
         }
     }
 
-    public List<Individual> getIndividualsByVClass(VClass vclass ) {
-        return getIndividualsByVClassURI(vclass.getURI(),-1,-1);
+    public List<Individual> getIndividualsByVClass(VClass vclass) {
+        return getIndividualsByVClassURI(vclass.getURI(), -1, -1);
     }
 
     public List<Individual> getIndividualsByVClassURI(String vclassURI) {
-        return getIndividualsByVClassURI(vclassURI,-1,-1);
+        return getIndividualsByVClassURI(vclassURI, -1, -1);
     }
 
-    public List<Individual> getIndividualsByVClassURI(String vclassURI, int offset, int quantity ) {
+    public List<Individual> getIndividualsByVClassURI(String vclassURI, int offset, int quantity) {
 
-    	if (vclassURI==null) {
+        if (vclassURI == null) {
             return null;
         }
 
@@ -143,30 +155,29 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
             : ResourceFactory.createResource(vclassURI);
 
 
-
         if (theClass.isAnon() && theClass.canAs(UnionClass.class)) {
-        	UnionClass u = theClass.as(UnionClass.class);
-        	for (OntClass operand : u.listOperands().toList()) {
-        		VClass vc = new VClassJena(operand, getWebappDaoFactory());
-        		ents.addAll(getIndividualsByVClass(vc));
-        	}
+            UnionClass u = theClass.as(UnionClass.class);
+            for (OntClass operand : u.listOperands().toList()) {
+                VClass vc = new VClassJena(operand, getWebappDaoFactory());
+                ents.addAll(getIndividualsByVClass(vc));
+            }
         } else {
-        	OntModel ontModel = getOntModelSelector().getABoxModel();
-        	try {
-        		ontModel.enterCriticalSection(Lock.READ);
-	            StmtIterator stmtIt = ontModel.listStatements((Resource) null, RDF.type, theClass);
-	            try {
-	                while (stmtIt.hasNext()) {
-	                    Statement stmt = stmtIt.nextStatement();
-	                    OntResource ind = stmt.getSubject().as(OntResource.class);
-	                    ents.add(new IndividualJena(ind, getWebappDaoFactory()));
-	                }
-	            } finally {
-	                stmtIt.close();
-	            }
-        	} finally {
-        		ontModel.leaveCriticalSection();
-        	}
+            OntModel ontModel = getOntModelSelector().getABoxModel();
+            try {
+                ontModel.enterCriticalSection(Lock.READ);
+                StmtIterator stmtIt = ontModel.listStatements((Resource) null, RDF.type, theClass);
+                try {
+                    while (stmtIt.hasNext()) {
+                        Statement stmt = stmtIt.nextStatement();
+                        OntResource ind = stmt.getSubject().as(OntResource.class);
+                        ents.add(new IndividualJena(ind, getWebappDaoFactory()));
+                    }
+                } finally {
+                    stmtIt.close();
+                }
+            } finally {
+                ontModel.leaveCriticalSection();
+            }
         }
 
 
@@ -176,7 +187,7 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
 
     }
 
-    public int getCountOfIndividualsInVClass(String vclassURI ) {
+    public int getCountOfIndividualsInVClass(String vclassURI) {
         int count = 0;
         getOntModel().enterCriticalSection(Lock.READ);
         try {
@@ -210,10 +221,10 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
 
         String entURI = null;
 
-    	Resource cls = (ent.getVClassURI() != null)
+        Resource cls = (ent.getVClassURI() != null)
             ? ontModel.getResource(ent.getVClassURI())
             : OWL.Thing; // This assumes we want OWL-DL compatibility.
-                         // Individuals cannot be untyped.
+        // Individuals cannot be untyped.
 
         ontModel.enterCriticalSection(Lock.WRITE);
         try {
@@ -228,8 +239,9 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
             }
 
             try {
-                ontModel.getBaseModel().notifyEvent(new IndividualCreationEvent(getWebappDaoFactory().getUserURI(),true,entURI));
-                org.apache.jena.ontology.Individual ind = ontModel.createIndividual(entURI,cls);
+                ontModel.getBaseModel().notifyEvent(
+                    new IndividualCreationEvent(getWebappDaoFactory().getUserURI(), true, entURI));
+                org.apache.jena.ontology.Individual ind = ontModel.createIndividual(entURI, cls);
                 if (ent.getName() != null) {
                     ind.setLabel(ent.getName(), getDefaultLanguage());
                 }
@@ -239,18 +251,19 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
                         ind.addRDFType(ResourceFactory.createResource(vc.getURI()));
                     }
                 }
-                addPropertyDateTimeValue(ind,MODTIME,Calendar.getInstance().getTime(),ontModel);
+                addPropertyDateTimeValue(ind, MODTIME, Calendar.getInstance().getTime(), ontModel);
                 if (ent.getMainImageUri() != null) {
-                	addPropertyResourceURIValue(ind, IND_MAIN_IMAGE, ent.getMainImageUri());
+                    addPropertyResourceURIValue(ind, IND_MAIN_IMAGE, ent.getMainImageUri());
                 }
-                if( ent.getSearchBoost() != null ) {
-                    addPropertyFloatValue(ind,SEARCH_BOOST_ANNOT, ent.getSearchBoost(), ontModel);
+                if (ent.getSearchBoost() != null) {
+                    addPropertyFloatValue(ind, SEARCH_BOOST_ANNOT, ent.getSearchBoost(), ontModel);
                 }
             } catch (Exception e) {
-                log.error("Exception inserting individual: ",e);
+                log.error("Exception inserting individual: ", e);
             }
         } finally {
-            ontModel.getBaseModel().notifyEvent(new IndividualCreationEvent(getWebappDaoFactory().getUserURI(),false,entURI));
+            ontModel.getBaseModel().notifyEvent(
+                new IndividualCreationEvent(getWebappDaoFactory().getUserURI(), false, entURI));
             ontModel.leaveCriticalSection();
         }
         return entURI;
@@ -284,20 +297,21 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
     public int updateIndividual(Individual ent, OntModel ontModel) {
         ontModel.enterCriticalSection(Lock.WRITE);
         try {
-            ontModel.getBaseModel().notifyEvent(new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(),true,ent.getURI()));
+            ontModel.getBaseModel().notifyEvent(
+                new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(), true, ent.getURI()));
             org.apache.jena.ontology.Individual ind = ontModel.getIndividual(ent.getURI());
             if (ind != null) {
-               
+
                 String newLabel = ent.getName();
                 String oldLabel = ind.getLabel(getDefaultLanguage());
-                if ( newLabel != null && !newLabel.equals(oldLabel) ) {
+                if (newLabel != null && !newLabel.equals(oldLabel)) {
                     if (oldLabel == null) {
                         oldLabel = "";
                     }
                     replaceOldLabelWithNewInDefaultLanguage(ontModel, ind, newLabel, oldLabel);
                 }
                 Set<String> oldTypeURIsSet = new HashSet<String>();
-                for (Iterator<Resource> typeIt = ind.listRDFTypes(true); typeIt.hasNext();) {
+                for (Iterator<Resource> typeIt = ind.listRDFTypes(true); typeIt.hasNext(); ) {
                     Resource t = typeIt.next();
                     if (t.getURI() != null) {
                         oldTypeURIsSet.add(t.getURI());
@@ -305,13 +319,14 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
                 }
                 Set<String> newTypeURIsSet = new HashSet<String>();
                 if (ent.getVClassURI() != null) {
-                	newTypeURIsSet.add(ent.getVClassURI());
+                    newTypeURIsSet.add(ent.getVClassURI());
                 }
                 boolean conservativeTypeDeletion = false;
                 try {
                     List<VClass> vcl = ent.getVClasses(false);
                     if (vcl == null) {
-                        conservativeTypeDeletion = true; // if the bean has null here instead of an empty list, we don't want to trust it and just start deleting any existing types.  So we'll just update the Vitro flag-related types and leave the rest alone.
+                        conservativeTypeDeletion =
+                            true; // if the bean has null here instead of an empty list, we don't want to trust it and just start deleting any existing types.  So we'll just update the Vitro flag-related types and leave the rest alone.
                     } else {
                         for (VClass vc : vcl) {
                             newTypeURIsSet.add(vc.getURI());
@@ -322,7 +337,8 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
                 }
                 for (String uri : oldTypeURIsSet) {
                     if (!newTypeURIsSet.contains(uri)) {
-                        if ((!conservativeTypeDeletion) || (uri.indexOf(VitroVocabulary.vitroURI) == 0)) {
+                        if ((!conservativeTypeDeletion) ||
+                            (uri.indexOf(VitroVocabulary.vitroURI) == 0)) {
                             ind.removeRDFType(ResourceFactory.createResource(uri));
                         }
                     }
@@ -332,23 +348,29 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
                         ind.addRDFType(ResourceFactory.createResource(uri));
                     }
                 }
-                updatePropertyDateTimeValue(ind,MODTIME,Calendar.getInstance().getTime(),ontModel);
-                updatePropertyResourceURIValue(ind, IND_MAIN_IMAGE, ent.getMainImageUri(), ontModel);
-                if( ent.getSearchBoost() != null ) {
-                    updatePropertyFloatValue(ind, SEARCH_BOOST_ANNOT, ent.getSearchBoost(), ontModel);
+                updatePropertyDateTimeValue(ind, MODTIME, Calendar.getInstance().getTime(),
+                    ontModel);
+                updatePropertyResourceURIValue(ind, IND_MAIN_IMAGE, ent.getMainImageUri(),
+                    ontModel);
+                if (ent.getSearchBoost() != null) {
+                    updatePropertyFloatValue(ind, SEARCH_BOOST_ANNOT, ent.getSearchBoost(),
+                        ontModel);
                 }
-            return 0;
+                return 0;
             } else {
                 return 1;
             }
         } finally {
-            ontModel.getBaseModel().notifyEvent(new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(),false,ent.getURI()));
+            ontModel.getBaseModel().notifyEvent(
+                new IndividualUpdateEvent(getWebappDaoFactory().getUserURI(), false, ent.getURI()));
             ontModel.leaveCriticalSection();
         }
     }
 
-    private void replaceOldLabelWithNewInDefaultLanguage(OntModel ontModel, org.apache.jena.ontology.Individual ind,
-        final String newLabel, final String oldLabel) {
+    private void replaceOldLabelWithNewInDefaultLanguage(OntModel ontModel,
+                                                         org.apache.jena.ontology.Individual ind,
+                                                         final String newLabel,
+                                                         final String oldLabel) {
         Model temp = ModelFactory.createDefaultModel();
         StmtIterator statements = ontModel.listStatements(ind, RDFS.label, (RDFNode) null);
         while (statements.hasNext()) {
@@ -356,16 +378,16 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
             Literal object = statement.getLiteral();
             String lexicalForm = object.getLexicalForm();
             String language = object.getLanguage();
-            if (oldLabel.equals(lexicalForm) && language.equals(getDefaultLanguage()) ) {
+            if (oldLabel.equals(lexicalForm) && language.equals(getDefaultLanguage())) {
                 temp.add(statement);
             }
         }
         ontModel.remove(temp);
-        ind.addLabel(newLabel, getDefaultLanguage());    
+        ind.addLabel(newLabel, getDefaultLanguage());
     }
 
     public void markModified(Individual ind) {
-        markModified(ind,getOntModel());
+        markModified(ind, getOntModel());
     }
 
     public void markModified(Individual ind, OntModel ontModel) {
@@ -373,7 +395,8 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
         try {
             org.apache.jena.ontology.Individual jind = ontModel.getIndividual(ind.getURI());
             if (jind != null) {
-                updatePropertyDateTimeValue(jind,MODTIME,Calendar.getInstance().getTime(),ontModel);
+                updatePropertyDateTimeValue(jind, MODTIME, Calendar.getInstance().getTime(),
+                    ontModel);
             }
         } finally {
             ontModel.leaveCriticalSection();
@@ -391,7 +414,8 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
                 log.debug("Cannot remove individual with null URI");
                 return 1;
             }
-            ontModel.getBaseModel().notifyEvent(new IndividualDeletionEvent(getWebappDaoFactory().getUserURI(),true,URI));
+            ontModel.getBaseModel().notifyEvent(
+                new IndividualDeletionEvent(getWebappDaoFactory().getUserURI(), true, URI));
             Resource res = ontModel.getResource(URI);
             if (res == null) {
                 // This should never happen, but just in case
@@ -402,11 +426,12 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
                 OntResource ontRes = res.as(OntResource.class);
                 smartRemove(ontRes, ontModel);
             } else {
-                ontModel.removeAll(res,null,null);
-                ontModel.removeAll(null,null,res);
+                ontModel.removeAll(res, null, null);
+                ontModel.removeAll(null, null, res);
             }
         } finally {
-            ontModel.getBaseModel().notifyEvent(new IndividualDeletionEvent(getWebappDaoFactory().getUserURI(),false,URI));
+            ontModel.getBaseModel().notifyEvent(
+                new IndividualDeletionEvent(getWebappDaoFactory().getUserURI(), false, URI));
             ontModel.leaveCriticalSection();
         }
         return 0;
@@ -421,16 +446,19 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
     }
 
     public Individual getIndividualByURI(String entityURI) {
-        if( entityURI == null || entityURI.length() == 0 )
+        if (entityURI == null || entityURI.length() == 0) {
             return null;
+        }
 
         OntModel ontModel = getOntModelSelector().getABoxModel();
 
         ontModel.enterCriticalSection(Lock.READ);
         try {
-        	OntResource ontRes = (entityURI.startsWith(VitroVocabulary.PSEUDO_BNODE_NS))
-        		? (OntResource) ontModel.createResource(new AnonId(entityURI.substring(VitroVocabulary.PSEUDO_BNODE_NS.length()))).as(OntResource.class)
-        		: ontModel.getOntResource(entityURI);
+            OntResource ontRes = (entityURI.startsWith(VitroVocabulary.PSEUDO_BNODE_NS))
+                ? (OntResource) ontModel.createResource(
+                new AnonId(entityURI.substring(VitroVocabulary.PSEUDO_BNODE_NS.length())))
+                .as(OntResource.class)
+                : ontModel.getOntResource(entityURI);
             Individual ent = new IndividualJena(ontRes, getWebappDaoFactory());
             return ent;
         } catch (Exception ex) {
@@ -441,34 +469,35 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
     }
 
     public void fillVClassForIndividual(Individual entity) {
-        entity.setVClass(getWebappDaoFactory().getVClassDao().getVClassByURI(entity.getVClassURI()));
+        entity
+            .setVClass(getWebappDaoFactory().getVClassDao().getVClassByURI(entity.getVClassURI()));
     }
 
     /**
      * In Jena it can be difficult to get an object with a given dataproperty if
      * you do not care about the datatype or lang of the literal.  Use this
      * method if you would like to ignore the lang and datatype.
-     *
+     * <p>
      * Note: this method doesn't require that a property be declared in the
      * ontology as a data property -- only that it behaves as one.
      */
-    public List<Individual> getIndividualsByDataProperty(String dataPropertyUri, String value){
+    public List<Individual> getIndividualsByDataProperty(String dataPropertyUri, String value) {
         Property prop = null;
-        if( RDFS.label.getURI().equals( dataPropertyUri )){
+        if (RDFS.label.getURI().equals(dataPropertyUri)) {
             prop = RDFS.label;
-        }else{
+        } else {
             prop = getOntModel().getProperty(dataPropertyUri);
         }
 
-        if( prop == null ) {
+        if (prop == null) {
             log.debug("Could not getIndividualsByDataProperty() " +
-                    "because " + dataPropertyUri + "was not found in model.");
+                "because " + dataPropertyUri + "was not found in model.");
             return Collections.emptyList();
         }
 
-        if( value == null ){
+        if (value == null) {
             log.debug("Could not getIndividualsByDataProperty() " +
-                    "because value was null");
+                "because value was null");
             return Collections.emptyList();
         }
 
@@ -476,86 +505,95 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
         Literal litv2 = getOntModel().createTypedLiteral(value);
 
         //warning: this assumes that any language tags will be EN
-        Literal litv3 = getOntModel().createLiteral(value,"EN");
+        Literal litv3 = getOntModel().createLiteral(value, "EN");
 
-        HashMap<String,Individual> individualsMap = new HashMap<String, Individual>();
+        HashMap<String, Individual> individualsMap = new HashMap<String, Individual>();
 
         getOntModel().enterCriticalSection(Lock.READ);
         int count = 0;
-        try{
+        try {
             StmtIterator stmts
-                = getOntModel().listStatements((Resource)null, prop, litv1);
-            while(stmts.hasNext()){
+                = getOntModel().listStatements((Resource) null, prop, litv1);
+            while (stmts.hasNext()) {
                 count++;
                 Statement stmt = stmts.nextStatement();
 
                 RDFNode sub = stmt.getSubject();
-                if( sub == null || sub.isAnon() || sub.isLiteral() )
+                if (sub == null || sub.isAnon() || sub.isLiteral()) {
                     continue;
+                }
 
                 RDFNode obj = stmt.getObject();
-                if( obj == null || !obj.isLiteral() )
+                if (obj == null || !obj.isLiteral()) {
                     continue;
+                }
 
-                Literal literal = (Literal)obj;
+                Literal literal = (Literal) obj;
                 Object v = literal.getValue();
-                if( v == null )
+                if (v == null) {
                     continue;
+                }
 
-                String subUri = ((Resource)sub).getURI();
-                if( ! individualsMap.containsKey(subUri)){
+                String subUri = ((Resource) sub).getURI();
+                if (!individualsMap.containsKey(subUri)) {
                     org.apache.jena.ontology.Individual ind = getOntModel().getIndividual(subUri);
-                    individualsMap.put(subUri,new IndividualJena(ind, getWebappDaoFactory()));
+                    individualsMap.put(subUri, new IndividualJena(ind, getWebappDaoFactory()));
                 }
             }
 
-            stmts = getOntModel().listStatements((Resource)null, prop, litv2);
-            while(stmts.hasNext()){
+            stmts = getOntModel().listStatements((Resource) null, prop, litv2);
+            while (stmts.hasNext()) {
                 count++;
                 Statement stmt = stmts.nextStatement();
 
                 RDFNode sub = stmt.getSubject();
-                if( sub == null || sub.isAnon() || sub.isLiteral() )
+                if (sub == null || sub.isAnon() || sub.isLiteral()) {
                     continue;
+                }
 
                 RDFNode obj = stmt.getObject();
-                if( obj == null || !obj.isLiteral() )
+                if (obj == null || !obj.isLiteral()) {
                     continue;
+                }
 
-                Literal literal = (Literal)obj;
+                Literal literal = (Literal) obj;
                 Object v = literal.getValue();
-                if( v == null )
+                if (v == null) {
                     continue;
+                }
 
-                String subUri = ((Resource)sub).getURI();
-                if( ! individualsMap.containsKey(subUri)){
+                String subUri = ((Resource) sub).getURI();
+                if (!individualsMap.containsKey(subUri)) {
                     org.apache.jena.ontology.Individual ind = getOntModel().getIndividual(subUri);
-                    individualsMap.put(subUri,new IndividualJena(ind, getWebappDaoFactory()));
+                    individualsMap.put(subUri, new IndividualJena(ind, getWebappDaoFactory()));
                 }
             }
 
-            stmts = getOntModel().listStatements((Resource)null, prop, litv3);
-            while(stmts.hasNext()){
+            stmts = getOntModel().listStatements((Resource) null, prop, litv3);
+            while (stmts.hasNext()) {
                 count++;
                 Statement stmt = stmts.nextStatement();
 
                 RDFNode sub = stmt.getSubject();
-                if( sub == null || sub.isAnon() || sub.isLiteral() )
+                if (sub == null || sub.isAnon() || sub.isLiteral()) {
                     continue;
+                }
 
                 RDFNode obj = stmt.getObject();
-                if( obj == null || !obj.isLiteral() )
+                if (obj == null || !obj.isLiteral()) {
                     continue;
+                }
 
-                Literal literal = (Literal)obj;
+                Literal literal = (Literal) obj;
                 Object v = literal.getValue();
-                if( v == null )
+                if (v == null) {
                     continue;
+                }
 
-                String subUri = ((Resource)sub).getURI();
-                if( ! individualsMap.containsKey(subUri)){
+                String subUri = ((Resource) sub).getURI();
+                if (!individualsMap.containsKey(subUri)) {
                     org.apache.jena.ontology.Individual ind = getOntModel().getIndividual(subUri);
-                    individualsMap.put(subUri,new IndividualJena(ind, getWebappDaoFactory()));
+                    individualsMap.put(subUri, new IndividualJena(ind, getWebappDaoFactory()));
                 }
             }
         } finally {
@@ -567,21 +605,23 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
         return rv;
     }
 
-    public List<Individual> getIndividualsByDataProperty(String dataPropertyUri, String value, String datatypeUri, String lang){
-        if( datatypeUri == null && lang == null )
-            return getIndividualsByDataProperty(dataPropertyUri,value);
+    public List<Individual> getIndividualsByDataProperty(String dataPropertyUri, String value,
+                                                         String datatypeUri, String lang) {
+        if (datatypeUri == null && lang == null) {
+            return getIndividualsByDataProperty(dataPropertyUri, value);
+        }
 
         Property prop = null;
 
-        if( RDFS.label.getURI().equals( dataPropertyUri )){
+        if (RDFS.label.getURI().equals(dataPropertyUri)) {
             prop = RDFS.label;
-        }else{
+        } else {
             prop = getOntModel().getDatatypeProperty(dataPropertyUri);
         }
 
-        if( prop == null || value == null){
+        if (prop == null || value == null) {
             log.debug("Could not getIndividualsByDataProperty() " +
-                    "because " + dataPropertyUri + "was not found in model.");
+                "because " + dataPropertyUri + "was not found in model.");
             return Collections.emptyList();
         }
 
@@ -589,26 +629,29 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
         List<Individual> inds = new ArrayList<Individual>();
 
         Literal literal = null;
-        if( datatypeUri != null && datatypeUri.length() > 0 )
+        if (datatypeUri != null && datatypeUri.length() > 0) {
             literal = getOntModel().createTypedLiteral(value, datatypeUri);
-        else if( lang != null && lang.length() > 0 )
-            literal =  getOntModel().createLiteral(value,lang);
-        else
+        } else if (lang != null && lang.length() > 0) {
+            literal = getOntModel().createLiteral(value, lang);
+        } else {
             literal = getOntModel().createLiteral(value);
+        }
 
         getOntModel().enterCriticalSection(Lock.READ);
-        try{
+        try {
             stmts = getOntModel().listSubjectsWithProperty(prop, literal);
-            while(stmts.hasNext()){
+            while (stmts.hasNext()) {
                 Resource st = stmts.nextResource();
-                if ( st.getURI() == null ) { // check to make sure this node isn't null
+                if (st.getURI() == null) { // check to make sure this node isn't null
                     continue;
                 }
                 org.apache.jena.ontology.Individual ind = getOntModel().getIndividual(st.getURI());
                 inds.add(new IndividualJena(ind, getWebappDaoFactory()));
             }
         } finally {
-            if( stmts != null ) stmts.close();
+            if (stmts != null) {
+                stmts.close();
+            }
             getOntModel().leaveCriticalSection();
         }
         return inds;
@@ -619,93 +662,102 @@ public class IndividualDaoJena extends JenaBaseDao implements IndividualDao {
         throw new NotImplementedException("");
     }
 
-    public Iterator<String> getUpdatedSinceIterator(long updatedSince){
+    public Iterator<String> getUpdatedSinceIterator(long updatedSince) {
         //this is implemented in IndivdiualSDB
         throw new NotImplementedException("");
     }
 
     public boolean isIndividualOfClass(String vclassURI, String indURI) {
-        if( vclassURI == null || indURI == null
-            || "".equals(vclassURI) || "".equals(indURI))
+        if (vclassURI == null || indURI == null
+            || "".equals(vclassURI) || "".equals(indURI)) {
             return false;
+        }
         return getOntModel().contains(getOntModel().getResource(indURI),
-                    RDF.type ,
-                    getOntModel().getResource(vclassURI));
+            RDF.type,
+            getOntModel().getResource(vclassURI));
     }
 
-	public String getUnusedURI(Individual individual) throws InsertException {
-		String errMsg = null;
-		String namespace = null;
-		String uri = null;
-		boolean uriIsGood = false;
+    public String getUnusedURI(Individual individual) throws InsertException {
+        String errMsg = null;
+        String namespace = null;
+        String uri = null;
+        boolean uriIsGood = false;
 
-		if ( individual == null ||
-			(individual.getURI() != null && individual.getURI().startsWith( DEFAULT_NAMESPACE ) )
-			|| individual.getNamespace() == null
-			|| individual.getNamespace().length() == 0
-		    || DEFAULT_NAMESPACE.equals(individual.getNamespace()) ){
-			//we always want local names like n23423 for the default namespace
-			namespace = DEFAULT_NAMESPACE;
-			uri = null;
-			log.debug("Setting namespace to default namespace " + DEFAULT_NAMESPACE + " and uri is null");
-			log.debug("Individual : " + individual + " - URI: " + individual.getURI() + " - namespace -" +
-			individual.getNamespace() + "- ");
-		}else if( individual.getURI() != null ){
-			errMsg = getWebappDaoFactory().checkURI(individual.getURI());
-			if( errMsg == null){
-				uriIsGood = true;
-				uri = individual.getURI();
-			}else{
-				throw new InsertException(errMsg);
-			}
-			log.debug("Individual URI not null " + individual.getURI() + " and uriIsGood is true and uri set to individual uri");
-		}else{
-			namespace = individual.getNamespace();
-			if( namespace == null || namespace.length() == 0 )
-				namespace = DEFAULT_NAMESPACE;
-			String localName = individual.getName();
-			log.debug("Namespace " + namespace + " -localname=" + localName);
-			/* try to use the specified namespace and local name */
-			if (localName != null) {
-				log.debug("Local name not equal to null so replacing characters, etc.");
-				localName = localName.replaceAll("\\W", "");
-				localName = localName.replaceAll(":", "");
-				if (localName.length() > 2) {
-					if (Character.isDigit(localName.charAt(0))) {
-						localName = "n" + localName;
-					}
-					uri = namespace + localName;
-					errMsg = getWebappDaoFactory().checkURI(uri);
-					if( errMsg == null)
-						uriIsGood = true;
-					else
-						throw new InsertException(errMsg);
-					log.debug("uriIsGood is true and uri is " + uri);
-				}
-			}
-			/* else try namespace + n2343 */
-		}
+        if (individual == null ||
+            (individual.getURI() != null && individual.getURI().startsWith(DEFAULT_NAMESPACE))
+            || individual.getNamespace() == null
+            || individual.getNamespace().length() == 0
+            || DEFAULT_NAMESPACE.equals(individual.getNamespace())) {
+            //we always want local names like n23423 for the default namespace
+            namespace = DEFAULT_NAMESPACE;
+            uri = null;
+            log.debug(
+                "Setting namespace to default namespace " + DEFAULT_NAMESPACE + " and uri is null");
+            log.debug(
+                "Individual : " + individual + " - URI: " + individual.getURI() + " - namespace -" +
+                    individual.getNamespace() + "- ");
+        } else if (individual.getURI() != null) {
+            errMsg = getWebappDaoFactory().checkURI(individual.getURI());
+            if (errMsg == null) {
+                uriIsGood = true;
+                uri = individual.getURI();
+            } else {
+                throw new InsertException(errMsg);
+            }
+            log.debug("Individual URI not null " + individual.getURI() +
+                " and uriIsGood is true and uri set to individual uri");
+        } else {
+            namespace = individual.getNamespace();
+            if (namespace == null || namespace.length() == 0) {
+                namespace = DEFAULT_NAMESPACE;
+            }
+            String localName = individual.getName();
+            log.debug("Namespace " + namespace + " -localname=" + localName);
+            /* try to use the specified namespace and local name */
+            if (localName != null) {
+                log.debug("Local name not equal to null so replacing characters, etc.");
+                localName = localName.replaceAll("\\W", "");
+                localName = localName.replaceAll(":", "");
+                if (localName.length() > 2) {
+                    if (Character.isDigit(localName.charAt(0))) {
+                        localName = "n" + localName;
+                    }
+                    uri = namespace + localName;
+                    errMsg = getWebappDaoFactory().checkURI(uri);
+                    if (errMsg == null) {
+                        uriIsGood = true;
+                    } else {
+                        throw new InsertException(errMsg);
+                    }
+                    log.debug("uriIsGood is true and uri is " + uri);
+                }
+            }
+            /* else try namespace + n2343 */
+        }
 
-		int attempts = 0;
+        int attempts = 0;
 
-		while(!uriIsGood && attempts < 30 ){
-			log.debug("While loop: Uri is good false, attempt=" + attempts);
-			String localName = "n" + random.nextInt( Math.min(Integer.MAX_VALUE,(int)Math.pow(2,attempts + 13)) );
-			uri = namespace + localName;
-			log.debug("Trying URI " + uri);
-			errMsg = getWebappDaoFactory().checkURI(uri);
-			if(  errMsg != null)
-				uri = null;
-			else
-				uriIsGood = true;
-			attempts++;
-		}
+        while (!uriIsGood && attempts < 30) {
+            log.debug("While loop: Uri is good false, attempt=" + attempts);
+            String localName =
+                "n" + random.nextInt(Math.min(Integer.MAX_VALUE, (int) Math.pow(2, attempts + 13)));
+            uri = namespace + localName;
+            log.debug("Trying URI " + uri);
+            errMsg = getWebappDaoFactory().checkURI(uri);
+            if (errMsg != null) {
+                uri = null;
+            } else {
+                uriIsGood = true;
+            }
+            attempts++;
+        }
 
-		if( uri == null )
-			throw new InsertException("Could not create URI for individual: " + errMsg);
-		log.debug("Using URI" + uri);
-		return uri;
-	}
+        if (uri == null) {
+            throw new InsertException("Could not create URI for individual: " + errMsg);
+        }
+        log.debug("Using URI" + uri);
+        return uri;
+    }
 
     @Override
     // This method returns an EditLiteral rather than a Jena Literal, since IndividualDao

@@ -2,18 +2,22 @@
 
 package edu.cornell.mannlib.vitro.webapp.rdfservice.impl.jena.sdb;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import javax.sql.DataSource;
-
+import edu.cornell.mannlib.vitro.webapp.dao.jena.DatasetWrapper;
+import edu.cornell.mannlib.vitro.webapp.dao.jena.StaticDatasetFactory;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeSet;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.jena.RDFServiceJena;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
@@ -33,13 +37,6 @@ import org.apache.jena.sdb.StoreDesc;
 import org.apache.jena.sdb.layout2.NodeLayout2;
 import org.apache.jena.sdb.layout2.ValueType;
 import org.apache.jena.sdb.sql.SDBConnection;
-
-import edu.cornell.mannlib.vitro.webapp.dao.jena.DatasetWrapper;
-import edu.cornell.mannlib.vitro.webapp.dao.jena.StaticDatasetFactory;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeSet;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.jena.RDFServiceJena;
 import org.apache.jena.sdb.store.DatabaseType;
 import org.apache.jena.sdb.store.LayoutType;
 
@@ -61,7 +58,33 @@ public class RDFServiceSDB extends RDFServiceJena implements RDFService {
         this.conn = conn;
         this.storeDesc = storeDesc;
         this.staticDatasetFactory = new StaticDatasetFactory(getDataset(
-                new SDBConnection(conn)));
+            new SDBConnection(conn)));
+    }
+
+    // Copied from Jena SQLBridge2
+    private static Node makeNode(String lex, String datatype, String lang, ValueType vType) {
+        switch (vType) {
+            case BNODE:
+                return NodeFactory.createBlankNode(lex);
+            case URI:
+                return NodeFactory.createURI(lex);
+            case STRING:
+                return NodeFactory.createLiteral(lex, lang);
+            case XSDSTRING:
+                return NodeFactory.createLiteral(lex, XSDDatatype.XSDstring);
+            case INTEGER:
+                return NodeFactory.createLiteral(lex, XSDDatatype.XSDinteger);
+            case DOUBLE:
+                return NodeFactory.createLiteral(lex, XSDDatatype.XSDdouble);
+            case DATETIME:
+                return NodeFactory.createLiteral(lex, XSDDatatype.XSDdateTime);
+            case OTHER:
+                RDFDatatype dt = TypeMapper.getInstance().getSafeTypeByName(datatype);
+                return NodeFactory.createLiteral(lex, dt);
+            default:
+                log.warn("Unrecognized: (" + lex + ", " + lang + ", " + vType + ")");
+                return NodeFactory.createLiteral("UNRECOGNIZED");
+        }
     }
 
     @Override
@@ -80,12 +103,12 @@ public class RDFServiceSDB extends RDFServiceJena implements RDFService {
 
     @Override
     public boolean changeSetUpdate(ChangeSet changeSet)
-            throws RDFServiceException {
+        throws RDFServiceException {
 
         if (changeSet.getPreconditionQuery() != null
-                && !isPreconditionSatisfied(
-                        changeSet.getPreconditionQuery(),
-                                changeSet.getPreconditionQueryType())) {
+            && !isPreconditionSatisfied(
+            changeSet.getPreconditionQuery(),
+            changeSet.getPreconditionQueryType())) {
             return false;
         }
 
@@ -99,8 +122,8 @@ public class RDFServiceSDB extends RDFServiceJena implements RDFService {
 
         try {
             beginTransaction(sdbConn);
-        	notifyListenersOfPreChangeEvents(changeSet);
-        	applyChangeSetToModel(changeSet, dataset);
+            notifyListenersOfPreChangeEvents(changeSet);
+            applyChangeSetToModel(changeSet, dataset);
             commitTransaction(sdbConn);
             notifyListenersOfChanges(changeSet);
             notifyListenersOfPostChangeEvents(changeSet);
@@ -115,14 +138,14 @@ public class RDFServiceSDB extends RDFServiceJena implements RDFService {
         }
     }
 
-	private SDBConnection getSDBConnection() throws RDFServiceException  {
-		try {
-			Connection c = (conn != null) ? conn : ds.getConnection();
-			return new SDBConnection(c);
-		} catch (SQLException sqle) {
-			log.error(sqle, sqle);
-			throw new RDFServiceException(sqle);
-		}
+    private SDBConnection getSDBConnection() throws RDFServiceException {
+        try {
+            Connection c = (conn != null) ? conn : ds.getConnection();
+            return new SDBConnection(c);
+        } catch (SQLException sqle) {
+            log.error(sqle, sqle);
+            throw new RDFServiceException(sqle);
+        }
     }
 
     private void close(SDBConnection sdbConn) {
@@ -137,23 +160,23 @@ public class RDFServiceSDB extends RDFServiceJena implements RDFService {
         return SDBFactory.connectDataset(store);
     }
 
-	private void beginTransaction(SDBConnection sdbConn) {
-		if (sdbConn.getTransactionHandler().transactionsSupported()) {
-		    sdbConn.getTransactionHandler().begin();
-		}
-	}
+    private void beginTransaction(SDBConnection sdbConn) {
+        if (sdbConn.getTransactionHandler().transactionsSupported()) {
+            sdbConn.getTransactionHandler().begin();
+        }
+    }
 
-	private void commitTransaction(SDBConnection sdbConn) {
-		if (sdbConn.getTransactionHandler().transactionsSupported()) {
-			sdbConn.getTransactionHandler().commit();
-		}
-	}
+    private void commitTransaction(SDBConnection sdbConn) {
+        if (sdbConn.getTransactionHandler().transactionsSupported()) {
+            sdbConn.getTransactionHandler().commit();
+        }
+    }
 
-	private void abortTransaction(SDBConnection sdbConn) {
-		if (sdbConn.getTransactionHandler().transactionsSupported()) {
-			sdbConn.getTransactionHandler().abort();
-		}
-	}
+    private void abortTransaction(SDBConnection sdbConn) {
+        if (sdbConn.getTransactionHandler().transactionsSupported()) {
+            sdbConn.getTransactionHandler().abort();
+        }
+    }
 
     @Override
     protected QueryExecution createQueryExecution(String queryString, Query q, Dataset d) {
@@ -164,7 +187,8 @@ public class RDFServiceSDB extends RDFServiceJena implements RDFService {
     }
 
     @Override
-    public long countTriples(RDFNode subject, RDFNode predicate, RDFNode object) throws RDFServiceException {
+    public long countTriples(RDFNode subject, RDFNode predicate, RDFNode object)
+        throws RDFServiceException {
         if (LayoutType.LayoutTripleNodesHash.equals(storeDesc.getLayout())) {
             if (DatabaseType.MySQL.equals(storeDesc.getDbType()) ||
                 DatabaseType.PostgreSQL.equals(storeDesc.getDbType())) {
@@ -172,7 +196,9 @@ public class RDFServiceSDB extends RDFServiceJena implements RDFService {
                 try {
                     String whereClause = makeWhereClause(subject, predicate, object);
                     Statement stmt = sdbConn.getSqlConnection().createStatement();
-                    ResultSet rs = stmt.executeQuery("SELECT count(DISTINCT s,p,o) AS tcount FROM Quads" + (StringUtils.isEmpty(whereClause) ? "" : " WHERE " + whereClause));
+                    ResultSet rs = stmt.executeQuery(
+                        "SELECT count(DISTINCT s,p,o) AS tcount FROM Quads" +
+                            (StringUtils.isEmpty(whereClause) ? "" : " WHERE " + whereClause));
                     try {
                         if (rs.next()) {
                             return rs.getLong("tcount");
@@ -194,7 +220,8 @@ public class RDFServiceSDB extends RDFServiceJena implements RDFService {
     }
 
     @Override
-    public Model getTriples(RDFNode subject, RDFNode predicate, RDFNode object, long limit, long offset) throws RDFServiceException {
+    public Model getTriples(RDFNode subject, RDFNode predicate, RDFNode object, long limit,
+                            long offset) throws RDFServiceException {
         if (LayoutType.LayoutTripleNodesHash.equals(storeDesc.getLayout())) {
             if (DatabaseType.MySQL.equals(storeDesc.getDbType()) ||
                 DatabaseType.PostgreSQL.equals(storeDesc.getDbType())) {
@@ -205,56 +232,57 @@ public class RDFServiceSDB extends RDFServiceJena implements RDFService {
                     String whereClause = makeWhereClause(subject, predicate, object);
                     Statement stmt = sdbConn.getSqlConnection().createStatement();
                     ResultSet rs = stmt.executeQuery("SELECT \n" +
-                            "N1.lex      AS s_lex,\n" +
-                            "N1.lang     AS s_lang,\n" +
-                            "N1.datatype AS s_datatype,\n" +
-                            "N1.type     AS s_type,\n" +
-                            "N2.lex      AS p_lex,\n" +
-                            "N2.lang     AS p_lang,\n" +
-                            "N2.datatype AS p_datatype,\n" +
-                            "N2.type     AS p_type,\n" +
-                            "N3.lex      AS o_lex,\n" +
-                            "N3.lang     AS o_lang,\n" +
-                            "N3.datatype AS o_datatype,\n" +
-                            "N3.type     AS o_type\n" +
-                            "FROM\n" +
-                            "(SELECT DISTINCT s,p,o FROM Quads" +
-                            (StringUtils.isEmpty(whereClause) ? "" : " WHERE " + whereClause) +
-                            " ORDER BY s,p,o " +
-                            (limit > 0 ? "LIMIT " + limit : "") +
-                            (offset > 0 ? " OFFSET " + offset : "") + ") Q\n" +
-                            "LEFT OUTER JOIN\n" +
-                            "\tNodes AS N1\n" +
-                            "ON ( Q.s = N1.hash )\n" +
-                            "LEFT OUTER JOIN\n" +
-                            "\tNodes AS N2\n" +
-                            "ON ( Q.p = N2.hash )\n" +
-                            "LEFT OUTER JOIN\n" +
-                            "\tNodes AS N3\n" +
-                            "ON ( Q.o = N3.hash )");
+                        "N1.lex      AS s_lex,\n" +
+                        "N1.lang     AS s_lang,\n" +
+                        "N1.datatype AS s_datatype,\n" +
+                        "N1.type     AS s_type,\n" +
+                        "N2.lex      AS p_lex,\n" +
+                        "N2.lang     AS p_lang,\n" +
+                        "N2.datatype AS p_datatype,\n" +
+                        "N2.type     AS p_type,\n" +
+                        "N3.lex      AS o_lex,\n" +
+                        "N3.lang     AS o_lang,\n" +
+                        "N3.datatype AS o_datatype,\n" +
+                        "N3.type     AS o_type\n" +
+                        "FROM\n" +
+                        "(SELECT DISTINCT s,p,o FROM Quads" +
+                        (StringUtils.isEmpty(whereClause) ? "" : " WHERE " + whereClause) +
+                        " ORDER BY s,p,o " +
+                        (limit > 0 ? "LIMIT " + limit : "") +
+                        (offset > 0 ? " OFFSET " + offset : "") + ") Q\n" +
+                        "LEFT OUTER JOIN\n" +
+                        "\tNodes AS N1\n" +
+                        "ON ( Q.s = N1.hash )\n" +
+                        "LEFT OUTER JOIN\n" +
+                        "\tNodes AS N2\n" +
+                        "ON ( Q.p = N2.hash )\n" +
+                        "LEFT OUTER JOIN\n" +
+                        "\tNodes AS N3\n" +
+                        "ON ( Q.o = N3.hash )");
 
                     try {
                         while (rs.next()) {
                             Node subjectNode = makeNode(
-                                    rs.getString("s_lex"),
-                                    rs.getString("s_datatype"),
-                                    rs.getString("s_lang"),
-                                    ValueType.lookup(rs.getInt("s_type")));
+                                rs.getString("s_lex"),
+                                rs.getString("s_datatype"),
+                                rs.getString("s_lang"),
+                                ValueType.lookup(rs.getInt("s_type")));
 
                             Node predicateNode = makeNode(
-                                    rs.getString("p_lex"),
-                                    rs.getString("p_datatype"),
-                                    rs.getString("p_lang"),
-                                    ValueType.lookup(rs.getInt("p_type")));
+                                rs.getString("p_lex"),
+                                rs.getString("p_datatype"),
+                                rs.getString("p_lang"),
+                                ValueType.lookup(rs.getInt("p_type")));
 
                             Node objectNode = makeNode(
-                                    rs.getString("o_lex"),
-                                    rs.getString("o_datatype"),
-                                    rs.getString("o_lang"),
-                                    ValueType.lookup(rs.getInt("o_type")));
+                                rs.getString("o_lex"),
+                                rs.getString("o_datatype"),
+                                rs.getString("o_lang"),
+                                ValueType.lookup(rs.getInt("o_type")));
 
                             triples.add(
-                                    triples.asStatement(Triple.create(subjectNode, predicateNode, objectNode))
+                                triples.asStatement(
+                                    Triple.create(subjectNode, predicateNode, objectNode))
                             );
                         }
                     } finally {
@@ -284,34 +312,8 @@ public class RDFServiceSDB extends RDFServiceJena implements RDFService {
             try {
                 conn.close();
             } catch (SQLException e) {
-                log.error(e,e);
+                log.error(e, e);
             }
-        }
-    }
-
-    // Copied from Jena SQLBridge2
-    private static Node makeNode(String lex, String datatype, String lang, ValueType vType) {
-        switch(vType) {
-            case BNODE:
-                return NodeFactory.createBlankNode(lex);
-            case URI:
-                return NodeFactory.createURI(lex);
-            case STRING:
-                return NodeFactory.createLiteral(lex, lang);
-            case XSDSTRING:
-                return NodeFactory.createLiteral(lex, XSDDatatype.XSDstring);
-            case INTEGER:
-                return NodeFactory.createLiteral(lex, XSDDatatype.XSDinteger);
-            case DOUBLE:
-                return NodeFactory.createLiteral(lex, XSDDatatype.XSDdouble);
-            case DATETIME:
-                return NodeFactory.createLiteral(lex, XSDDatatype.XSDdateTime);
-            case OTHER:
-                RDFDatatype dt = TypeMapper.getInstance().getSafeTypeByName(datatype);
-                return NodeFactory.createLiteral(lex, dt);
-            default:
-                log.warn("Unrecognized: (" + lex + ", " + lang + ", " + vType + ")");
-                return NodeFactory.createLiteral("UNRECOGNIZED");
         }
     }
 

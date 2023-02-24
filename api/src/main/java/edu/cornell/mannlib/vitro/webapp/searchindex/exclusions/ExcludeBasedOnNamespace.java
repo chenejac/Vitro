@@ -13,25 +13,25 @@ import edu.cornell.mannlib.vitro.webapp.utils.configuration.Property;
  */
 public class ExcludeBasedOnNamespace implements SearchIndexExcluder {
 
-	private List<String> excludeNamespaces = new ArrayList<>();
+    private List<String> excludeNamespaces = new ArrayList<>();
 
-	@Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#excludes")
-	public void addExcludedNamespace(String ns) {
-		excludeNamespaces.add(ns);
-	}
+    @Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#excludes")
+    public void addExcludedNamespace(String ns) {
+        excludeNamespaces.add(ns);
+    }
 
-	@Override
-	public String checkForExclusion(Individual ind) {
-		for (String ns : excludeNamespaces) {
-			if (ns.equals(ind.getNamespace())) {
-				return "skipping because of namespace " + ns;
-			}
-		}
-		return null;
-	}
+    @Override
+    public String checkForExclusion(Individual ind) {
+        for (String ns : excludeNamespaces) {
+            if (ns.equals(ind.getNamespace())) {
+                return "skipping because of namespace " + ns;
+            }
+        }
+        return null;
+    }
 
-	@Override
-	public String toString() {
-		return "ExcludeBasedOnNamespace[namespaces=" + excludeNamespaces + "]";
-	}
+    @Override
+    public String toString() {
+        return "ExcludeBasedOnNamespace[namespaces=" + excludeNamespaces + "]";
+    }
 }

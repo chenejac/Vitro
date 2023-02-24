@@ -9,121 +9,122 @@ import org.apache.jena.shared.Lock;
 
 /**
  * An OntModelSelector that does not support model-per-ontology separation
- * @author bjl23
  *
+ * @author bjl23
  */
 public class SimpleOntModelSelector implements OntModelSelector {
 
-	protected OntModel fullModel;
-	protected OntModel aboxModel;
-	protected OntModel applicationMetadataModel;
-	protected OntModel tboxModel;
-	protected OntModel userAccountsModel;
+    protected OntModel fullModel;
+    protected OntModel aboxModel;
+    protected OntModel applicationMetadataModel;
+    protected OntModel tboxModel;
+    protected OntModel userAccountsModel;
 
-	protected OntModelSpec DEFAULT_ONT_MODEL_SPEC = OntModelSpec.OWL_MEM;
-	protected OntModel displayModel;
+    protected OntModelSpec DEFAULT_ONT_MODEL_SPEC = OntModelSpec.OWL_MEM;
+    protected OntModel displayModel;
 
-	/**
-	 * Construct an OntModelSelector with a bunch of empty models
-	 */
-	public SimpleOntModelSelector() {
-		aboxModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
-		tboxModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
-		applicationMetadataModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
-		userAccountsModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
-		fullModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
-		fullModel.addSubModel(aboxModel);
-		fullModel.addSubModel(tboxModel);
-		fullModel.addSubModel(applicationMetadataModel);
-	}
+    /**
+     * Construct an OntModelSelector with a bunch of empty models
+     */
+    public SimpleOntModelSelector() {
+        aboxModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
+        tboxModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
+        applicationMetadataModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
+        userAccountsModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
+        fullModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
+        fullModel.addSubModel(aboxModel);
+        fullModel.addSubModel(tboxModel);
+        fullModel.addSubModel(applicationMetadataModel);
+    }
 
-	/**
-	 * Construct An OntModel selector that works with a single union OntModel
-	 * Only for temporary backwards compatibility.
-	 */
-	public SimpleOntModelSelector(OntModel ontModel) {
-		this.fullModel = ontModel;
-		this.aboxModel = ontModel;
-		this.applicationMetadataModel = ontModel;
-		this.tboxModel = ontModel;
-		this.userAccountsModel = ontModel;
-		this.displayModel = ontModel;
-	}
+    /**
+     * Construct An OntModel selector that works with a single union OntModel
+     * Only for temporary backwards compatibility.
+     */
+    public SimpleOntModelSelector(OntModel ontModel) {
+        this.fullModel = ontModel;
+        this.aboxModel = ontModel;
+        this.applicationMetadataModel = ontModel;
+        this.tboxModel = ontModel;
+        this.userAccountsModel = ontModel;
+        this.displayModel = ontModel;
+    }
 
-	public void setABoxModel(OntModel m) {
-		fullModel.enterCriticalSection(Lock.WRITE);
-		try {
-			fullModel.removeSubModel(aboxModel);
-			this.aboxModel = m;
-			fullModel.addSubModel(aboxModel);
-		} finally {
-			fullModel.leaveCriticalSection();
-		}
-	}
+    @Override
+    public OntModel getABoxModel() {
+        return aboxModel;
+    }
 
-	public void setApplicationMetadataModel(OntModel m) {
-		fullModel.enterCriticalSection(Lock.WRITE);
-		try {
-			fullModel.removeSubModel(applicationMetadataModel);
-			this.applicationMetadataModel = m;
-			fullModel.addSubModel(applicationMetadataModel);
-		} finally {
-			fullModel.leaveCriticalSection();
-		}
-	}
+    public void setABoxModel(OntModel m) {
+        fullModel.enterCriticalSection(Lock.WRITE);
+        try {
+            fullModel.removeSubModel(aboxModel);
+            this.aboxModel = m;
+            fullModel.addSubModel(aboxModel);
+        } finally {
+            fullModel.leaveCriticalSection();
+        }
+    }
 
-	public void setTBoxModel(OntModel m) {
-		fullModel.enterCriticalSection(Lock.WRITE);
-		try {
-			fullModel.removeSubModel(tboxModel);
-			this.tboxModel = m;
-			fullModel.addSubModel(tboxModel);
-		} finally {
-			fullModel.leaveCriticalSection();
-		}
-	}
+    @Override
+    public OntModel getApplicationMetadataModel() {
+        return applicationMetadataModel;
+    }
 
-	public void setFullModel(OntModel m) {
-		m.addSubModel(tboxModel);
-		m.addSubModel(aboxModel);
-		m.addSubModel(applicationMetadataModel);
-		this.fullModel = m;
-	}
+    public void setApplicationMetadataModel(OntModel m) {
+        fullModel.enterCriticalSection(Lock.WRITE);
+        try {
+            fullModel.removeSubModel(applicationMetadataModel);
+            this.applicationMetadataModel = m;
+            fullModel.addSubModel(applicationMetadataModel);
+        } finally {
+            fullModel.leaveCriticalSection();
+        }
+    }
 
-	@Override
-	public OntModel getABoxModel() {
-		return aboxModel;
-	}
+    @Override
+    public OntModel getFullModel() {
+        return fullModel;
+    }
 
-	@Override
-	public OntModel getApplicationMetadataModel() {
-		return applicationMetadataModel;
-	}
+    public void setFullModel(OntModel m) {
+        m.addSubModel(tboxModel);
+        m.addSubModel(aboxModel);
+        m.addSubModel(applicationMetadataModel);
+        this.fullModel = m;
+    }
 
-	@Override
-	public OntModel getFullModel() {
-		return fullModel;
-	}
+    @Override
+    public OntModel getTBoxModel() {
+        return tboxModel;
+    }
 
-	@Override
-	public OntModel getTBoxModel() {
-		return tboxModel;
-	}
+    public void setTBoxModel(OntModel m) {
+        fullModel.enterCriticalSection(Lock.WRITE);
+        try {
+            fullModel.removeSubModel(tboxModel);
+            this.tboxModel = m;
+            fullModel.addSubModel(tboxModel);
+        } finally {
+            fullModel.leaveCriticalSection();
+        }
+    }
 
-	@Override
-	public OntModel getUserAccountsModel() {
-		return userAccountsModel;
-	}
+    @Override
+    public OntModel getUserAccountsModel() {
+        return userAccountsModel;
+    }
 
-	public void setUserAccountsModel(OntModel userAccountsModel) {
-		this.userAccountsModel = userAccountsModel;
-	}
+    public void setUserAccountsModel(OntModel userAccountsModel) {
+        this.userAccountsModel = userAccountsModel;
+    }
 
-	public void setDisplayModel(OntModel displayModel) {
-		this.displayModel = displayModel;
-	}
-	@Override
-	public OntModel getDisplayModel(){
-		return this.displayModel;
-	}
+    @Override
+    public OntModel getDisplayModel() {
+        return this.displayModel;
+    }
+
+    public void setDisplayModel(OntModel displayModel) {
+        this.displayModel = displayModel;
+    }
 }

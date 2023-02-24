@@ -5,6 +5,9 @@ package edu.cornell.mannlib.vitro.webapp.servlet.setup;
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess.WhichService.CONTENT;
 import static edu.cornell.mannlib.vitro.webapp.servlet.setup.RDFFilesLoader.getEnabledLocales;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -19,20 +22,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.jena.ontology.OntDocumentManager;
-import org.apache.jena.ontology.OntModel;
-import org.apache.jena.ontology.OntModelSpec;
-import org.apache.jena.query.Dataset;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-
 import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
 import edu.cornell.mannlib.vitro.webapp.dao.jena.RDFServiceDataset;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
@@ -40,30 +29,42 @@ import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
 import edu.cornell.mannlib.vitro.webapp.startup.StartupStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.jena.ontology.OntDocumentManager;
+import org.apache.jena.ontology.OntModel;
+import org.apache.jena.ontology.OntModelSpec;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 
 // This ContextListener must run after the JenaDataSourceSetup ContextListener
 
 public class FileGraphSetup implements ServletContextListener {
-	private static final Log log = LogFactory.getLog(FileGraphSetup.class);
-
-	private static final String RDF = "rdf";
+    public static final String FILEGRAPH_URI_ROOT = "http://vitro.mannlib.cornell.edu/filegraph/";
+    private static final Log log = LogFactory.getLog(FileGraphSetup.class);
+    private static final String RDF = "rdf";
     private static final String I18N = "i18n";
     private static final String ABOX = "abox";
     private static final String TBOX = "tbox";
     private static final String FILEGRAPH = "filegraph";
+    /**
+     * Ignore hidden files when looking for filegraph RDF.
+     */
+    private static final DirectoryStream.Filter<Path> REJECT_HIDDEN_FILES =
+        new DirectoryStream.Filter<Path>() {
+            @Override
+            public boolean accept(Path entry) throws IOException {
+                return !Files.isHidden(entry);
+            }
+        };
 
-    public static final String FILEGRAPH_URI_ROOT = "http://vitro.mannlib.cornell.edu/filegraph/";
-
-    /** Ignore hidden files when looking for filegraph RDF. */
-	private static final DirectoryStream.Filter<Path> REJECT_HIDDEN_FILES = new DirectoryStream.Filter<Path>() {
-		@Override
-		public boolean accept(Path entry) throws IOException {
-			return !Files.isHidden(entry);
-		}
-	};
+    private static boolean isUpdateRequired(ServletContext ctx) {
+        return (ctx.getAttribute(UpdateKnowledgeBase.KBM_REQURIED_AT_STARTUP) != null);
+    }
 
     @Override
-	public void contextInitialized(ServletContextEvent sce) {
+    public void contextInitialized(ServletContextEvent sce) {
 
         boolean aboxChanged = false; // indicates whether any ABox file graph model has changed
         boolean tboxChanged = false; // indicates whether any TBox file graph model has changed
@@ -73,7 +74,7 @@ public class FileGraphSetup implements ServletContextListener {
         try {
             OntDocumentManager.getInstance().setProcessImports(true);
             Dataset dataset = ModelAccess.on(ctx).getDataset();
-			RDFService rdfService = ModelAccess.on(ctx).getRDFService(CONTENT);
+            RDFService rdfService = ModelAccess.on(ctx).getRDFService(CONTENT);
 
             // ABox files
             Set<Path> paths = getFilegraphPaths(ctx, RDF, ABOX, FILEGRAPH);
@@ -97,12 +98,13 @@ public class FileGraphSetup implements ServletContextListener {
                 paths.addAll(getFilegraphPaths(ctx, RDF, I18N, locale, TBOX, FILEGRAPH));
             }
 
-            cleanupDB(dataset, pathsToURIs(paths, TBOX),TBOX);
+            cleanupDB(dataset, pathsToURIs(paths, TBOX), TBOX);
 
             OntModel tboxBaseModel = ModelAccess.on(ctx).getOntModel(ModelNames.TBOX_ASSERTIONS);
             tboxChanged = readGraphs(paths, rdfService, TBOX, tboxBaseModel);
         } catch (ClassCastException cce) {
-            String errMsg = "Unable to cast servlet context attribute to the appropriate type " + cce.getLocalizedMessage();
+            String errMsg = "Unable to cast servlet context attribute to the appropriate type " +
+                cce.getLocalizedMessage();
             log.error(errMsg);
             throw new ClassCastException(errMsg);
         } catch (Throwable t) {
@@ -111,41 +113,43 @@ public class FileGraphSetup implements ServletContextListener {
             OntDocumentManager.getInstance().setProcessImports(false);
         }
 
-        if ( (aboxChanged || tboxChanged) && !isUpdateRequired(ctx)) {
+        if ((aboxChanged || tboxChanged) && !isUpdateRequired(ctx)) {
             log.info("a full recompute of the Abox will be performed because" +
-                    " the filegraph abox(s) and/or tbox(s) have changed or are being read for the first time." );
-            SimpleReasonerSetup.setRecomputeRequired(ctx, SimpleReasonerSetup.RecomputeMode.BACKGROUND);
+                " the filegraph abox(s) and/or tbox(s) have changed or are being read for the first time.");
+            SimpleReasonerSetup
+                .setRecomputeRequired(ctx, SimpleReasonerSetup.RecomputeMode.BACKGROUND);
         }
     }
 
-	private Set<Path> getFilegraphPaths(ServletContext ctx, String... strings) {
-		StartupStatus ss = StartupStatus.getBean(ctx);
+    private Set<Path> getFilegraphPaths(ServletContext ctx, String... strings) {
+        StartupStatus ss = StartupStatus.getBean(ctx);
 
-		String homeDirProperty = ApplicationUtils.instance().getHomeDirectory().getPath().toString();
-		Path filegraphDir = Paths.get(homeDirProperty, strings);
+        String homeDirProperty =
+            ApplicationUtils.instance().getHomeDirectory().getPath().toString();
+        Path filegraphDir = Paths.get(homeDirProperty, strings);
 
-		Set<Path> paths = new TreeSet<>();
-		if (Files.isDirectory(filegraphDir)) {
-			try (DirectoryStream<Path> stream = Files.newDirectoryStream(
-					filegraphDir, REJECT_HIDDEN_FILES)) {
-				for (Path p : stream) {
-					paths.add(p);
-				}
-				ss.info(this, "Read " + paths.size() + " RDF files from '"
-						+ filegraphDir + "'");
-			} catch (IOException e) {
-				ss.fatal(this, "Failed to read filegraph RDF from '"
-						+ filegraphDir + "' directory.", e);
-			}
-		} else {
-			ss.info(this, "Filegraph directory '" + filegraphDir
-					+ "' doesn't exist.");
-		}
-		log.debug("Paths from '" + filegraphDir + "': " + paths);
-		return paths;
-	}
+        Set<Path> paths = new TreeSet<>();
+        if (Files.isDirectory(filegraphDir)) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(
+                filegraphDir, REJECT_HIDDEN_FILES)) {
+                for (Path p : stream) {
+                    paths.add(p);
+                }
+                ss.info(this, "Read " + paths.size() + " RDF files from '"
+                    + filegraphDir + "'");
+            } catch (IOException e) {
+                ss.fatal(this, "Failed to read filegraph RDF from '"
+                    + filegraphDir + "' directory.", e);
+            }
+        } else {
+            ss.info(this, "Filegraph directory '" + filegraphDir
+                + "' doesn't exist.");
+        }
+        log.debug("Paths from '" + filegraphDir + "': " + paths);
+        return paths;
+    }
 
-	/*
+    /*
      * Reads the graphs stored as files in sub-directories of
      *   1. updates the SDB store to reflect the current contents of the graph.
      *   2. adds the graph as an in-memory submodel of the base in-memory graph
@@ -153,7 +157,8 @@ public class FileGraphSetup implements ServletContextListener {
      * Note: no connection needs to be maintained between the in-memory copy of the
      * graph and the DB copy.
      */
-    private boolean readGraphs(Set<Path> pathSet, RDFService rdfService, String type, OntModel baseModel) {
+    private boolean readGraphs(Set<Path> pathSet, RDFService rdfService, String type,
+                               OntModel baseModel) {
 
         int count = 0;
 
@@ -161,31 +166,33 @@ public class FileGraphSetup implements ServletContextListener {
 
         // For each file graph in the target directory update or add that graph to
         // the Jena SDB, and attach the graph as a submodel of the base model
-        for ( Path p : pathSet ) {
+        for (Path p : pathSet) {
 
             count++; // note this will count the empty files too
             try {
-                FileInputStream fis = new FileInputStream( p.toFile() );
+                FileInputStream fis = new FileInputStream(p.toFile());
                 try {
                     OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM);
                     String fn = p.getFileName().toString().toLowerCase();
-                    if ( fn.endsWith(".nt") ) {
-                        model.read( fis, null, "N-TRIPLE" );
-                    } else if ( fn.endsWith(".n3") ) {
+                    if (fn.endsWith(".nt")) {
+                        model.read(fis, null, "N-TRIPLE");
+                    } else if (fn.endsWith(".n3")) {
                         model.read(fis, null, "N3");
-                    } else if ( fn.endsWith(".ttl") ) {
+                    } else if (fn.endsWith(".ttl")) {
                         model.read(fis, null, "TURTLE");
-                    } else if ( fn.endsWith(".owl") || fn.endsWith(".rdf") || fn.endsWith(".xml") ) {
-                        model.read( fis, null, "RDF/XML" );
-                    } else if ( fn.endsWith(".md") ) {
-                    	// Ignore markdown files - documentation.
+                    } else if (fn.endsWith(".owl") || fn.endsWith(".rdf") || fn.endsWith(".xml")) {
+                        model.read(fis, null, "RDF/XML");
+                    } else if (fn.endsWith(".md")) {
+                        // Ignore markdown files - documentation.
                     } else {
-                        log.warn("Ignoring " + type + " file graph " + p + " because the file extension is unrecognized.");
+                        log.warn("Ignoring " + type + " file graph " + p +
+                            " because the file extension is unrecognized.");
                     }
 
-                    if ( !model.isEmpty() && baseModel != null ) {
+                    if (!model.isEmpty() && baseModel != null) {
                         baseModel.addSubModel(model);
-                        log.debug("Attached file graph as " + type + " submodel " + p.getFileName());
+                        log.debug(
+                            "Attached file graph as " + type + " submodel " + p.getFileName());
                     }
 
                     modelChanged = modelChanged | updateGraphInDB(rdfService, model, type, p);
@@ -199,15 +206,15 @@ public class FileGraphSetup implements ServletContextListener {
                 }
             } catch (FileNotFoundException fnfe) {
                 log.warn(p + " not found. Unable to process file graph" +
-                        ((fnfe.getLocalizedMessage() != null) ?
-                                fnfe.getLocalizedMessage() : "") );
+                    ((fnfe.getLocalizedMessage() != null) ?
+                        fnfe.getLocalizedMessage() : ""));
             } catch (IOException ioe) {
                 // this is for the fis.close() above.
-                log.warn("Exception while trying to close file graph file: " + p,ioe);
+                log.warn("Exception while trying to close file graph file: " + p, ioe);
             }
         } // end - for
 
-		log.info("Read " + count + " " + type + " file graph" + ((count == 1) ? "" : "s"));
+        log.info("Read " + count + " " + type + " file graph" + ((count == 1) ? "" : "s"));
 
         return modelChanged;
     }
@@ -222,25 +229,26 @@ public class FileGraphSetup implements ServletContextListener {
      * Otherwise, if a graph with the given name is in the DB and is isomorphic with
      * the graph that was read from the files system, then do nothing.
      */
-    public boolean updateGraphInDB(RDFService rdfService, Model fileModel, String type, Path path) throws RDFServiceException {
-        String graphURI = pathToURI(path,type);
+    public boolean updateGraphInDB(RDFService rdfService, Model fileModel, String type, Path path)
+        throws RDFServiceException {
+        String graphURI = pathToURI(path, type);
 
         if (rdfService.isEquivalentGraph(graphURI, fileModel)) {
             return false;
         }
 
-		Model dbModel = new RDFServiceDataset(rdfService).getNamedModel(graphURI);
-		if (log.isDebugEnabled()) {
-			log.debug(String.format(
-					"%s %s dbModel size is %d, fileModel size is %d", type,
-					path.getFileName(), dbModel.size(), fileModel.size()));
-		}
+        Model dbModel = new RDFServiceDataset(rdfService).getNamedModel(graphURI);
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(
+                "%s %s dbModel size is %d, fileModel size is %d", type,
+                path.getFileName(), dbModel.size(), fileModel.size()));
+        }
 
-		log.info("Updating " + path + " because graphs are not isomorphic");
-		log.info("dbModel: " + dbModel.size() + " ; fileModel: " + fileModel.size());
-		dbModel.removeAll();
-		dbModel.add(fileModel);
-		return true;
+        log.info("Updating " + path + " because graphs are not isomorphic");
+        log.info("dbModel: " + dbModel.size() + " ; fileModel: " + fileModel.size());
+        dbModel.removeAll();
+        dbModel.add(fileModel);
+        return true;
     }
 
     /*
@@ -267,41 +275,38 @@ public class FileGraphSetup implements ServletContextListener {
                 if (!uriSet.contains(graphURI)) {
                     Model model = dataset.getNamedModel(graphURI);
                     model.removeAll(); // delete the graph from the DB
-                    log.info("Removed " + type + " file graph " + graphURI + " from the DB store because the file no longer exists in the file system");
+                    log.info("Removed " + type + " file graph " + graphURI +
+                        " from the DB store because the file no longer exists in the file system");
                 }
             }
         }
 
     }
 
-	/*
-	 * Takes a set of paths for file graphs and returns a set containing a graph
-	 * uri for each path.
-	 */
-	private Set<String> pathsToURIs(Set<Path> paths, String type) {
-		HashSet<String> uriSet = new HashSet<String>();
-		for (Path path : paths) {
-			uriSet.add(pathToURI(path, type));
-		}
-		log.debug("uriSet = " + uriSet);
-		return uriSet;
-	}
+    /*
+     * Takes a set of paths for file graphs and returns a set containing a graph
+     * uri for each path.
+     */
+    private Set<String> pathsToURIs(Set<Path> paths, String type) {
+        HashSet<String> uriSet = new HashSet<String>();
+        for (Path path : paths) {
+            uriSet.add(pathToURI(path, type));
+        }
+        log.debug("uriSet = " + uriSet);
+        return uriSet;
+    }
 
     /*
      * Takes a path for a file graph and returns the corresponding SDB URI
      * for the graph. The correspondence is by defined convention.
      */
     private String pathToURI(Path path, String type) {
-    		return FILEGRAPH_URI_ROOT + type + "/" + path.getFileName();
+        return FILEGRAPH_URI_ROOT + type + "/" + path.getFileName();
     }
 
     @Override
-	public void contextDestroyed( ServletContextEvent sce ) {
+    public void contextDestroyed(ServletContextEvent sce) {
         // nothing to do
-    }
-
-    private static boolean isUpdateRequired(ServletContext ctx) {
-        return (ctx.getAttribute(UpdateKnowledgeBase.KBM_REQURIED_AT_STARTUP) != null);
     }
 
 }

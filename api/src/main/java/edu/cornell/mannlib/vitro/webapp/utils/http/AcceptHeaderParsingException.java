@@ -7,12 +7,12 @@ package edu.cornell.mannlib.vitro.webapp.utils.http;
  * the value for "q" could not be parsed to a Float.
  */
 public class AcceptHeaderParsingException extends Exception {
-	public AcceptHeaderParsingException(String message) {
-		super(message);
-	}
+    public AcceptHeaderParsingException(String message) {
+        super(message);
+    }
 
-	public AcceptHeaderParsingException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public AcceptHeaderParsingException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }

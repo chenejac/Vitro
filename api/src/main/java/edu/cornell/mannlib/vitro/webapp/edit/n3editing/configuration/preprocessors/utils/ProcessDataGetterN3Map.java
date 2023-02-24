@@ -13,23 +13,30 @@ import org.apache.commons.logging.LogFactory;
 public class ProcessDataGetterN3Map {
     private static final Log log = LogFactory.getLog(ProcessDataGetterN3Map.class);
 
-	private static HashMap<String, String> dataGetterMap;
+    private static HashMap<String, String> dataGetterMap;
 
-	static {
-		dataGetterMap = new HashMap<String, String>();
-		dataGetterMap.put("edu.cornell.mannlib.vitro.webapp.utils.dataGetter.SparqlQueryDataGetter", "edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors.utils.ProcessSparqlDataGetterN3");
-		dataGetterMap.put("edu.cornell.mannlib.vitro.webapp.utils.dataGetter.ClassGroupPageData", "edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors.utils.ProcessClassGroupDataGetterN3");
-		dataGetterMap.put("edu.cornell.mannlib.vitro.webapp.utils.dataGetter.IndividualsForClassesDataGetter", "edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors.utils.ProcessIndividualsForClassesDataGetterN3");
-		dataGetterMap.put("edu.cornell.mannlib.vitro.webapp.utils.dataGetter.FixedHTMLDataGetter", "edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors.utils.ProcessFixedHTMLN3");
-		dataGetterMap.put("edu.cornell.mannlib.vitro.webapp.utils.dataGetter.SearchIndividualsDataGetter", "edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors.utils.ProcessSearchIndividualsDataGetterN3");
-	}
-
-    public static HashMap<String, String> getDataGetterTypeToProcessorMap() {
-		return dataGetterMap;
+    static {
+        dataGetterMap = new HashMap<String, String>();
+        dataGetterMap.put("edu.cornell.mannlib.vitro.webapp.utils.dataGetter.SparqlQueryDataGetter",
+            "edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors.utils.ProcessSparqlDataGetterN3");
+        dataGetterMap.put("edu.cornell.mannlib.vitro.webapp.utils.dataGetter.ClassGroupPageData",
+            "edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors.utils.ProcessClassGroupDataGetterN3");
+        dataGetterMap.put(
+            "edu.cornell.mannlib.vitro.webapp.utils.dataGetter.IndividualsForClassesDataGetter",
+            "edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors.utils.ProcessIndividualsForClassesDataGetterN3");
+        dataGetterMap.put("edu.cornell.mannlib.vitro.webapp.utils.dataGetter.FixedHTMLDataGetter",
+            "edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors.utils.ProcessFixedHTMLN3");
+        dataGetterMap
+            .put("edu.cornell.mannlib.vitro.webapp.utils.dataGetter.SearchIndividualsDataGetter",
+                "edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors.utils.ProcessSearchIndividualsDataGetterN3");
     }
 
-	public static void replaceDataGetterMap(HashMap<String, String> newMap) {
-		dataGetterMap = new HashMap<String, String>();
-		dataGetterMap.putAll(newMap);
-	}
+    public static HashMap<String, String> getDataGetterTypeToProcessorMap() {
+        return dataGetterMap;
+    }
+
+    public static void replaceDataGetterMap(HashMap<String, String> newMap) {
+        dataGetterMap = new HashMap<String, String>();
+        dataGetterMap.putAll(newMap);
+    }
 }

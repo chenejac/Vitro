@@ -2,24 +2,21 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 
-import java.util.Map;
-
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.util.Map;
 
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.TemplateProcessingHelper.TemplateProcessingException;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * TEMPORARY for transition from JSP to FreeMarker. Once transition
  * is complete and no more pages are generated in JSP, this can be removed.
  *
  * @author rjy7
- *
  */
 public class FreemarkerComponentGenerator extends FreemarkerHttpServlet {
 
@@ -52,7 +49,8 @@ public class FreemarkerComponentGenerator extends FreemarkerHttpServlet {
         }
     }
 
-    private String getHead(String templateName, Map<String, Object> root, HttpServletRequest request) {
+    private String getHead(String templateName, Map<String, Object> root,
+                           HttpServletRequest request) {
         // The Freemarker head template displays the page title in the <title> tag. Get the value out of the request.
         String title = (String) request.getAttribute("title");
         if (!StringUtils.isEmpty(title)) {

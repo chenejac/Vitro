@@ -2,8 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.filters;
 
-import java.io.IOException;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -14,35 +12,35 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
+import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
  * Replaces the Response with one that will never put in a jsession.
-
+ * <p>
  * Here is what needs to go into the web.xml:
- *
+ * <p>
  * {@code
-    <filter>
-        <filter-name>JSession Strip Filter</filter-name>
-        <filter-class>edu.cornell.mannlib.vitro.filters.JSessionStripFilter</filter-class>
-    </filter>
-
-    <filter-mapping>
-        <filter-name>JSession Strip Filter</filter-name>
-        <url-pattern>/*</url-pattern>
-        <dispatcher>REQUEST</dispatcher>
-    </filter-mapping>
-    }
+ * <filter>
+ * <filter-name>JSession Strip Filter</filter-name>
+ * <filter-class>edu.cornell.mannlib.vitro.filters.JSessionStripFilter</filter-class>
+ * </filter>
+ * <p>
+ * <filter-mapping>
+ * <filter-name>JSession Strip Filter</filter-name>
+ * <url-pattern>/*</url-pattern>
+ * <dispatcher>REQUEST</dispatcher>
+ * </filter-mapping>
+ * }
  * some of this code is from URLRewriteFilter
  */
 @WebFilter(filterName = "JSession Strip Filter", urlPatterns = {"/*"})
 public class JSessionStripFilter implements Filter {
-    private FilterConfig filterConfig = null;
-
     private static final Log log = LogFactory.getLog(JSessionStripFilter.class.getName());
     public static String USING_JSESSION_STRIP = "usingJsessionStrip";
+    private FilterConfig filterConfig = null;
 
     public void init(FilterConfig filterConfig) throws ServletException {
         log.info("Filtering: no jsessionids will be generated.");
@@ -51,16 +49,16 @@ public class JSessionStripFilter implements Filter {
 
     public void doFilter(ServletRequest request, ServletResponse response,
                          FilterChain chain) throws IOException, ServletException {
-        HttpServletResponse hResponse = (HttpServletResponse)response;
+        HttpServletResponse hResponse = (HttpServletResponse) response;
         HttpServletRequest hRequest = (HttpServletRequest) request;
         hRequest.setAttribute(USING_JSESSION_STRIP, "true");
 
         if (hResponse.isCommitted()) {
             log.error("response is comitted cannot forward " +
-                      " (check you haven't done anything to the response (ie, written to it) before here)");
+                " (check you haven't done anything to the response (ie, written to it) before here)");
             return;
         }
-        chain.doFilter(hRequest, new StripSessionIdWrapper( hResponse) );
+        chain.doFilter(hRequest, new StripSessionIdWrapper(hResponse));
 
     }
 
@@ -72,28 +70,38 @@ public class JSessionStripFilter implements Filter {
      * This is a wrapper that does not encode urls with jsessions
      */
     public class StripSessionIdWrapper extends HttpServletResponseWrapper {
-        public StripSessionIdWrapper(HttpServletResponse response)
-        {
+        public StripSessionIdWrapper(HttpServletResponse response) {
             super(response);
         }
 
         /**
          * @deprecated
          */
-        public String encodeRedirectUrl(String url) { return (url); }
-        public String encodeRedirectURL(String url) { return (url); }
+        public String encodeRedirectUrl(String url) {
+            return (url);
+        }
+
+        public String encodeRedirectURL(String url) {
+            return (url);
+        }
 
         /**
          * @deprecated
          */
-        public String encodeUrl(String url) { return (url); }
+        public String encodeUrl(String url) {
+            return (url);
+        }
 
-        public String encodeURL(String url) { return (url); }
+        public String encodeURL(String url) {
+            return (url);
+        }
 
         /**
          * @deprecated
          */
-        public void setStatus(int sc, String sm) {super.setStatus(sc, sm); }
+        public void setStatus(int sc, String sm) {
+            super.setStatus(sc, sm);
+        }
 
     }
 }

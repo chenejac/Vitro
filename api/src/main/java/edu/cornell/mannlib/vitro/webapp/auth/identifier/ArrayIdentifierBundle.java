@@ -10,12 +10,12 @@ import java.util.Collection;
  * Most common implementation of a List of Identifiers (IdentifierBundle).
  */
 public class ArrayIdentifierBundle extends ArrayList<Identifier> implements
-		IdentifierBundle {
-	public ArrayIdentifierBundle(Collection<? extends Identifier> ids) {
-		super(ids);
-	}
+    IdentifierBundle {
+    public ArrayIdentifierBundle(Collection<? extends Identifier> ids) {
+        super(ids);
+    }
 
-	public ArrayIdentifierBundle(Identifier... ids) {
-		this(Arrays.asList(ids));
-	}
+    public ArrayIdentifierBundle(Identifier... ids) {
+        this(Arrays.asList(ids));
+    }
 }

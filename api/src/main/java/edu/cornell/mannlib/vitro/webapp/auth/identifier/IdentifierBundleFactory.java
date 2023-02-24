@@ -9,9 +9,9 @@ import javax.servlet.http.HttpServletRequest;
  * getting the identifiers that should be associated with a request.
  */
 public interface IdentifierBundleFactory {
-	/**
-	 * Return the IdentifierBundle from this factory. May return an empty
-	 * bundle, but never returns null.
-	 */
-	public IdentifierBundle getIdentifierBundle(HttpServletRequest request);
+    /**
+     * Return the IdentifierBundle from this factory. May return an empty
+     * bundle, but never returns null.
+     */
+    public IdentifierBundle getIdentifierBundle(HttpServletRequest request);
 }

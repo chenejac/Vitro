@@ -9,12 +9,12 @@ import edu.cornell.mannlib.vitro.webapp.beans.Individual;
  * should be excluded from the search index.
  */
 public interface SearchIndexExcluder {
-	public static final String DONT_EXCLUDE = null;
+    public static final String DONT_EXCLUDE = null;
 
     /**
      * REturn a string message if the individual should
      * be excluded from the index.
-     *
+     * <p>
      * Return null if ind should not be excluded.
      */
     public String checkForExclusion(Individual ind);

@@ -14,21 +14,25 @@ public interface ObjectPropertyDao extends PropertyDao {
 
     public ObjectProperty getObjectPropertyByURI(String objectPropertyURI);
 
-    public ObjectProperty getObjectPropertyByURIs(String objectPropertyURI, String domainURI, String rangeURI);
+    public ObjectProperty getObjectPropertyByURIs(String objectPropertyURI, String domainURI,
+                                                  String rangeURI);
 
     /**
      * Use this method to supply a base ObjectProperty whose fields will be updated
      * as necessary to correspond to the configuration for the specified Domain
      * and Range.
+     *
      * @param objectPropertyURI Object Property URI
-     * @param domainURI Domain URI
-     * @param rangeURI Range URI
-     * @param base Object property
+     * @param domainURI         Domain URI
+     * @param rangeURI          Range URI
+     * @param base              Object property
      * @return ObjectProperty
      */
-    public ObjectProperty getObjectPropertyByURIs(String objectPropertyURI, String domainURI, String rangeURI, ObjectProperty base);
+    public ObjectProperty getObjectPropertyByURIs(String objectPropertyURI, String domainURI,
+                                                  String rangeURI, ObjectProperty base);
 
-    public List <ObjectProperty> getObjectPropertiesForObjectPropertyStatements(List<ObjectPropertyStatement> objectPropertyStatements);
+    public List<ObjectProperty> getObjectPropertiesForObjectPropertyStatements(
+        List<ObjectPropertyStatement> objectPropertyStatements);
 
     public List<String> getSuperPropertyURIs(String objectPropertyURI, boolean direct);
 
@@ -36,9 +40,9 @@ public interface ObjectPropertyDao extends PropertyDao {
 
     public void fillObjectPropertiesForIndividual(Individual individual);
 
-    public int insertObjectProperty(ObjectProperty objectProperty ) throws InsertException;
+    public int insertObjectProperty(ObjectProperty objectProperty) throws InsertException;
 
-    public void updateObjectProperty(ObjectProperty objectProperty );
+    public void updateObjectProperty(ObjectProperty objectProperty);
 
     public void deleteObjectProperty(String objectPropertyURI);
 
@@ -61,7 +65,7 @@ public interface ObjectPropertyDao extends PropertyDao {
 
 //    List /* of ObjectProperty */ getAllObjectProperties();
 
-    List <ObjectProperty> getRootObjectProperties();
+    List<ObjectProperty> getRootObjectProperties();
 
     /**
      * Returns a list of ObjectProperty objects for which statements exist about

@@ -10,9 +10,19 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import edu.cornell.mannlib.vitro.webapp.beans.Classes2Classes;
+import edu.cornell.mannlib.vitro.webapp.beans.Ontology;
+import edu.cornell.mannlib.vitro.webapp.beans.VClass;
+import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
+import edu.cornell.mannlib.vitro.webapp.dao.InsertException;
+import edu.cornell.mannlib.vitro.webapp.dao.OntologyDao;
+import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
+import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
+import edu.cornell.mannlib.vitro.webapp.dao.jena.event.EditEvent;
+import edu.cornell.mannlib.vitro.webapp.i18n.I18nBundle;
+import edu.cornell.mannlib.vitro.webapp.web.URLEncoder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.ontology.AllValuesFromRestriction;
 import org.apache.jena.ontology.AnnotationProperty;
 import org.apache.jena.ontology.CardinalityRestriction;
@@ -53,18 +63,6 @@ import org.apache.jena.vocabulary.OWL;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 
-import edu.cornell.mannlib.vitro.webapp.beans.Classes2Classes;
-import edu.cornell.mannlib.vitro.webapp.beans.Ontology;
-import edu.cornell.mannlib.vitro.webapp.beans.VClass;
-import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
-import edu.cornell.mannlib.vitro.webapp.dao.InsertException;
-import edu.cornell.mannlib.vitro.webapp.dao.OntologyDao;
-import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
-import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
-import edu.cornell.mannlib.vitro.webapp.dao.jena.event.EditEvent;
-import edu.cornell.mannlib.vitro.webapp.i18n.I18nBundle;
-import edu.cornell.mannlib.vitro.webapp.web.URLEncoder;
-
 public class VClassDaoJena extends JenaBaseDao implements VClassDao {
 
     protected static final Log log = LogFactory.getLog(VClassDaoJena.class);
@@ -88,7 +86,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
 
     /* ************************************************** */
 
-    public String getLabelForClass(OntClass cls,boolean withPrefix,boolean forPickList) {
+    public String getLabelForClass(OntClass cls, boolean withPrefix, boolean forPickList) {
         cls.getModel().enterCriticalSection(Lock.READ);
         try {
             if (cls.isAnon()) {
@@ -112,7 +110,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                         }
                         if (fillerRes.canAs(OntClass.class)) {
                             OntClass avf = fillerRes.as(OntClass.class);
-                            labelStr.append(getLabelForClass(avf,withPrefix,forPickList));
+                            labelStr.append(getLabelForClass(avf, withPrefix, forPickList));
                         } else {
                             try {
                                 labelStr.append(getLabelOrId(fillerRes.as(OntResource.class)));
@@ -152,11 +150,12 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                     if (cls.isComplementClass()) {
                         labelStr.append(format("%s ", i18n.text("not")));
                         ComplementClass ccls = cls.as(ComplementClass.class);
-                        labelStr.append(getLabelForClass(ccls.getOperand(), withPrefix, forPickList));
+                        labelStr
+                            .append(getLabelForClass(ccls.getOperand(), withPrefix, forPickList));
                     } else if (cls.isIntersectionClass()) {
                         IntersectionClass icls = cls.as(IntersectionClass.class);
                         for (Iterator<? extends OntClass> operandIt =
-                                icls.listOperands(); operandIt.hasNext();) {
+                             icls.listOperands(); operandIt.hasNext(); ) {
                             OntClass operand = operandIt.next();
                             labelStr.append(getLabelForClass(operand, withPrefix, forPickList));
                             if (operandIt.hasNext()) {
@@ -166,7 +165,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                     } else if (cls.isUnionClass()) {
                         UnionClass icls = cls.as(UnionClass.class);
                         for (Iterator<? extends OntClass> operandIt =
-                                icls.listOperands(); operandIt.hasNext();) {
+                             icls.listOperands(); operandIt.hasNext(); ) {
                             OntClass operand = operandIt.next();
                             labelStr.append(getLabelForClass(operand, withPrefix, forPickList));
                             if (operandIt.hasNext()) {
@@ -180,18 +179,23 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                     // I'm putting the link markup in because I need it,
                     // but obviously we need to factor this out into the display layer.
                     return "<a href=\"vclassEdit?uri=" +
-                            URLEncoder.encode(getClassURIStr(cls)) +
-                                    "\">[anonymous class]</a>";
+                        URLEncoder.encode(getClassURIStr(cls)) +
+                        "\">[anonymous class]</a>";
                 }
             } else {
                 if (withPrefix || forPickList) {
-                    OntologyDao oDao=getWebappDaoFactory().getOntologyDao();
+                    OntologyDao oDao = getWebappDaoFactory().getOntologyDao();
                     Ontology o = oDao.getOntologyByURI(cls.getNameSpace());
-                    if (o!=null) {
+                    if (o != null) {
                         if (withPrefix) {
-                            return(o.getPrefix()==null?(o.getName()==null?"unspec:"+getLabelOrId(cls):o.getName()+":"+getLabelOrId(cls)):o.getPrefix()+":"+getLabelOrId(cls));
+                            return (o.getPrefix() == null ?
+                                (o.getName() == null ? "unspec:" + getLabelOrId(cls) :
+                                    o.getName() + ":" + getLabelOrId(cls)) :
+                                o.getPrefix() + ":" + getLabelOrId(cls));
                         } else {
-                            return(getLabelOrId(cls)+(o.getPrefix()==null?(o.getName()==null?" (unspec)":" ("+o.getName()+")"):" ("+o.getPrefix()+")"));
+                            return (getLabelOrId(cls) + (o.getPrefix() == null ?
+                                (o.getName() == null ? " (unspec)" : " (" + o.getName() + ")") :
+                                " (" + o.getPrefix() + ")"));
                         }
                     } else {
                         return getLabelOrId(cls);
@@ -208,22 +212,24 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     }
 
     public void deleteVClass(VClass cls) {
-        deleteVClass(cls,getOntModel());
+        deleteVClass(cls, getOntModel());
     }
 
     public void deleteVClass(String URI) {
-        deleteVClass(URI,getOntModel());
+        deleteVClass(URI, getOntModel());
     }
 
     public void deleteVClass(String URI, OntModel ontModel) {
         ontModel.enterCriticalSection(Lock.WRITE);
-        getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
+        getOntModel().getBaseModel()
+            .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
         try {
-            OntClass cls = getOntClass(ontModel,URI);
+            OntClass cls = getOntClass(ontModel, URI);
             if (cls != null) {
                 //Remove restriction class.
-                Iterator<Resource> restIt = ontModel.listSubjectsWithProperty(OWL.allValuesFrom, cls);
-                while(restIt.hasNext()) {
+                Iterator<Resource> restIt =
+                    ontModel.listSubjectsWithProperty(OWL.allValuesFrom, cls);
+                while (restIt.hasNext()) {
                     Resource restRes = restIt.next();
                     if (restRes.canAs(OntResource.class)) {
                         OntResource restOntRes = restRes.as(OntResource.class);
@@ -231,7 +237,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                     }
                 }
                 restIt = ontModel.listSubjectsWithProperty(OWL.someValuesFrom, cls);
-                while(restIt.hasNext()) {
+                while (restIt.hasNext()) {
                     Resource restRes = restIt.next();
                     if (restRes.canAs(OntResource.class)) {
                         OntResource restOntRes = restRes.as(OntResource.class);
@@ -242,7 +248,8 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                 smartRemove(cls, ontModel);
             }
         } finally {
-            getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
             ontModel.leaveCriticalSection();
         }
     }
@@ -257,14 +264,14 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
         getOntModel().enterCriticalSection(Lock.READ);
         try {
             for (Iterator<? extends OntClass> i =
-                    ontClass.listDisjointWith(); i.hasNext(); ) {
+                 ontClass.listDisjointWith(); i.hasNext(); ) {
                 OntClass disjointClass = i.next();
                 uriList.add(getClassURIStr(disjointClass));
             }
         } catch (ProfileException pe) {
             // Current language profile does not support disjointWith axioms.
             // We'd prefer to return an empty list instead of throwing an exception.
-        	log.error(pe, pe);
+            log.error(pe, pe);
         } finally {
             getOntModel().leaveCriticalSection();
         }
@@ -273,26 +280,30 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
 
     public void addDisjointWithClass(String classURI, String disjointClassURI) {
         getOntModel().enterCriticalSection(Lock.WRITE);
-        getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
+        getOntModel().getBaseModel()
+            .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
         try {
-            OntClass ontClass = getOntClass(getOntModel(),classURI);
-            OntClass disjointClass = getOntClass(getOntModel(),disjointClassURI);
+            OntClass ontClass = getOntClass(getOntModel(), classURI);
+            OntClass disjointClass = getOntClass(getOntModel(), disjointClassURI);
             ontClass.addDisjointWith(disjointClass);
         } finally {
-            getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
             getOntModel().leaveCriticalSection();
         }
     }
 
     public void removeDisjointWithClass(String classURI, String disjointClassURI) {
         getOntModel().enterCriticalSection(Lock.WRITE);
-        getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
+        getOntModel().getBaseModel()
+            .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
         try {
-            OntClass ontClass = getOntClass(getOntModel(),classURI);
-            OntClass disjointClass = getOntClass(getOntModel(),disjointClassURI);
+            OntClass ontClass = getOntClass(getOntModel(), classURI);
+            OntClass disjointClass = getOntClass(getOntModel(), disjointClassURI);
             ontClass.removeDisjointWith(disjointClass);
         } finally {
-            getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
             getOntModel().leaveCriticalSection();
         }
     }
@@ -305,7 +316,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
             ClosableIterator<OntClass> equivalentOntClassIt = ontClass.listEquivalentClasses();
             try {
                 for (Iterator<OntClass> eqOntClassIt =
-                        equivalentOntClassIt; eqOntClassIt.hasNext(); ) {
+                     equivalentOntClassIt; eqOntClassIt.hasNext(); ) {
                     OntClass eqClass = eqOntClassIt.next();
                     equivalentClassURIs.add(getClassURIStr(eqClass));
                 }
@@ -319,7 +330,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
             // we'll try this again using a different method that
             // doesn't try to convert to OntClass
             List<Resource> supList = this.listDirectObjectPropertyValues(
-                    getOntModel().getResource(classURI), OWL.equivalentClass);
+                getOntModel().getResource(classURI), OWL.equivalentClass);
             for (Resource res : supList) {
                 equivalentClassURIs.add(getClassURIStr(res));
             }
@@ -330,7 +341,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     }
 
     public void addSuperclass(VClass vclass, VClass superclass) {
-        addSuperclass(vclass.getURI(),superclass.getURI());
+        addSuperclass(vclass.getURI(), superclass.getURI());
     }
 
     public void addSuperclass(String vclassURI, String superclassURI) {
@@ -341,7 +352,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     }
 
     public void removeSuperclass(VClass vclass, VClass superclass) {
-        removeSuperclass(vclass.getURI(),superclass.getURI());
+        removeSuperclass(vclass.getURI(), superclass.getURI());
     }
 
     public void removeSuperclass(String vclassURI, String superclassURI) {
@@ -352,7 +363,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     }
 
     public void addSubclass(VClass vclass, VClass subclass) {
-        addSubclass(vclass.getURI(),subclass.getURI());
+        addSubclass(vclass.getURI(), subclass.getURI());
     }
 
     public void addSubclass(String vclassURI, String subclassURI) {
@@ -363,7 +374,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     }
 
     public void removeSubclass(VClass vclass, VClass subclass) {
-        removeSubclass(vclass.getURI(),subclass.getURI());
+        removeSubclass(vclass.getURI(), subclass.getURI());
     }
 
     public void removeSubclass(String vclassURI, String subclassURI) {
@@ -375,24 +386,27 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
 
     public void addEquivalentClass(String classURI, String equivalentClassURI) {
         getOntModel().enterCriticalSection(Lock.WRITE);
-        getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
+        getOntModel().getBaseModel()
+            .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
         try {
-            OntClass ontClass = getOntClass(getOntModel(),classURI);
-            OntClass eqClass = getOntClass(getOntModel(),equivalentClassURI);
+            OntClass ontClass = getOntClass(getOntModel(), classURI);
+            OntClass eqClass = getOntClass(getOntModel(), equivalentClassURI);
             ontClass.addEquivalentClass(eqClass);
             eqClass.addEquivalentClass(ontClass);
         } finally {
-            getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
             getOntModel().leaveCriticalSection();
         }
     }
 
     public void removeEquivalentClass(String classURI, String equivalentClassURI) {
         getOntModel().enterCriticalSection(Lock.WRITE);
-        getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
+        getOntModel().getBaseModel()
+            .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
         try {
-            OntClass ontClass = getOntClass(getOntModel(),classURI);
-            OntClass eqClass = getOntClass(getOntModel(),equivalentClassURI);
+            OntClass ontClass = getOntClass(getOntModel(), classURI);
+            OntClass eqClass = getOntClass(getOntModel(), equivalentClassURI);
             ontClass.removeEquivalentClass(eqClass);
             eqClass.removeEquivalentClass(ontClass);
             if (ontClass.isAnon()) {
@@ -402,7 +416,8 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                 smartRemove(eqClass, getOntModel());
             }
         } finally {
-            getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
             getOntModel().leaveCriticalSection();
         }
     }
@@ -417,7 +432,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
         return outputList;
     }
 
-    public void getAllSubClassURIs(String classURI, HashSet<String> subtree){
+    public void getAllSubClassURIs(String classURI, HashSet<String> subtree) {
         List<String> directSubclasses = getSubClassURIs(classURI);
         for (String uri : directSubclasses) {
             if (!subtree.contains(uri)) {
@@ -435,7 +450,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
             superclassURIs = new ArrayList<String>();
             Resource cls = ResourceFactory.createResource(classURI);
             StmtIterator superClassIt = getOntModel().listStatements(
-                    cls, RDFS.subClassOf, (RDFNode)null);
+                cls, RDFS.subClassOf, (RDFNode) null);
             while (superClassIt.hasNext()) {
                 Statement stmt = superClassIt.nextStatement();
                 if (stmt.getObject().canAs(OntResource.class)) {
@@ -454,7 +469,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
         }
     }
 
-    public void getAllSuperClassURIs(String classURI, HashSet<String> subtree){
+    public void getAllSuperClassURIs(String classURI, HashSet<String> subtree) {
         List<String> directSuperclasses = getSuperClassURIs(classURI, true);
         for (String uri : directSuperclasses) {
             if (!subtree.contains(uri)) {
@@ -464,7 +479,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
         }
     }
 
-    public List <VClass> getAllVclasses() {
+    public List<VClass> getAllVclasses() {
         List<VClass> classes = new ArrayList<VClass>();
         getOntModel().enterCriticalSection(Lock.READ);
         try {
@@ -473,10 +488,11 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                 while (classIt.hasNext()) {
                     try {
                         Individual classInd = classIt.next();
-                        if(classInd.canAs(OntClass.class)) {
+                        if (classInd.canAs(OntClass.class)) {
                             OntClass cls = classInd.as(OntClass.class);
-                            if (!cls.isAnon() && !(NONUSER_NAMESPACES.contains(cls.getNameSpace()))) {
-                                classes.add(new VClassJena(cls,getWebappDaoFactory()));
+                            if (!cls.isAnon() &&
+                                !(NONUSER_NAMESPACES.contains(cls.getNameSpace()))) {
+                                classes.add(new VClassJena(cls, getWebappDaoFactory()));
                             }
                         }
                     } catch (ClassCastException cce) {
@@ -499,11 +515,12 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
      * We also avoid ClassCastExceptions deep in Jena-land by eschewing Jena's
      * listSuperClasses() method.
      */
-    private Iterator<OntClass> smarterListHierarchyRootClasses(OntModel ontModel, String ontologyURI) {
+    private Iterator<OntClass> smarterListHierarchyRootClasses(OntModel ontModel,
+                                                               String ontologyURI) {
         List<OntClass> rootClassList = new ArrayList<OntClass>();
         ResIterator ci = ontModel.listResourcesWithProperty(RDF.type, OWL.Class);
         try {
-            for (ResIterator i = ci ; i.hasNext(); ) {
+            for (ResIterator i = ci; i.hasNext(); ) {
                 try {
                     Resource ontClass = i.nextResource();
                     boolean isRoot = true;
@@ -514,15 +531,16 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                         }
                         Resource superClass = (Resource) stmt.getObject();
                         if (!superClass.isAnon() &&
-                                ((ontologyURI==null) || (ontologyURI.equals(superClass.getNameSpace()))) &&
-                                !OWL.Thing.equals(superClass) &&
-                                !superClass.equals(ontClass) &&
-                                !( ontModel.contains(ontClass,OWL.equivalentClass,superClass) ||
-                                        ontModel.contains(superClass,OWL.equivalentClass,ontClass) ) )  {
-                            if ( (superClass.getNameSpace() != null)
-                                    && (!(NONUSER_NAMESPACES.contains(
-                                            superClass.getNameSpace()))) ) {
-                                isRoot=false;
+                            ((ontologyURI == null) ||
+                                (ontologyURI.equals(superClass.getNameSpace()))) &&
+                            !OWL.Thing.equals(superClass) &&
+                            !superClass.equals(ontClass) &&
+                            !(ontModel.contains(ontClass, OWL.equivalentClass, superClass) ||
+                                ontModel.contains(superClass, OWL.equivalentClass, ontClass))) {
+                            if ((superClass.getNameSpace() != null)
+                                && (!(NONUSER_NAMESPACES.contains(
+                                superClass.getNameSpace())))) {
+                                isRoot = false;
                                 break;
                             }
                         }
@@ -545,17 +563,17 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
         return getRootClasses(null);
     }
 
-    private List <VClass> getRootClasses(String ontologyURI) {
+    private List<VClass> getRootClasses(String ontologyURI) {
         List<VClass> rootClasses = new ArrayList<VClass>();
         getOntModel().enterCriticalSection(Lock.READ);
         try {
             Iterator<OntClass> rootIt = smarterListHierarchyRootClasses(
-                    getOntModel(), ontologyURI);
+                getOntModel(), ontologyURI);
             while (rootIt.hasNext()) {
                 OntClass cls = rootIt.next();
                 if (!cls.isAnon() && cls.getNameSpace() != null
-                        && !(NONUSER_NAMESPACES.contains(cls.getNameSpace()))) {
-                    rootClasses.add(new VClassJena(cls,getWebappDaoFactory()));
+                    && !(NONUSER_NAMESPACES.contains(cls.getNameSpace()))) {
+                    rootClasses.add(new VClassJena(cls, getWebappDaoFactory()));
                 }
             }
             Collections.sort(rootClasses);
@@ -566,7 +584,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     }
 
 
-    public List <VClass> getOntologyRootClasses(String ontologyURI) {
+    public List<VClass> getOntologyRootClasses(String ontologyURI) {
         if (ontologyURI == null) {
             throw new RuntimeException("can't find root classes for null ontology URI");
         }
@@ -576,20 +594,20 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
         ontModel.enterCriticalSection(Lock.READ);
         try {
             Iterator<Resource> ontClassIt = ontModel.listResourcesWithProperty(
-                    RDF.type, OWL.Class);
+                RDF.type, OWL.Class);
             while (ontClassIt.hasNext()) {
                 Resource ontClass = ontClassIt.next();
                 if (ontologyURI.equals(ontClass.getNameSpace())) {
                     boolean root = true;
                     StmtIterator superStmtIt = ontModel.listStatements(
-                            ontClass, RDFS.subClassOf, (RDFNode) null);
+                        ontClass, RDFS.subClassOf, (RDFNode) null);
                     try {
                         while (superStmtIt.hasNext()) {
                             Statement superStmt = superStmtIt.nextStatement();
-                            if ( superStmt.getObject().isResource()
-                                    && ontologyURI.equals(
-                                            ((Resource) superStmt.getObject())
-                                            .getNameSpace()) ) {
+                            if (superStmt.getObject().isResource()
+                                && ontologyURI.equals(
+                                ((Resource) superStmt.getObject())
+                                    .getNameSpace())) {
                                 root = false;
                                 break;
                             }
@@ -599,8 +617,8 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                     }
                     if (root && ontClass.canAs(OntClass.class)) {
                         ontologyRootClasses.add(new VClassJena(
-                                (OntClass) ontClass.as(OntClass.class),
-                                getWebappDaoFactory()));
+                            (OntClass) ontClass.as(OntClass.class),
+                            getWebappDaoFactory()));
                     }
                 }
             }
@@ -610,9 +628,9 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
         return ontologyRootClasses;
     }
 
-    public List <String> getSubClassURIs(String classURI) {
+    public List<String> getSubClassURIs(String classURI) {
         List<String> subURIs = new ArrayList<String>();
-        OntClass superClass = getOntClass(getOntModel(),classURI);
+        OntClass superClass = getOntClass(getOntModel(), classURI);
         try {
             Iterator<OntClass> subIt = superClass.listSubClasses(true);
             while (subIt.hasNext()) {
@@ -621,7 +639,9 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
             }
         } catch (Exception e) {
             // we'll try this again using a different method that doesn't try to convert to OntClass
-            List<Resource> supList = this.listDirectObjectPropertySubjects(getOntModel().getResource(classURI), RDFS.subClassOf);
+            List<Resource> supList =
+                this.listDirectObjectPropertySubjects(getOntModel().getResource(classURI),
+                    RDFS.subClassOf);
             for (Resource res : supList) {
                 subURIs.add(res.getURI());
             }
@@ -629,7 +649,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
         return subURIs;
     }
 
-    public List <String> getSuperClassURIs(String classURI, boolean direct) {
+    public List<String> getSuperClassURIs(String classURI, boolean direct) {
         List<String> supURIs = new ArrayList<String>();
         OntClass subClass = getOntClass(getOntModel(), classURI);
         try {
@@ -639,13 +659,13 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                 supURIs.add(getClassURIStr(cls));
             }
         } catch (Exception e) {
-            log.debug(e,e);
+            log.debug(e, e);
             // we'll try this again using a different method
             // that doesn't try to convert to OntClass
             supURIs.clear();
             List<Resource> supList = (direct)
-                    ? listDirectObjectPropertyValues(subClass, RDFS.subClassOf)
-                    : listObjectPropertyValues(subClass, RDFS.subClassOf);
+                ? listDirectObjectPropertyValues(subClass, RDFS.subClassOf)
+                : listObjectPropertyValues(subClass, RDFS.subClassOf);
             for (Resource res : supList) {
                 supURIs.add(getClassURIStr(res));
             }
@@ -668,7 +688,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     public VClass getTopConcept() {
         VClass top = new VClass();
         if (getOntModel().getProfile().NAMESPACE().equals(RDFS.getURI())) {
-            top.setURI(RDF.getURI()+"Resource");
+            top.setURI(RDF.getURI() + "Resource");
         } else {
             top.setURI((getOntModel().getProfile().THING().getURI()));
         }
@@ -698,9 +718,9 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     public VClass getVClassByURI(String URIStr) {
         getOntModel().enterCriticalSection(Lock.READ);
         try {
-            OntClass cls = getOntClass(getOntModel(),URIStr);
+            OntClass cls = getOntClass(getOntModel(), URIStr);
             if (cls != null) {
-                return new VClassJena(cls,getWebappDaoFactory());
+                return new VClassJena(cls, getWebappDaoFactory());
             } else {
                 return null;
             }
@@ -710,7 +730,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     }
 
     public void insertNewVClass(VClass cls) throws InsertException {
-        insertNewVClass(cls,getOntModelSelector().getTBoxModel());
+        insertNewVClass(cls, getOntModelSelector().getTBoxModel());
     }
 
     public List<VClass> getVClassesForProperty(String propertyURI, boolean domainSide) {
@@ -721,7 +741,8 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
         return getVClassesForProperty(vclassURI, propertyURI, true);
     }
 
-    private List<VClass> getVClassesForProperty(String vclassURI, String propertyURI, boolean domainSide) {
+    private List<VClass> getVClassesForProperty(String vclassURI, String propertyURI,
+                                                boolean domainSide) {
         List<VClass> vClasses = new ArrayList<VClass>();
         getOntModel().enterCriticalSection(Lock.READ);
         try {
@@ -731,32 +752,39 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                 if (vclassURI != null) {
                     // TODO need a getAllSuperPropertyURIs method in ObjectPropertyDao
                     List<String> superproperties = getWebappDaoFactory()
-                            .getObjectPropertyDao()
-                            .getSuperPropertyURIs(propertyURI, false);
+                        .getObjectPropertyDao()
+                        .getSuperPropertyURIs(propertyURI, false);
                     superproperties.add(propertyURI);
                     HashSet<String> subjSuperclasses = new HashSet<String>(
-                            getAllSuperClassURIs(vclassURI));
+                        getAllSuperClassURIs(vclassURI));
                     subjSuperclasses.add(vclassURI);
                     for (String objectPropertyURI : superproperties) {
                         for (Iterator restStmtIt = getOntModel().listStatements(
-                                null,OWL.onProperty,getOntModel().getProperty(objectPropertyURI)); restStmtIt.hasNext();) {
+                            null, OWL.onProperty, getOntModel().getProperty(objectPropertyURI));
+                             restStmtIt.hasNext(); ) {
                             Statement restStmt = (Statement) restStmtIt.next();
                             Resource restRes = restStmt.getSubject();
-                            for (Iterator axStmtIt = getOntModel().listStatements(null,null,restRes); axStmtIt.hasNext();) {
+                            for (Iterator axStmtIt =
+                                 getOntModel().listStatements(null, null, restRes);
+                                 axStmtIt.hasNext(); ) {
                                 Statement axStmt = (Statement) axStmtIt.next();
                                 OntResource subjOntRes = null;
                                 if (axStmt.getSubject().canAs(OntResource.class)) {
                                     subjOntRes = axStmt.getSubject().as(OntResource.class);
                                 }
                                 if (
-                                        (subjOntRes != null) && (subjSuperclasses.contains(getClassURIStr(subjOntRes))) &&
-                                        (axStmt.getPredicate().equals(RDFS.subClassOf) || (axStmt.getPredicate().equals(OWL.equivalentClass)))
-                                        ) {
+                                    (subjOntRes != null) &&
+                                        (subjSuperclasses.contains(getClassURIStr(subjOntRes))) &&
+                                        (axStmt.getPredicate().equals(RDFS.subClassOf) ||
+                                            (axStmt.getPredicate().equals(OWL.equivalentClass)))
+                                ) {
                                     if (restRes.canAs(AllValuesFromRestriction.class)) {
-                                        AllValuesFromRestriction avfRest = restRes.as(AllValuesFromRestriction.class);
+                                        AllValuesFromRestriction avfRest =
+                                            restRes.as(AllValuesFromRestriction.class);
                                         Resource avf = avfRest.getAllValuesFrom();
                                         if (avf.canAs(OntClass.class)) {
-                                            superclass = avfRest.getAllValuesFrom().as(OntClass.class);
+                                            superclass =
+                                                avfRest.getAllValuesFrom().as(OntClass.class);
                                         }
                                     }
                                 }
@@ -767,10 +795,10 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                 if (superclass == null) {
                     superclass = (domainSide) ? op.getRange() : op.getDomain();
                     if (superclass == null) {
-                    	//this section to prevent all subclasses of owl:Thing
+                        //this section to prevent all subclasses of owl:Thing
                         //returned if range is owl:Thing, refer to NIHVIVO-3357 NIHVIVO-3814
-                    	//This is unfortunate case of warping the model for the ease of the display.
-                    	return Collections.emptyList();
+                        //This is unfortunate case of warping the model for the ease of the display.
+                        return Collections.emptyList();
                     }
                 }
                 if (superclass != null) {
@@ -780,23 +808,24 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                     } else {
                         superVclass = getVClassByURI(superclass.getURI());
                     }
-                    if( OWL.Thing.equals( superclass )){
-                    	//this section to prevent all subclasses of owl:Thing
+                    if (OWL.Thing.equals(superclass)) {
+                        //this section to prevent all subclasses of owl:Thing
                         //returned if range is owl:Thing, refer to NIHVIVO-3357 NIHVIVO-3814
-                    	//This is unfortunate case of warping the model for the ease of the display.
-                    	return Collections.emptyList();
+                        //This is unfortunate case of warping the model for the ease of the display.
+                        return Collections.emptyList();
                     }
                     if (superVclass != null) {
                         vClasses.add(superVclass);
-						// if this model infers types based on the taxonomy, adding the subclasses will only
-						// waste time for no benefit
-						if (!isUnderlyingStoreReasoned()) {
+                        // if this model infers types based on the taxonomy, adding the subclasses will only
+                        // waste time for no benefit
+                        if (!isUnderlyingStoreReasoned()) {
                             for (String classURI : getAllSubClassURIs(getClassURIStr(superclass))) {
                                 VClass vClass = getVClassByURI(classURI);
-                                if (vClass != null)
+                                if (vClass != null) {
                                     vClasses.add(vClass);
+                                }
                             }
-						}
+                        }
                     }
                 }
             }
@@ -818,19 +847,22 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     }
 
     @Deprecated
-    public void addVClassesToGroup(VClassGroup group, boolean includeUninstantiatedClasses, boolean getIndividualCount) {
+    public void addVClassesToGroup(VClassGroup group, boolean includeUninstantiatedClasses,
+                                   boolean getIndividualCount) {
         getOntModel().enterCriticalSection(Lock.READ);
 
         if (getIndividualCount) {
-            group.setIndividualCount( getClassGroupInstanceCount(group));
+            group.setIndividualCount(getClassGroupInstanceCount(group));
         }
 
         try {
             if ((group != null) && (group.getURI() != null)) {
                 Resource groupRes = ResourceFactory.createResource(group.getURI());
-                AnnotationProperty inClassGroup = getOntModel().getAnnotationProperty(VitroVocabulary.IN_CLASSGROUP);
+                AnnotationProperty inClassGroup =
+                    getOntModel().getAnnotationProperty(VitroVocabulary.IN_CLASSGROUP);
                 if (inClassGroup != null) {
-                    ClosableIterator annotIt = getOntModel().listStatements((OntClass)null,inClassGroup,groupRes);
+                    ClosableIterator annotIt =
+                        getOntModel().listStatements((OntClass) null, inClassGroup, groupRes);
                     try {
                         while (annotIt.hasNext()) {
                             try {
@@ -845,11 +877,15 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                                         int count = 0;
                                         try {
                                             String countQueryStr = "SELECT COUNT(*) WHERE \n" +
-                                                    "{ ?s a <" + cls.getURI() + "> } \n";
-                                            Query countQuery = QueryFactory.create(countQueryStr, Syntax.syntaxARQ);
-                                            QueryExecution qe = QueryExecutionFactory.create(countQuery, aboxModel);
-                                            ResultSet rs =qe.execSelect();
-                                            count = Integer.parseInt(((Literal) rs.nextSolution().get(".1")).getLexicalForm());
+                                                "{ ?s a <" + cls.getURI() + "> } \n";
+                                            Query countQuery = QueryFactory
+                                                .create(countQueryStr, Syntax.syntaxARQ);
+                                            QueryExecution qe =
+                                                QueryExecutionFactory.create(countQuery, aboxModel);
+                                            ResultSet rs = qe.execSelect();
+                                            count = Integer.parseInt(
+                                                ((Literal) rs.nextSolution().get(".1"))
+                                                    .getLexicalForm());
                                             //count = aboxModel.listStatements(null,RDF.type,cls).toList().size();
                                         } finally {
                                             aboxModel.leaveCriticalSection();
@@ -862,7 +898,8 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                                         Model aboxModel = getOntModelSelector().getABoxModel();
                                         aboxModel.enterCriticalSection(Lock.READ);
                                         try {
-                                            ClosableIterator countIt = aboxModel.listStatements(null,RDF.type,cls);
+                                            ClosableIterator countIt =
+                                                aboxModel.listStatements(null, RDF.type, cls);
                                             try {
                                                 if (countIt.hasNext()) {
                                                     classIsInstantiated = true;
@@ -894,22 +931,23 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
         }
     }
 
-    int getClassGroupInstanceCount(VClassGroup vcg){
+    int getClassGroupInstanceCount(VClassGroup vcg) {
         Model ontModel = getOntModel();
         ontModel.enterCriticalSection(Lock.READ);
         int count = 0;
         try {
             String queryText =
-                    "SELECT COUNT( DISTINCT ?instance ) WHERE { \n" +
-                            "      ?class <"+VitroVocabulary.IN_CLASSGROUP+"> <"+vcg.getURI() +"> .\n" +
-                            "      ?instance a ?class .  \n" +
-                            "}" ;
+                "SELECT COUNT( DISTINCT ?instance ) WHERE { \n" +
+                    "      ?class <" + VitroVocabulary.IN_CLASSGROUP + "> <" + vcg.getURI() +
+                    "> .\n" +
+                    "      ?instance a ?class .  \n" +
+                    "}";
             Query countQuery = QueryFactory.create(queryText, Syntax.syntaxARQ);
             QueryExecution qe = QueryExecutionFactory.create(countQuery, ontModel);
-            ResultSet rs =qe.execSelect();
+            ResultSet rs = qe.execSelect();
             count = Integer.parseInt(((Literal) rs.nextSolution().get(".1")).getLexicalForm());
-        }catch(Exception ex){
-            log.error(ex,ex);
+        } catch (Exception ex) {
+            log.error(ex, ex);
         } finally {
             ontModel.leaveCriticalSection();
         }
@@ -917,7 +955,7 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
     }
 
 
-    public void addVClassesToGroups(List <VClassGroup> groups) {
+    public void addVClassesToGroups(List<VClassGroup> groups) {
         getOntModel().enterCriticalSection(Lock.READ);
         try {
             if (groups != null) {
@@ -932,7 +970,8 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
 
     public int insertNewVClass(VClass cls, OntModel ontModel) throws InsertException {
         ontModel.enterCriticalSection(Lock.WRITE);
-        getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
+        getOntModel().getBaseModel()
+            .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
         try {
             String errMsgStr = getWebappDaoFactory().checkURIForEditableEntity(cls.getURI());
             if (errMsgStr != null) {
@@ -946,125 +985,158 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                     ontCls.removeAll(RDFS.label);
                 }
             } catch (Exception e) {
-                log.error("error setting label for class "+cls.getURI());
+                log.error("error setting label for class " + cls.getURI());
             }
             try {
-                if (cls.getGroupURI() != null && cls.getGroupURI().length()>0) {
+                if (cls.getGroupURI() != null && cls.getGroupURI().length() > 0) {
                     String badURIErrorStr = checkURI(cls.getGroupURI());
                     if (badURIErrorStr == null) {
-                        ontCls.addProperty(IN_CLASSGROUP, getOntModel().getResource(cls.getGroupURI()));
+                        ontCls.addProperty(IN_CLASSGROUP,
+                            getOntModel().getResource(cls.getGroupURI()));
                     } else {
                         log.error(badURIErrorStr);
                     }
                 }
             } catch (Exception e) {
-                log.error("error linking class "+cls.getURI()+" to class group");
+                log.error("error linking class " + cls.getURI() + " to class group");
             }
             updatePlainLiteralValue(ontCls, SHORTDEF, cls.getShortDef());
             updatePlainLiteralValue(ontCls, EXAMPLE_ANNOT, cls.getExample());
             updatePlainLiteralValue(ontCls, DESCRIPTION_ANNOT, cls.getDescription());
-            addPropertyIntValue(ontCls,DISPLAY_LIMIT,cls.getDisplayLimit(),ontModel);
-            addPropertyIntValue(ontCls,DISPLAY_RANK_ANNOT,cls.getDisplayRank(),ontModel);
+            addPropertyIntValue(ontCls, DISPLAY_LIMIT, cls.getDisplayLimit(), ontModel);
+            addPropertyIntValue(ontCls, DISPLAY_RANK_ANNOT, cls.getDisplayRank(), ontModel);
 
             ontCls.removeAll(HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT);
-            if (HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT != null && cls.getHiddenFromDisplayBelowRoleLevel() != null) { // only need to add if present
+            if (HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT != null &&
+                cls.getHiddenFromDisplayBelowRoleLevel() != null) { // only need to add if present
                 try {
-                    ontCls.addProperty(HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory.createResource(cls.getHiddenFromDisplayBelowRoleLevel().getURI()));
+                    ontCls.addProperty(HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory
+                        .createResource(cls.getHiddenFromDisplayBelowRoleLevel().getURI()));
                 } catch (Exception e) {
-                    log.error("error adding HiddenFromDisplayBelowRoleLevel annotation to class "+cls.getURI());
+                    log.error("error adding HiddenFromDisplayBelowRoleLevel annotation to class " +
+                        cls.getURI());
                 }
             }
 
             ontCls.removeAll(PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT);
-            if (PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT != null && cls.getProhibitedFromUpdateBelowRoleLevel() != null) { // only need to add if present
+            if (PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT != null &&
+                cls.getProhibitedFromUpdateBelowRoleLevel() !=
+                    null) { // only need to add if present
                 try {
-                    ontCls.addProperty(PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory.createResource(cls.getProhibitedFromUpdateBelowRoleLevel().getURI()));
+                    ontCls.addProperty(PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT,
+                        ResourceFactory
+                            .createResource(cls.getProhibitedFromUpdateBelowRoleLevel().getURI()));
                 } catch (Exception e) {
-                    log.error("error adding ProhibitedFromUpdateBelowRoleLevel annotation to class "+cls.getURI());
+                    log.error(
+                        "error adding ProhibitedFromUpdateBelowRoleLevel annotation to class " +
+                            cls.getURI());
                 }
             }
 
             ontCls.removeAll(HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT);
-            if (HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT != null && cls.getHiddenFromPublishBelowRoleLevel() != null) { // only need to add if present
+            if (HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT != null &&
+                cls.getHiddenFromPublishBelowRoleLevel() != null) { // only need to add if present
                 try {
-                    ontCls.addProperty(HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory.createResource(cls.getHiddenFromPublishBelowRoleLevel().getURI()));
+                    ontCls.addProperty(HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory
+                        .createResource(cls.getHiddenFromPublishBelowRoleLevel().getURI()));
                 } catch (Exception e) {
-                    log.error("error adding HiddenFromPublishBelowRoleLevel annotation to class "+cls.getURI());
+                    log.error("error adding HiddenFromPublishBelowRoleLevel annotation to class " +
+                        cls.getURI());
                 }
             }
 
             /* OPTIONAL annotation properties */
-            addPropertyStringValue(ontCls,PROPERTY_CUSTOMENTRYFORMANNOT,cls.getCustomEntryForm(),ontModel);
-            addPropertyStringValue(ontCls,PROPERTY_CUSTOMDISPLAYVIEWANNOT,cls.getCustomDisplayView(),ontModel);
-            addPropertyStringValue(ontCls,PROPERTY_CUSTOMSHORTVIEWANNOT,cls.getCustomShortView(),ontModel);
-            addPropertyStringValue(ontCls,PROPERTY_CUSTOMSEARCHVIEWANNOT,cls.getCustomSearchView(),ontModel);
+            addPropertyStringValue(ontCls, PROPERTY_CUSTOMENTRYFORMANNOT, cls.getCustomEntryForm(),
+                ontModel);
+            addPropertyStringValue(ontCls, PROPERTY_CUSTOMDISPLAYVIEWANNOT,
+                cls.getCustomDisplayView(), ontModel);
+            addPropertyStringValue(ontCls, PROPERTY_CUSTOMSHORTVIEWANNOT, cls.getCustomShortView(),
+                ontModel);
+            addPropertyStringValue(ontCls, PROPERTY_CUSTOMSEARCHVIEWANNOT,
+                cls.getCustomSearchView(), ontModel);
             addPropertyFloatValue(ontCls, SEARCH_BOOST_ANNOT, cls.getSearchBoost(), ontModel);
         } finally {
-            getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
             ontModel.leaveCriticalSection();
         }
         return 0;
     }
 
     public void updateVClass(VClass cls) {
-        updateVClass(cls,getOntModel());
+        updateVClass(cls, getOntModel());
     }
 
     public void updateVClass(VClass cls, OntModel ontModel) {
         ontModel.enterCriticalSection(Lock.WRITE);
-        ontModel.getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
+        ontModel.getBaseModel()
+            .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
         try {
             OntClass ontCls = ontModel.getOntClass(cls.getURI());
 
             if (ontCls != null) {
                 updateRDFSLabel(ontCls, cls.getName());
-                updatePropertyResourceURIValue(ontCls,IN_CLASSGROUP,cls.getGroupURI(),ontModel);
+                updatePropertyResourceURIValue(ontCls, IN_CLASSGROUP, cls.getGroupURI(), ontModel);
                 updatePlainLiteralValue(ontCls, SHORTDEF, cls.getShortDef());
                 updatePlainLiteralValue(ontCls, EXAMPLE_ANNOT, cls.getExample());
                 updatePlainLiteralValue(ontCls, DESCRIPTION_ANNOT, cls.getDescription());
-                updatePropertyNonNegativeIntValue(ontCls,DISPLAY_LIMIT,cls.getDisplayLimit(),ontModel);
-                updatePropertyNonNegativeIntValue(ontCls,DISPLAY_RANK_ANNOT,cls.getDisplayRank(),ontModel);
-                updatePropertyFloatValue(ontCls, SEARCH_BOOST_ANNOT, cls.getSearchBoost(), ontModel);
+                updatePropertyNonNegativeIntValue(ontCls, DISPLAY_LIMIT, cls.getDisplayLimit(),
+                    ontModel);
+                updatePropertyNonNegativeIntValue(ontCls, DISPLAY_RANK_ANNOT, cls.getDisplayRank(),
+                    ontModel);
+                updatePropertyFloatValue(ontCls, SEARCH_BOOST_ANNOT, cls.getSearchBoost(),
+                    ontModel);
 
                 if (cls.getHiddenFromDisplayBelowRoleLevel() != null) {
-                    updatePropertyResourceURIValue(ontCls,HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT,cls.getHiddenFromDisplayBelowRoleLevel().getURI(),ontModel);
+                    updatePropertyResourceURIValue(ontCls,
+                        HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT,
+                        cls.getHiddenFromDisplayBelowRoleLevel().getURI(), ontModel);
                 }
 
                 if (cls.getProhibitedFromUpdateBelowRoleLevel() != null) {
-                    updatePropertyResourceURIValue(ontCls,PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT,cls.getProhibitedFromUpdateBelowRoleLevel().getURI(),ontModel);
+                    updatePropertyResourceURIValue(ontCls,
+                        PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT,
+                        cls.getProhibitedFromUpdateBelowRoleLevel().getURI(), ontModel);
                 }
 
                 if (cls.getHiddenFromPublishBelowRoleLevel() != null) {
-                    updatePropertyResourceURIValue(ontCls,HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT,cls.getHiddenFromPublishBelowRoleLevel().getURI(),ontModel);
+                    updatePropertyResourceURIValue(ontCls,
+                        HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT,
+                        cls.getHiddenFromPublishBelowRoleLevel().getURI(), ontModel);
                 }
 
-                updatePropertyStringValue(ontCls,PROPERTY_CUSTOMENTRYFORMANNOT,cls.getCustomEntryForm(),ontModel);
-                updatePropertyStringValue(ontCls,PROPERTY_CUSTOMDISPLAYVIEWANNOT,cls.getCustomDisplayView(),ontModel);
-                updatePropertyStringValue(ontCls,PROPERTY_CUSTOMSHORTVIEWANNOT,cls.getCustomShortView(),ontModel);
-                updatePropertyStringValue(ontCls,PROPERTY_CUSTOMSEARCHVIEWANNOT,cls.getCustomSearchView(),ontModel);
+                updatePropertyStringValue(ontCls, PROPERTY_CUSTOMENTRYFORMANNOT,
+                    cls.getCustomEntryForm(), ontModel);
+                updatePropertyStringValue(ontCls, PROPERTY_CUSTOMDISPLAYVIEWANNOT,
+                    cls.getCustomDisplayView(), ontModel);
+                updatePropertyStringValue(ontCls, PROPERTY_CUSTOMSHORTVIEWANNOT,
+                    cls.getCustomShortView(), ontModel);
+                updatePropertyStringValue(ontCls, PROPERTY_CUSTOMSEARCHVIEWANNOT,
+                    cls.getCustomSearchView(), ontModel);
             } else {
-                log.error("error: cannot find jena class "+cls.getURI()+" for updating");
+                log.error("error: cannot find jena class " + cls.getURI() + " for updating");
             }
         } finally {
-            getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
             ontModel.leaveCriticalSection();
         }
     }
 
-    public void deleteClasses2Classes( Classes2Classes c2c ) {
+    public void deleteClasses2Classes(Classes2Classes c2c) {
         deleteClasses2Classes(c2c, getOntModelSelector().getTBoxModel());
     }
 
-    public void deleteClasses2Classes( Classes2Classes c2c, OntModel ontModel )
-    {
+    public void deleteClasses2Classes(Classes2Classes c2c, OntModel ontModel) {
         ontModel.enterCriticalSection(Lock.WRITE);
-        ontModel.getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
+        ontModel.getBaseModel()
+            .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
         try {
-            OntResource subclass = getOntClass(ontModel,c2c.getSubclassURI());
-            OntResource superclass = getOntClass(ontModel,c2c.getSuperclassURI());
-            if(subclass == null || superclass == null) {
+            OntResource subclass = getOntClass(ontModel, c2c.getSubclassURI());
+            OntResource superclass = getOntClass(ontModel, c2c.getSuperclassURI());
+            if (subclass == null || superclass == null) {
                 log.warn("unable to delete " + c2c.getSubclassURI() +
-                        " rdfs:subClassOf " + c2c.getSuperclassURI());
+                    " rdfs:subClassOf " + c2c.getSuperclassURI());
                 if (subclass == null) {
                     log.warn(c2c.getSubclassURI() + " not found in the model.");
                 }
@@ -1089,19 +1161,20 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
             ontModel.remove(removal);
             ontModel.add(additions);
         } finally {
-            ontModel.getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            ontModel.getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
             ontModel.leaveCriticalSection();
         }
     }
 
-    public void insertNewClasses2Classes( Classes2Classes c2c ) {
+    public void insertNewClasses2Classes(Classes2Classes c2c) {
         insertNewClasses2Classes(c2c, getOntModelSelector().getTBoxModel());
     }
 
-    public void insertNewClasses2Classes( Classes2Classes c2c, OntModel ontModel )
-    {
+    public void insertNewClasses2Classes(Classes2Classes c2c, OntModel ontModel) {
         ontModel.enterCriticalSection(Lock.WRITE);
-        ontModel.getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
+        ontModel.getBaseModel()
+            .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
         try {
             Resource subclass = ontModel.getResource(c2c.getSubclassURI());
             Resource superclass = ontModel.getResource(c2c.getSuperclassURI());
@@ -1109,7 +1182,8 @@ public class VClassDaoJena extends JenaBaseDao implements VClassDao {
                 ontModel.add(subclass, RDFS.subClassOf, superclass);
             }
         } finally {
-            ontModel.getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            ontModel.getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
             ontModel.leaveCriticalSection();
         }
     }

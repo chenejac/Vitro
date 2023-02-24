@@ -6,10 +6,8 @@ import java.util.Comparator;
 
 /**
  * a class representing a particular instance of an object property
- *
  */
-public class ObjectPropertyStatementImpl implements ObjectPropertyStatement
-{
+public class ObjectPropertyStatementImpl implements ObjectPropertyStatement {
     private String subjectURI = null;
     private Individual subject = null;
     private String objectURI = null;
@@ -19,9 +17,10 @@ public class ObjectPropertyStatementImpl implements ObjectPropertyStatement
     private ObjectProperty property = null;
     private boolean subjectOriented = true; //is the range the item of interest?
 
-   public ObjectPropertyStatementImpl() { }
+    public ObjectPropertyStatementImpl() {
+    }
 
-   public ObjectPropertyStatementImpl(String subjectUri, String propertyUri, String objectUri) {
+    public ObjectPropertyStatementImpl(String subjectUri, String propertyUri, String objectUri) {
         subjectURI = subjectUri;
         propertyURI = propertyUri;
         objectURI = objectUri;
@@ -30,11 +29,13 @@ public class ObjectPropertyStatementImpl implements ObjectPropertyStatement
     /* (non-Javadoc)
      * @see edu.cornell.mannlib.vitro.webapp.beans.ObjectPropertyStatement#toString()
      */
-    public String toString(){
-           String prop = (getProperty()!=null)?getProperty().getDomainPublic():"by propURI"+getPropertyURI();
-           String ran = (getObject()!= null)?getObject().getName():"objectURI:"+getObjectURI();
-           String dom = (getSubject()!= null)?getSubject().getName():"subjectURI:"+getSubjectURI();
-           return "Object Property Statements: "+dom+" "+prop+" to "+ran+" ";
+    public String toString() {
+        String prop = (getProperty() != null) ? getProperty().getDomainPublic() :
+            "by propURI" + getPropertyURI();
+        String ran = (getObject() != null) ? getObject().getName() : "objectURI:" + getObjectURI();
+        String dom =
+            (getSubject() != null) ? getSubject().getName() : "subjectURI:" + getSubjectURI();
+        return "Object Property Statements: " + dom + " " + prop + " to " + ran + " ";
     }
 
     /* (non-Javadoc)
@@ -101,10 +102,11 @@ public class ObjectPropertyStatementImpl implements ObjectPropertyStatement
      * @see edu.cornell.mannlib.vitro.webapp.beans.ObjectPropertyStatement#setProperty(edu.cornell.mannlib.vitro.webapp.beans.ObjectProperty)
      */
     public void setProperty(ObjectProperty property) {
-        if(property != null )
+        if (property != null) {
             setPropertyURI(property.getURI());
-        else
+        } else {
             setPropertyURI(null);
+        }
         this.property = property;
     }
 
@@ -136,35 +138,37 @@ public class ObjectPropertyStatementImpl implements ObjectPropertyStatement
     public String getPropertyURI() {
         return this.propertyURI;
     }
+
     /* (non-Javadoc)
      * @see edu.cornell.mannlib.vitro.webapp.beans.ObjectPropertyStatement#setPropertyURI(java.lang.String)
      */
-    public void setPropertyURI(String URI){
+    public void setPropertyURI(String URI) {
         this.propertyURI = URI;
-    }
-
-    /**
-     * Sorts entity object for display presentation.
-     * @author bdc34
-     */
-    public static class DisplayComparator implements Comparator{
-        public int compare(Object o1, Object o2) {
-            Individual ent1 = ((ObjectPropertyStatement) o1).getSubject();
-            Individual ent2 = ((ObjectPropertyStatement) o2).getSubject();
-            return ent1.getName().compareTo(ent2.getName());
-        }
     }
 
     /* (non-Javadoc)
      * @see edu.cornell.mannlib.vitro.webapp.beans.ObjectPropertyStatement#toPropertyInstance()
      */
-    public PropertyInstance toPropertyInstance(){
+    public PropertyInstance toPropertyInstance() {
         PropertyInstance pi = new PropertyInstance();
 
         pi.setPropertyURI(propertyURI);
         pi.setSubjectEntURI(subjectURI);
         pi.setObjectEntURI(objectURI);
         return pi;
+    }
+
+    /**
+     * Sorts entity object for display presentation.
+     *
+     * @author bdc34
+     */
+    public static class DisplayComparator implements Comparator {
+        public int compare(Object o1, Object o2) {
+            Individual ent1 = ((ObjectPropertyStatement) o1).getSubject();
+            Individual ent2 = ((ObjectPropertyStatement) o2).getSubject();
+            return ent1.getName().compareTo(ent2.getName());
+        }
     }
 
 }

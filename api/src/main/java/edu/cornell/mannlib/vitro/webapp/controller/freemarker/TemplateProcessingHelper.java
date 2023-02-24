@@ -2,15 +2,11 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vitro.webapp.freemarker.config.FreemarkerConfiguration;
 import edu.cornell.mannlib.vitro.webapp.freemarker.config.FreemarkerConfigurationImpl;
@@ -18,6 +14,8 @@ import freemarker.core.Environment;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class TemplateProcessingHelper {
 
@@ -42,7 +40,7 @@ public class TemplateProcessingHelper {
 
         try {
             Environment env = template.createProcessingEnvironment(map, writer);
- 
+
             // Define a setup template to be included by every page template
             String templateType = (String) map.get("templateType");
             if (FreemarkerHttpServlet.PAGE_TEMPLATE_TYPE.equals(templateType)) {
@@ -56,7 +54,8 @@ public class TemplateProcessingHelper {
             // Now process it.
             env.process();
         } catch (TemplateException e) {
-            throw new TemplateProcessingException("TemplateException creating processing environment", e);
+            throw new TemplateProcessingException(
+                "TemplateException creating processing environment", e);
         } catch (IOException e) {
             throw new TemplateProcessingException("IOException creating processing environment", e);
         }

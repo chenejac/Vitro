@@ -2,14 +2,12 @@
 
 package edu.cornell.mannlib.vedit.forwarder.impl;
 
-import java.io.IOException;
-
-import edu.cornell.mannlib.vedit.forwarder.PageForwarder;
-import edu.cornell.mannlib.vedit.beans.EditProcessObject;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
+import edu.cornell.mannlib.vedit.beans.EditProcessObject;
+import edu.cornell.mannlib.vedit.forwarder.PageForwarder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -18,12 +16,13 @@ public class UrlForwarder implements PageForwarder {
 
     private String theUrl = null;
 
-    public UrlForwarder (String theUrl) {
+    public UrlForwarder(String theUrl) {
         this.theUrl = theUrl;
     }
 
 
-    public void doForward(HttpServletRequest request, HttpServletResponse response, EditProcessObject epo) {
+    public void doForward(HttpServletRequest request, HttpServletResponse response,
+                          EditProcessObject epo) {
         try {
             response.sendRedirect(response.encodeRedirectURL(theUrl));
         } catch (IOException ioe) {

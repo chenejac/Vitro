@@ -12,37 +12,37 @@ import java.util.List;
  */
 
 public class ProxyRelationshipSelection {
-	private final ProxyRelationshipSelectionCriteria criteria;
-	private final List<ProxyRelationship> proxyRelationships;
-	private final int totalResultCount;
+    private final ProxyRelationshipSelectionCriteria criteria;
+    private final List<ProxyRelationship> proxyRelationships;
+    private final int totalResultCount;
 
-	public ProxyRelationshipSelection(
-			ProxyRelationshipSelectionCriteria criteria,
-			List<ProxyRelationship> proxyRelationships, int totalResultCount) {
-		this.criteria = criteria;
-		this.proxyRelationships = Collections
-				.unmodifiableList(new ArrayList<ProxyRelationship>(
-						proxyRelationships));
-		this.totalResultCount = totalResultCount;
-	}
+    public ProxyRelationshipSelection(
+        ProxyRelationshipSelectionCriteria criteria,
+        List<ProxyRelationship> proxyRelationships, int totalResultCount) {
+        this.criteria = criteria;
+        this.proxyRelationships = Collections
+            .unmodifiableList(new ArrayList<ProxyRelationship>(
+                proxyRelationships));
+        this.totalResultCount = totalResultCount;
+    }
 
-	public ProxyRelationshipSelectionCriteria getCriteria() {
-		return criteria;
-	}
+    public ProxyRelationshipSelectionCriteria getCriteria() {
+        return criteria;
+    }
 
-	public List<ProxyRelationship> getProxyRelationships() {
-		return proxyRelationships;
-	}
+    public List<ProxyRelationship> getProxyRelationships() {
+        return proxyRelationships;
+    }
 
-	public int getTotalResultCount() {
-		return totalResultCount;
-	}
+    public int getTotalResultCount() {
+        return totalResultCount;
+    }
 
-	@Override
-	public String toString() {
-		return "ProxyRelationshipSelection[count=" + totalResultCount
-				+ ", relationships=" + proxyRelationships + ", criteria="
-				+ criteria + "]";
-	}
+    @Override
+    public String toString() {
+        return "ProxyRelationshipSelection[count=" + totalResultCount
+            + ", relationships=" + proxyRelationships + ", criteria="
+            + criteria + "]";
+    }
 
 }

@@ -20,38 +20,39 @@ public class ExcludeBasedOnTypeNamespace implements SearchIndexExcluder {
     private final List<String> namespaces = new ArrayList<>();
     Pattern nsRegexPattern;
 
-	@Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#excludes")
-	public void addExcludedNamespace(String uri) {
-		namespaces.add(uri);
-	}
+    @Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#excludes")
+    public void addExcludedNamespace(String uri) {
+        namespaces.add(uri);
+    }
 
-	@Validation
-	public void compileRegexPattern() {
+    @Validation
+    public void compileRegexPattern() {
         StringBuilder nsOrPattern = new StringBuilder();
-        for( int i=0; i<namespaces.size(); i++){
+        for (int i = 0; i < namespaces.size(); i++) {
             String ns = namespaces.get(i);
             nsOrPattern.append(i != 0 ? "|" : "").append(Pattern.quote(ns)).append("[^/#]*$");
         }
         this.nsRegexPattern = Pattern.compile(nsOrPattern.toString());
-	}
+    }
 
 
     @Override
     public String checkForExclusion(Individual ind) {
-        if( ind != null && ind.getVClasses() != null ){
-            for( VClass vclass : ind.getVClasses() ){
+        if (ind != null && ind.getVClasses() != null) {
+            for (VClass vclass : ind.getVClasses()) {
                 String excludeMsg = checkForSkip(ind, vclass);
-                if(excludeMsg != null)
+                if (excludeMsg != null) {
                     return excludeMsg;
+                }
             }
         }
         return null;
     }
 
     String checkForSkip(Individual individual, VClass vclass) {
-        if( vclass != null && vclass.getURI() != null ){
-            Matcher match=nsRegexPattern.matcher( vclass.getURI() );
-            if( match.matches() ){
+        if (vclass != null && vclass.getURI() != null) {
+            Matcher match = nsRegexPattern.matcher(vclass.getURI());
+            if (match.matches()) {
                 return "Skipping because it is of a type in an excluded namespace.";
             }
         }
@@ -59,8 +60,8 @@ public class ExcludeBasedOnTypeNamespace implements SearchIndexExcluder {
     }
 
 
-	@Override
-	public String toString() {
-		return "ExcludeBasedOnTypeNamespace[namespaces=" + namespaces + "]";
-	}
+    @Override
+    public String toString() {
+        return "ExcludeBasedOnTypeNamespace[namespaces=" + namespaces + "]";
+    }
 }

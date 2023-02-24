@@ -6,82 +6,79 @@ package edu.cornell.mannlib.vitro.webapp.controller.accounts;
  * How are the accounts to be sorted?
  */
 public class UserAccountsOrdering {
-	public enum Direction {
-		ASCENDING("ASC"), DESCENDING("DESC");
+    public static final UserAccountsOrdering DEFAULT_ORDERING = new UserAccountsOrdering(
+        Field.DEFAULT_FIELD, Direction.DEFAULT_DIRECTION);
+    private final Field field;
+    private final Direction direction;
 
-		public static Direction DEFAULT_DIRECTION = ASCENDING;
+    public UserAccountsOrdering(Field field, Direction direction) {
+        this.field = field;
+        this.direction = direction;
+    }
 
-		public static Direction fromKeyword(String keyword) {
-			if (keyword == null) {
-				return DEFAULT_DIRECTION;
-			}
+    public Field getField() {
+        return field;
+    }
 
-			for (Direction d : Direction.values()) {
-				if (d.keyword.equals(keyword)) {
-					return d;
-				}
-			}
+    public Direction getDirection() {
+        return direction;
+    }
 
-			return DEFAULT_DIRECTION;
-		}
+    @Override
+    public String toString() {
+        return "UserAccountsOrdering[field=" + field + ", direction="
+            + direction + "]";
+    }
 
-		public final String keyword;
+    public enum Direction {
+        ASCENDING("ASC"), DESCENDING("DESC");
 
-		Direction(String keyword) {
-			this.keyword = keyword;
-		}
-	}
+        public static Direction DEFAULT_DIRECTION = ASCENDING;
+        public final String keyword;
 
-	public enum Field {
-		EMAIL("email"), FIRST_NAME("firstName"), LAST_NAME("lastName"), STATUS(
-				"status"), ROLE("ps"), LOGIN_COUNT("count"), LAST_LOGIN_TIME(
-				"lastLogin");
+        Direction(String keyword) {
+            this.keyword = keyword;
+        }
 
-		public static Field DEFAULT_FIELD = EMAIL;
+        public static Direction fromKeyword(String keyword) {
+            if (keyword == null) {
+                return DEFAULT_DIRECTION;
+            }
 
-		public static Field fromName(String name) {
-			if (name == null) {
-				return DEFAULT_FIELD;
-			}
+            for (Direction d : Direction.values()) {
+                if (d.keyword.equals(keyword)) {
+                    return d;
+                }
+            }
 
-			for (Field f : Field.values()) {
-				if (f.name.equals(name)) {
-					return f;
-				}
-			}
+            return DEFAULT_DIRECTION;
+        }
+    }
 
-			return DEFAULT_FIELD;
-		}
+    public enum Field {
+        EMAIL("email"), FIRST_NAME("firstName"), LAST_NAME("lastName"), STATUS(
+            "status"), ROLE("ps"), LOGIN_COUNT("count"), LAST_LOGIN_TIME(
+            "lastLogin");
 
-		public final String name;
+        public static Field DEFAULT_FIELD = EMAIL;
+        public final String name;
 
-		Field(String name) {
-			this.name = name;
-		}
-	}
+        Field(String name) {
+            this.name = name;
+        }
 
-	public static final UserAccountsOrdering DEFAULT_ORDERING = new UserAccountsOrdering(
-			Field.DEFAULT_FIELD, Direction.DEFAULT_DIRECTION);
+        public static Field fromName(String name) {
+            if (name == null) {
+                return DEFAULT_FIELD;
+            }
 
-	private final Field field;
-	private final Direction direction;
+            for (Field f : Field.values()) {
+                if (f.name.equals(name)) {
+                    return f;
+                }
+            }
 
-	public UserAccountsOrdering(Field field, Direction direction) {
-		this.field = field;
-		this.direction = direction;
-	}
-
-	public Field getField() {
-		return field;
-	}
-
-	public Direction getDirection() {
-		return direction;
-	}
-
-	@Override
-	public String toString() {
-		return "UserAccountsOrdering[field=" + field + ", direction="
-				+ direction + "]";
-	}
+            return DEFAULT_FIELD;
+        }
+    }
 }

@@ -2,15 +2,13 @@
 
 package edu.cornell.mannlib.vitro.webapp.reasoner.plugin;
 
+import edu.cornell.mannlib.vitro.webapp.reasoner.ReasonerPlugin;
+import edu.cornell.mannlib.vitro.webapp.reasoner.SimpleReasoner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Statement;
-
-import edu.cornell.mannlib.vitro.webapp.reasoner.ReasonerPlugin;
-import edu.cornell.mannlib.vitro.webapp.reasoner.SimpleReasoner;
 
 /**
  * Disables sameAs in associated SimpleReasoner.
@@ -19,41 +17,41 @@ public class DisableSameAs implements ReasonerPlugin {
 
     private static final Log log = LogFactory.getLog(DisableSameAs.class);
 
-	private SimpleReasoner simpleReasoner;
-
-    public void setSimpleReasoner(SimpleReasoner simpleReasoner) {
-    	this.simpleReasoner = simpleReasoner;
-        this.simpleReasoner.setSameAsEnabled( false );
-        log.info("owl:sameAs disabled in SimpleReasoner.");
-    }
+    private SimpleReasoner simpleReasoner;
 
     public boolean isConfigurationOnlyPlugin() {
         return true;
     }
 
     public SimpleReasoner getSimpleReasoner() {
-    	return this.simpleReasoner;
+        return this.simpleReasoner;
     }
 
-	public boolean isInterestedInAddedStatement(Statement stmt) {
-		return false;
-	}
+    public void setSimpleReasoner(SimpleReasoner simpleReasoner) {
+        this.simpleReasoner = simpleReasoner;
+        this.simpleReasoner.setSameAsEnabled(false);
+        log.info("owl:sameAs disabled in SimpleReasoner.");
+    }
 
-	public boolean isInterestedInRemovedStatement(Statement stmt) {
-		return false;
-	}
+    public boolean isInterestedInAddedStatement(Statement stmt) {
+        return false;
+    }
 
-	public void addedABoxStatement(Statement stmt,
-            Model aboxAssertionsModel,
-            Model aboxInferencesModel,
-            OntModel TBoxInferencesModel) {
+    public boolean isInterestedInRemovedStatement(Statement stmt) {
+        return false;
+    }
+
+    public void addedABoxStatement(Statement stmt,
+                                   Model aboxAssertionsModel,
+                                   Model aboxInferencesModel,
+                                   OntModel TBoxInferencesModel) {
     }
 
 
     public void removedABoxStatement(Statement stmt,
-            Model aboxAssertionsModel,
-            Model aboxInferencesModel,
-            OntModel TBoxInferencesModel) {
+                                     Model aboxAssertionsModel,
+                                     Model aboxInferencesModel,
+                                     OntModel TBoxInferencesModel) {
     }
 
 }

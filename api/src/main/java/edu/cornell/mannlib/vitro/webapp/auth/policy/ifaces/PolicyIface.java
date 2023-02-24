@@ -11,9 +11,8 @@ import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
  * false, representing unauthorized.
  *
  * @author bdc34
- *
  */
-public interface PolicyIface  {
+public interface PolicyIface {
     public PolicyDecision isAuthorized(IdentifierBundle whoToAuth, RequestedAction whatToAuth);
 
 }

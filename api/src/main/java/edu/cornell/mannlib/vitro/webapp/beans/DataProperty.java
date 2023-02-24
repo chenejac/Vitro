@@ -3,18 +3,19 @@
 package edu.cornell.mannlib.vitro.webapp.beans;
 
 import java.text.Collator;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 
 import edu.cornell.mannlib.vitro.webapp.auth.policy.bean.RoleRestrictedProperty;
 
 /**
  * class representing a property that relates an entity (object)
  * to a data literal
- * @author bjl23
  *
+ * @author bjl23
  */
-public class DataProperty extends Property implements Comparable<DataProperty>, ResourceBean, RoleRestrictedProperty {
+public class DataProperty extends Property
+    implements Comparable<DataProperty>, ResourceBean, RoleRestrictedProperty {
 
     private String name = null;
     private String publicName = null;
@@ -75,21 +76,16 @@ public class DataProperty extends Property implements Comparable<DataProperty>, 
         return domainClassURI;
     }
 
+    public void setDomainClassURI(String domainClassURI) {
+        this.domainClassURI = domainClassURI;
+    }
+
     @Override
     public String getDomainVClassURI() {
         return domainClassURI;
     }
 
-    public void setDomainClassURI(String domainClassURI) {
-        this.domainClassURI = domainClassURI;
-    }
-
     public String getRangeDatatypeURI() {
-        return rangeDatatypeURI;
-    }
-    
-    @Override
-    public String getRangeVClassURI() {
         return rangeDatatypeURI;
     }
 
@@ -97,20 +93,25 @@ public class DataProperty extends Property implements Comparable<DataProperty>, 
         this.rangeDatatypeURI = rangeDatatypeURI;
     }
 
-    public void setEditing(String editing) {
-    	this.editing = editing;
+    @Override
+    public String getRangeVClassURI() {
+        return rangeDatatypeURI;
     }
 
     public String getEditing() {
-    	return this.editing;
+        return this.editing;
+    }
+
+    public void setEditing(String editing) {
+        this.editing = editing;
     }
 
     public boolean getFunctional() {
-    	return this.functional;
+        return this.functional;
     }
 
     public void setFunctional(boolean functional) {
-    	this.functional = functional;
+        this.functional = functional;
     }
 
     public String getExample() {
@@ -132,6 +133,7 @@ public class DataProperty extends Property implements Comparable<DataProperty>, 
     public String getPublicDescription() {
         return publicDescription;
     }
+
     public void setPublicDescription(String s) {
         this.publicDescription = s;
     }
@@ -152,11 +154,11 @@ public class DataProperty extends Property implements Comparable<DataProperty>, 
         this.displayLimit = displayLimit;
     }
 
-    public int getStatusId(){
+    public int getStatusId() {
         return statusId;
     }
 
-    public void setStatusId(int statusId){
+    public void setStatusId(int statusId) {
         this.statusId = statusId;
     }
 
@@ -165,35 +167,40 @@ public class DataProperty extends Property implements Comparable<DataProperty>, 
     }
 
     public void setDataPropertyStatements(List<DataPropertyStatement> dataPropertyStatements) {
-        this.dataPropertyStatements=dataPropertyStatements;
+        this.dataPropertyStatements = dataPropertyStatements;
     }
 
     /**
      * adds a single DataPropertyStatement object to a DatatypeProperty's DataPropertyStatements list.
-     * @param dataPropertyStmt  Data property statement
+     *
+     * @param dataPropertyStmt Data property statement
      */
 
-    public void addDataPropertyStatement(DataPropertyStatement dataPropertyStmt){
-        if( dataPropertyStmt == null ) return;
-        if( getDataPropertyStatements() == null )
-            setDataPropertyStatements(new LinkedList<DataPropertyStatement>() );
+    public void addDataPropertyStatement(DataPropertyStatement dataPropertyStmt) {
+        if (dataPropertyStmt == null) {
+            return;
+        }
+        if (getDataPropertyStatements() == null) {
+            setDataPropertyStatements(new LinkedList<DataPropertyStatement>());
+        }
         getDataPropertyStatements().add(dataPropertyStmt);
     }
 
     public int compareTo(DataProperty o) {
         try {
             Collator collator = Collator.getInstance();
-            return collator.compare(this.getName(),((DataProperty)o).getName());
+            return collator.compare(this.getName(), ((DataProperty) o).getName());
         } catch (Exception e) {
             return -1;
         }
     }
 
-    public String toString(){
-        if( getURI() != null )
+    public String toString() {
+        if (getURI() != null) {
             return getURI();
-        else
+        } else {
             return "DataProperty without URI(" + hashCode() + ")";
+        }
     }
 }
 

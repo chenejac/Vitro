@@ -2,6 +2,9 @@
 
 package edu.cornell.mannlib.vedit.controller;
 
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -10,13 +13,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.forwarder.PageForwarder;
@@ -27,13 +23,17 @@ import edu.cornell.mannlib.vedit.util.FormUtils.NegativeIntegerException;
 import edu.cornell.mannlib.vedit.util.OperationUtils;
 import edu.cornell.mannlib.vedit.validator.ValidationObject;
 import edu.cornell.mannlib.vedit.validator.Validator;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-@WebServlet(name = "OperationController", urlPatterns = {"/doEdit"} )
+@WebServlet(name = "OperationController", urlPatterns = {"/doEdit"})
 public class OperationController extends BaseEditController {
 
     private static final Log log = LogFactory.getLog(OperationController.class.getName());
+    private boolean SUCCESS = false;
+    private boolean FAILURE = !SUCCESS;
 
-    public void doPost (HttpServletRequest request, HttpServletResponse response) {
+    public void doPost(HttpServletRequest request, HttpServletResponse response) {
 
         String defaultLandingPage = getDefaultLandingPage(request);
 
@@ -45,51 +45,50 @@ public class OperationController extends BaseEditController {
             epo = (EditProcessObject) epoHash.get(request.getParameter("_epoKey"));
         } catch (NullPointerException e) {
             //session or edit process expired
-        	try {
-        		response.sendRedirect(defaultLandingPage);
-        	} catch (IOException ioe) {
-        		log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
-        	}
+            try {
+                response.sendRedirect(defaultLandingPage);
+            } catch (IOException ioe) {
+                log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
+            }
             return;
         }
 
         if (epo == null) {
-        	try {
-        		response.sendRedirect(defaultLandingPage);
-        	} catch (IOException ioe) {
-        		log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
-        	}
+            try {
+                response.sendRedirect(defaultLandingPage);
+            } catch (IOException ioe) {
+                log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
+            }
             return;
         }
 
         // if we're canceling, we don't need to do anything
-        if (request.getParameter("_cancel") != null){
+        if (request.getParameter("_cancel") != null) {
             String referer = epo.getReferer();
             if (referer == null) {
-            	try {
-            		response.sendRedirect(defaultLandingPage);
-            	} catch (IOException ioe) {
+                try {
+                    response.sendRedirect(defaultLandingPage);
+                } catch (IOException ioe) {
                     log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
                 }
                 return;
-            }
-            else {
-            	try {
-            		response.sendRedirect(referer);
-            	} catch (IOException ioe) {
-            		log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
-            	}
+            } else {
+                try {
+                    response.sendRedirect(referer);
+                } catch (IOException ioe) {
+                    log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
+                }
                 return;
             }
         }
 
         // reset - if reset button is of type submit
         if (request.getParameter("_reset") != null) {
-        	try {
-        		response.sendRedirect(request.getHeader("Referer"));
-        	} catch (IOException ioe) {
-        		log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
-        	}
+            try {
+                response.sendRedirect(request.getHeader("Referer"));
+            } catch (IOException ioe) {
+                log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
+            }
             return;
         }
 
@@ -109,18 +108,18 @@ public class OperationController extends BaseEditController {
             epo.setNewBean(newObj);
 
             //if validation failed, go back to the form controller
-            if (!valid){
-            	epo.setAttribute("globalErrorMsg", "Please correct errors highlighted below.");
-            	retry(request, response, epo);
-            	return;
+            if (!valid) {
+                epo.setAttribute("globalErrorMsg", "Please correct errors highlighted below.");
+                retry(request, response, epo);
+                return;
             }
 
             String action = getAction(request);
 
             boolean status = performEdit(epo, newObj, action);
             if (status == FAILURE) {
-            	retry(request, response, epo);
-            	return;
+                retry(request, response, epo);
+                return;
             }
 
             /* put request parameters and attributes into epo where the listeners can see */
@@ -158,10 +157,11 @@ public class OperationController extends BaseEditController {
 
             //if no page forwarder was set, just go back to referring page:
             String referer = epo.getReferer();
-            if (referer == null)
+            if (referer == null) {
                 response.sendRedirect(defaultLandingPage);
-            else
+            } else {
                 response.sendRedirect(referer);
+            }
 
         } catch (Exception e) {
             log.error("Error performing edit", e);
@@ -173,38 +173,38 @@ public class OperationController extends BaseEditController {
             epo.setAttribute("globalErrorMsg", errMsg);
 
             try {
-            	retry(request, response, epo);
+                retry(request, response, epo);
             } catch (IOException ioe) {
-            	log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
+                log.error(this.getClass().getName() + " IOError on redirect: ", ioe);
             }
         }
     }
 
     private void retry(HttpServletRequest request,
-    		           HttpServletResponse response,
-    		           EditProcessObject epo) throws IOException {
+                       HttpServletResponse response,
+                       EditProcessObject epo) throws IOException {
         String referer = request.getHeader("Referer");
         referer = (referer == null) ? epo.getReferer() : referer;
-        if( referer != null ){
+        if (referer != null) {
             int epoKeyIndex = referer.indexOf("_epoKey");
-            if (epoKeyIndex >= 0){
-                String url = referer.substring(0,epoKeyIndex) + "_epoKey=" +
-                        request.getParameter("_epoKey");
+            if (epoKeyIndex >= 0) {
+                String url = referer.substring(0, epoKeyIndex) + "_epoKey=" +
+                    request.getParameter("_epoKey");
                 response.sendRedirect(url);
                 return;
             }
             String redirectUrl = (referer.indexOf("?") > -1)
-                    ? referer + "&"
-                    : referer + "?";
-            redirectUrl += "_epoKey="+request.getParameter("_epoKey");
+                ? referer + "&"
+                : referer + "?";
+            redirectUrl += "_epoKey=" + request.getParameter("_epoKey");
             response.sendRedirect(redirectUrl);
         } else {
-        	response.sendRedirect(getDefaultLandingPage(request));
+            response.sendRedirect(getDefaultLandingPage(request));
         }
     }
 
     private void runPreprocessors(EditProcessObject epo, Object newObj) {
-    	if (epo.getPreProcessorList() != null && epo.getPreProcessorList().size()>0) {
+        if (epo.getPreProcessorList() != null && epo.getPreProcessorList().size() > 0) {
             for (EditPreProcessor epp : epo.getPreProcessorList()) {
                 epp.process(newObj, epo);
             }
@@ -212,99 +212,105 @@ public class OperationController extends BaseEditController {
     }
 
     private Object getNewObj(EditProcessObject epo) {
-    	Object newObj = null;
-    	if (epo.getOriginalBean() != null) { // we're updating or deleting an existing bean
+        Object newObj = null;
+        if (epo.getOriginalBean() != null) { // we're updating or deleting an existing bean
             if (epo.getImplementationClass() != null) {
                 newObj = OperationUtils.cloneBean(
-                        epo.getOriginalBean(),
-                        epo.getImplementationClass(),
-                        epo.getBeanClass());
+                    epo.getOriginalBean(),
+                    epo.getImplementationClass(),
+                    epo.getBeanClass());
             } else {
                 newObj = OperationUtils.cloneBean(epo.getOriginalBean());
             }
         } else {
             Class cls = epo.getBeanClass();
             try {
-            	newObj = cls.newInstance();
+                newObj = cls.newInstance();
             } catch (IllegalAccessException iae) {
-            	throw new RuntimeException("Illegal access - see error logs.");
+                throw new RuntimeException("Illegal access - see error logs.");
             } catch (InstantiationException ie) {
-            	throw new RuntimeException("Unable to instantiate " + cls.getSimpleName());
+                throw new RuntimeException("Unable to instantiate " + cls.getSimpleName());
             }
         }
         epo.setNewBean(newObj); // is this dangerous?
         return newObj;
     }
 
-    private boolean populateObjectFromRequestParamsAndValidate(EditProcessObject epo, Object newObj, HttpServletRequest request) {
+    private boolean populateObjectFromRequestParamsAndValidate(EditProcessObject epo, Object newObj,
+                                                               HttpServletRequest request) {
         boolean valid = true;
-        String currParam="";
+        String currParam = "";
         Enumeration penum = request.getParameterNames();
-        while (penum.hasMoreElements()){
+        while (penum.hasMoreElements()) {
             currParam = (String) penum.nextElement();
-            if (!(currParam.indexOf("_")==0)){
+            if (!(currParam.indexOf("_") == 0)) {
                 String currValue = request.getParameterValues(currParam)[0];
                 // "altnew" values come in with the same input name but at position 1 of the array
-                if(currValue.length()==0  && request.getParameterValues(currParam).length>1) {
-                        currValue = request.getParameterValues(currParam)[1];
+                if (currValue.length() == 0 && request.getParameterValues(currParam).length > 1) {
+                    currValue = request.getParameterValues(currParam)[1];
                 }
                 //validate the entry
                 boolean fieldValid = true;
-                if ( request.getParameter("_delete") == null ) { // don't do validation if we're deleting
+                if (request.getParameter("_delete") ==
+                    null) { // don't do validation if we're deleting
                     List validatorList = (List) epo.getValidatorMap().get(currParam);
                     if (validatorList != null) {
                         Iterator valIt = validatorList.iterator();
                         StringBuilder errMsg = new StringBuilder();
-                        while (valIt.hasNext()){
-                            Validator val = (Validator)valIt.next();
+                        while (valIt.hasNext()) {
+                            Validator val = (Validator) valIt.next();
                             ValidationObject vo = val.validate(currValue);
-                            if (!vo.getValid()){
+                            if (!vo.getValid()) {
                                 valid = false;
                                 fieldValid = false;
                                 errMsg.append(vo.getMessage()).append(" ");
-                                epo.getBadValueMap().put(currParam,currValue);
+                                epo.getBadValueMap().put(currParam, currValue);
                             } else {
                                 try {
                                     epo.getBadValueMap().remove(currParam);
                                     epo.getErrMsgMap().remove(currParam);
-                                } catch (Exception e) {}
+                                } catch (Exception e) {
+                                }
                             }
                         }
-                        if (errMsg.length()>0) {
+                        if (errMsg.length() > 0) {
                             epo.getErrMsgMap().put(currParam, errMsg.toString());
-                            log.info("doPost() putting error message "+errMsg+" for "+currParam);
+                            log.info(
+                                "doPost() putting error message " + errMsg + " for " + currParam);
                         }
                     }
                 }
-                if (fieldValid){
-                    if (currValue.length()==0) {
+                if (fieldValid) {
+                    if (currValue.length() == 0) {
                         Map<String, String> defaultHash = epo.getDefaultValueMap();
                         try {
                             String defaultValue = defaultHash.get(currParam);
-                            if (defaultValue != null)
-                                currValue=defaultValue;
-                        } catch (Exception e) {}
+                            if (defaultValue != null) {
+                                currValue = defaultValue;
+                            }
+                        } catch (Exception e) {
+                        }
                     }
                     try {
-                        FormUtils.beanSet(newObj,currParam,currValue,epo);
+                        FormUtils.beanSet(newObj, currParam, currValue, epo);
                         epo.getErrMsgMap().remove(currParam);
                         epo.getBadValueMap().remove(currParam);
                     } catch (NumberFormatException e) {
-                        if (currValue.length()>0) {
+                        if (currValue.length() > 0) {
                             valid = false;
-                            epo.getErrMsgMap().put(currParam,"Please enter an integer");
-                            epo.getBadValueMap().put(currParam,currValue);
+                            epo.getErrMsgMap().put(currParam, "Please enter an integer");
+                            epo.getBadValueMap().put(currParam, currValue);
                         }
                     } catch (NegativeIntegerException nie) {
                         valid = false;
-                        epo.getErrMsgMap().put(currParam,"Please enter a positive integer");
-                        epo.getBadValueMap().put(currParam,currValue);
+                        epo.getErrMsgMap().put(currParam, "Please enter a positive integer");
+                        epo.getBadValueMap().put(currParam, currValue);
                     } catch (IllegalArgumentException f) {
-                        valid=false;
-                        log.error("doPost() reports IllegalArgumentException for "+currParam);
-                        log.debug("doPost() error message: "+f.getMessage());
+                        valid = false;
+                        log.error("doPost() reports IllegalArgumentException for " + currParam);
+                        log.debug("doPost() error message: " + f.getMessage());
                         epo.getErrMsgMap().put(currParam, f.getMessage());
-                        epo.getBadValueMap().put(currParam,currValue);
+                        epo.getBadValueMap().put(currParam, currValue);
                     }
                 }
             }
@@ -313,18 +319,18 @@ public class OperationController extends BaseEditController {
     }
 
     private String getAction(HttpServletRequest request) {
-    	if (request.getParameter("_update") != null ) {
-        	return "update";
-        } else if (request.getParameter("_delete") != null ) {
-        	return "delete";
+        if (request.getParameter("_update") != null) {
+            return "update";
+        } else if (request.getParameter("_delete") != null) {
+            return "delete";
         } else {
-        	return "insert";
+            return "insert";
         }
     }
 
     private void notifyChangeListeners(EditProcessObject epo, String action) {
-    	List<ChangeListener> changeListeners = epo.getChangeListenerList();
-        if (changeListeners != null){
+        List<ChangeListener> changeListeners = epo.getChangeListenerList();
+        if (changeListeners != null) {
             for (ChangeListener cl : changeListeners) {
                 switch (action) {
                     case "insert":
@@ -341,11 +347,8 @@ public class OperationController extends BaseEditController {
         }
     }
 
-    private boolean SUCCESS = false;
-    private boolean FAILURE = !SUCCESS;
-
     private boolean performEdit(EditProcessObject epo, Object newObj, String action) {
-    	/* do the actual edit operation */
+        /* do the actual edit operation */
         String partialClassName;
         if (epo.getBeanClass() != null) {
             partialClassName = epo.getBeanClass().getSimpleName();
@@ -356,77 +359,93 @@ public class OperationController extends BaseEditController {
         if (epo.getDataAccessObject() != null) {
             dataAccessObject = epo.getDataAccessObject();
         } else {
-            throw new RuntimeException(OperationController.class.getName()+" needs to be passed an EPO containing a data access object with which to perform the desired operation");
+            throw new RuntimeException(OperationController.class.getName() +
+                " needs to be passed an EPO containing a data access object with which to perform the desired operation");
         }
         Class[] classList = new Class[1];
         classList[0] = (epo.getBeanClass() != null) ? epo.getBeanClass() : newObj.getClass();
         newObj.getClass().getGenericSuperclass();
         Class[] superClassList = new Class[1];
         superClassList[0] = newObj.getClass().getSuperclass();
-        Method meth=null;
-        Method deleteMeth=null;
-        Method insertMeth=null;
+        Method meth = null;
+        Method deleteMeth = null;
+        Method insertMeth = null;
 
         // probably want to change this so it will walk up the class tree indefinitely looking for a good method to use
-        if ("update".equals(action)){
-        	if (epo.getUpdateMethod() != null) {
-        		meth = epo.getUpdateMethod();
-        	} else {
+        if ("update".equals(action)) {
+            if (epo.getUpdateMethod() != null) {
+                meth = epo.getUpdateMethod();
+            } else {
                 try {
-                    meth = dataAccessObject.getClass().getMethod("update"+partialClassName,classList);
+                    meth = dataAccessObject.getClass()
+                        .getMethod("update" + partialClassName, classList);
                 } catch (NoSuchMethodException e) {
                     try {
-                        meth = dataAccessObject.getClass().getMethod("update"+partialClassName,superClassList);
+                        meth = dataAccessObject.getClass()
+                            .getMethod("update" + partialClassName, superClassList);
                     } catch (NoSuchMethodException f) {
                         try {  // if there isn't a single update method, let's see if we can delete the old data and then insert the new
-                            deleteMeth = dataAccessObject.getClass().getMethod("delete"+partialClassName,classList);
+                            deleteMeth = dataAccessObject.getClass()
+                                .getMethod("delete" + partialClassName, classList);
                             try {
-                                insertMeth = dataAccessObject.getClass().getMethod("insert"+partialClassName,classList);
+                                insertMeth = dataAccessObject.getClass()
+                                    .getMethod("insert" + partialClassName, classList);
                             } catch (NoSuchMethodException ee) {
-                                insertMeth = dataAccessObject.getClass().getMethod("insertNew"+partialClassName,classList);
+                                insertMeth = dataAccessObject.getClass()
+                                    .getMethod("insertNew" + partialClassName, classList);
                             }
                         } catch (NoSuchMethodException g) {
-                            log.error("doPost() could not find method(s) for updating "+partialClassName);
+                            log.error("doPost() could not find method(s) for updating " +
+                                partialClassName);
                         }
                     }
                 }
-        	}
+            }
         } else if ("delete".equals(action)) {
-        	if (epo.getDeleteMethod() != null) {
-        		meth = epo.getDeleteMethod();
-        	} else {
+            if (epo.getDeleteMethod() != null) {
+                meth = epo.getDeleteMethod();
+            } else {
                 try {
-                    meth = dataAccessObject.getClass().getMethod("delete"+partialClassName,classList);
+                    meth = dataAccessObject.getClass()
+                        .getMethod("delete" + partialClassName, classList);
                 } catch (NoSuchMethodException e) {
                     try {
-                        meth = dataAccessObject.getClass().getMethod("delete"+partialClassName,superClassList);
+                        meth = dataAccessObject.getClass()
+                            .getMethod("delete" + partialClassName, superClassList);
                     } catch (NoSuchMethodException f) {
-                        log.error("doPost() could not find method delete"+partialClassName+"() on "+dataAccessObject.getClass().getName());
+                        log.error(
+                            "doPost() could not find method delete" + partialClassName + "() on " +
+                                dataAccessObject.getClass().getName());
                     }
                 }
-        	}
+            }
         } else {
-        	if (epo.getInsertMethod() != null) {
-        		meth = epo.getInsertMethod();
-        	} else {
+            if (epo.getInsertMethod() != null) {
+                meth = epo.getInsertMethod();
+            } else {
                 try {
-                    meth = dataAccessObject.getClass().getMethod("insert"+partialClassName,classList);
+                    meth = dataAccessObject.getClass()
+                        .getMethod("insert" + partialClassName, classList);
                 } catch (NoSuchMethodException e) {
                     try {
-                        meth = dataAccessObject.getClass().getMethod("insertNew"+partialClassName,classList);
+                        meth = dataAccessObject.getClass()
+                            .getMethod("insertNew" + partialClassName, classList);
                     } catch (NoSuchMethodException f) {
                         try {
-                            meth = dataAccessObject.getClass().getMethod("insertNew"+partialClassName,superClassList);
+                            meth = dataAccessObject.getClass()
+                                .getMethod("insertNew" + partialClassName, superClassList);
                         } catch (NoSuchMethodException g) {
                             try {
-                                meth = dataAccessObject.getClass().getMethod("insertNew"+partialClassName,superClassList);
+                                meth = dataAccessObject.getClass()
+                                    .getMethod("insertNew" + partialClassName, superClassList);
                             } catch (NoSuchMethodException h) {
-                                log.error("doPost() could not find method for inserting "+partialClassName);
+                                log.error("doPost() could not find method for inserting " +
+                                    partialClassName);
                             }
                         }
                     }
                 }
-        	}
+            }
         }
 
         Object[] insArgList = new Object[1];
@@ -434,45 +453,47 @@ public class OperationController extends BaseEditController {
 
         Object result = null;
 
-        if ( (meth == null) && action.equals("update") ) {
+        if ((meth == null) && action.equals("update")) {
             //System.out.println("OperationController performing two-stage (deletion followed by insertion) update");
             try {
                 Object[] delArgList = new Object[1];
                 delArgList[0] = epo.getOriginalBean();
-                deleteMeth.invoke(dataAccessObject,delArgList);
-                insertMeth.invoke(dataAccessObject,insArgList);
+                deleteMeth.invoke(dataAccessObject, delArgList);
+                insertMeth.invoke(dataAccessObject, insArgList);
             } catch (InvocationTargetException e) {
-                log.error(this.getClass().getName()+" encountered exception performing two-stage update");
+                log.error(this.getClass().getName() +
+                    " encountered exception performing two-stage update");
                 Throwable innerE = e.getTargetException();
                 log.error(innerE, innerE);
-                if (innerE.getMessage()!=null) {
-                	//log.error(innerE.getMessage());
-                	epo.setAttribute("globalErrorMsg",innerE.getMessage());
+                if (innerE.getMessage() != null) {
+                    //log.error(innerE.getMessage());
+                    epo.setAttribute("globalErrorMsg", innerE.getMessage());
                 }
                 return FAILURE;
             } catch (IllegalAccessException iae) {
-            	log.error(iae, iae);
-            	epo.setAttribute("globalErrorMessage", "Illegal access - see error logs.");
-            	return FAILURE;
+                log.error(iae, iae);
+                epo.setAttribute("globalErrorMessage", "Illegal access - see error logs.");
+                return FAILURE;
             }
         } else {
             try {
-                result = meth.invoke(dataAccessObject,insArgList);
+                result = meth.invoke(dataAccessObject, insArgList);
             } catch (InvocationTargetException e) {
-            	log.error(this.getClass().getName()+" encountered exception performing edit action");
+                log.error(
+                    this.getClass().getName() + " encountered exception performing edit action");
                 Throwable innerE = e.getTargetException();
                 //innerE.printStackTrace();
                 log.error(innerE, innerE);
-                if (innerE.getMessage()!=null) {
+                if (innerE.getMessage() != null) {
                     //System.out.println(innerE.getMessage());
-                	//log.error(innerE.getMessage());
-                	epo.setAttribute("globalErrorMsg",innerE.getMessage());
+                    //log.error(innerE.getMessage());
+                    epo.setAttribute("globalErrorMsg", innerE.getMessage());
                 }
                 return FAILURE;
             } catch (IllegalAccessException iae) {
-            	log.error(iae, iae);
-            	epo.setAttribute("globalErrorMessage", "Illegal access - see error logs.");
-            	return FAILURE;
+                log.error(iae, iae);
+                epo.setAttribute("globalErrorMessage", "Illegal access - see error logs.");
+                return FAILURE;
             }
         }
 
@@ -480,21 +501,22 @@ public class OperationController extends BaseEditController {
             // need to put the result of the insert in the id of the newbean
             try {
                 Class[] setIdArgs = new Class[1];
-                if (epo.getIdFieldClass() != null)
+                if (epo.getIdFieldClass() != null) {
                     setIdArgs[0] = epo.getIdFieldClass();
-                else
+                } else {
                     setIdArgs[0] = int.class;
+                }
                 String idMutator = "set";
                 if (epo.getIdFieldName() != null) {
                     idMutator += epo.getIdFieldName();
                 } else {
                     idMutator += "Id";
                 }
-                Method setIdMeth = epo.getNewBean().getClass().getMethod(idMutator,setIdArgs);
+                Method setIdMeth = epo.getNewBean().getClass().getMethod(idMutator, setIdArgs);
                 try {
                     Object[] idArg = new Object[1];
                     idArg[0] = result;
-                    setIdMeth.invoke((Object)epo.getNewBean(),idArg);
+                    setIdMeth.invoke((Object) epo.getNewBean(), idArg);
                 } catch (IllegalAccessException e) {
                     log.error("doPost() encountered IllegalAccessException setting id of new bean");
                 } catch (InvocationTargetException f) {

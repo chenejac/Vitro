@@ -7,16 +7,15 @@ import static javax.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.AuthorizationRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.ajax.VitroAjaxController;
 import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 
 @WebServlet(name = "primitiveDelete", urlPatterns = {"/edit/primitiveDelete"})
@@ -27,7 +26,7 @@ public class PrimitiveDelete extends VitroAjaxController {
 
     @Override
     protected AuthorizationRequest requiredActions(VitroRequest vreq) {
-    	return SimplePermission.USE_BASIC_AJAX_CONTROLLERS.ACTION;
+        return SimplePermission.USE_BASIC_AJAX_CONTROLLERS.ACTION;
     }
 
     @Override
@@ -43,9 +42,9 @@ public class PrimitiveDelete extends VitroAjaxController {
         // The permission-checking code should be inherited from superclass
         boolean hasPermission = true;
 
-        if( !hasPermission ){
+        if (!hasPermission) {
             //if not okay, send error message
-            doError(response,"Insufficent permissions.", SC_UNAUTHORIZED);
+            doError(response, "Insufficent permissions.", SC_UNAUTHORIZED);
             return;
         }
 

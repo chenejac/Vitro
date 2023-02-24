@@ -5,19 +5,16 @@ package edu.cornell.mannlib.vitro.webapp.dao.filtering.filters;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.cornell.mannlib.vitro.webapp.beans.Individual;
+import edu.cornell.mannlib.vitro.webapp.beans.IndividualImpl;
+import edu.cornell.mannlib.vitro.webapp.dao.filtering.BaseFiltering;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.cornell.mannlib.vitro.webapp.beans.Individual;
-import edu.cornell.mannlib.vitro.webapp.beans.IndividualImpl;
-import edu.cornell.mannlib.vitro.webapp.dao.filtering.BaseFiltering;
-
 public class VitroFiltersFactoryTest {
 
-    @Before
-    public void setUp() throws Exception {
-    }
+    private boolean ACCEPT = true;
 
 //    @Test
 //    public void testSunsetWindowFilterOnListOfEnts() {
@@ -163,6 +160,11 @@ public class VitroFiltersFactoryTest {
 //        Assert.assertTrue("should be not throw exceptions and should not be filtered out", vf.getDataPropertyStatementFilter().fn( dps ) );
 //
 //    }
+    private boolean REJECT = false;
+
+    @Before
+    public void setUp() throws Exception {
+    }
 
     @Test
     public void testGetTestFilter() {
@@ -170,37 +172,35 @@ public class VitroFiltersFactoryTest {
         checkFilterForNull(vf);
         ArrayList<Individual> ents = new ArrayList<Individual>();
 
-        String[] names = {"Greg", "gary", "bob", "Sue", "jim" };
-        for( String name : names){
+        String[] names = {"Greg", "gary", "bob", "Sue", "jim"};
+        for (String name : names) {
             Individual ent = new IndividualImpl();
             ent.setName(name);
             ents.add(ent);
         }
 
         BaseFiltering bf = new BaseFiltering();
-        List<Individual> filteredEnts = bf.filter(ents,vf.getIndividualFilter());
+        List<Individual> filteredEnts = bf.filter(ents, vf.getIndividualFilter());
         Assert.assertNotNull(filteredEnts);
         Assert.assertEquals("did not filter correctly", 2, filteredEnts.size());
     }
 
-    public void checkFilterForNull(VitroFilters vf){
+    public void checkFilterForNull(VitroFilters vf) {
         Assert.assertNotNull("filter was null", vf);
         Assert.assertNotNull("getClassFilter was null", vf.getClassFilter());
         Assert.assertNotNull("getDataPropertyFilter was null", vf.getDataPropertyFilter());
-        Assert.assertNotNull("getDataPropertyStatementFilter was null", vf.getDataPropertyStatementFilter());
+        Assert.assertNotNull("getDataPropertyStatementFilter was null",
+            vf.getDataPropertyStatementFilter());
         Assert.assertNotNull("getObjectPropertyFilter was null", vf.getObjectPropertyFilter());
-        Assert.assertNotNull("getObjectPropertyStatementFilter was null", vf.getObjectPropertyStatementFilter());
+        Assert.assertNotNull("getObjectPropertyStatementFilter was null",
+            vf.getObjectPropertyStatementFilter());
         Assert.assertNotNull("getIndividualFilter was null", vf.getIndividualFilter());
         Assert.assertNotNull("getVClassGroupFilter was null", vf.getVClassGroupFilter());
     }
 
     @Test
-    public void testRoleLevelFilter(){
+    public void testRoleLevelFilter() {
 
     }
-
-
-    private boolean ACCEPT= true;
-    private boolean REJECT= false;
 
 }

@@ -2,19 +2,14 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.beans.FormObject;
@@ -35,13 +30,16 @@ import edu.cornell.mannlib.vitro.webapp.controller.edit.utils.RoleLevelOptionsSe
 import edu.cornell.mannlib.vitro.webapp.dao.ObjectPropertyDao;
 import edu.cornell.mannlib.vitro.webapp.dao.OntologyDao;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class PropertyRetryController extends BaseEditController {
 
     private static final Log log = LogFactory.getLog(PropertyRetryController.class.getName());
 
     @Override
-    public void doPost (HttpServletRequest req, HttpServletResponse response) {
+    public void doPost(HttpServletRequest req, HttpServletResponse response) {
         if (!isAuthorizedToDisplayPage(req, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
             return;
         }
@@ -65,12 +63,13 @@ public class PropertyRetryController extends BaseEditController {
             action = epo.getAction();
         }
 
-        ObjectPropertyDao propDao = ModelAccess.on(req).getWebappDaoFactory().getObjectPropertyDao();
+        ObjectPropertyDao propDao =
+            ModelAccess.on(req).getWebappDaoFactory().getObjectPropertyDao();
         epo.setDataAccessObject(propDao);
         OntologyDao ontDao = request.getUnfilteredWebappDaoFactory().getOntologyDao();
 
         ObjectProperty propertyForEditing = null;
-        if (!epo.getUseRecycledBean()){
+        if (!epo.getUseRecycledBean()) {
             String uri = request.getParameter("uri");
             if (uri != null) {
                 try {
@@ -79,7 +78,7 @@ public class PropertyRetryController extends BaseEditController {
                     epo.setAction("update");
                 } catch (NullPointerException e) {
                     log.error("Need to implement 'record not found' error message.");
-                    throw(e);
+                    throw (e);
                 }
             } else {
                 propertyForEditing = new ObjectProperty();
@@ -97,8 +96,8 @@ public class PropertyRetryController extends BaseEditController {
 
         //make a simple mask for the class's id
         Object[] simpleMaskPair = new Object[2];
-        simpleMaskPair[0]="Id";
-        simpleMaskPair[1]=propertyForEditing.getURI();
+        simpleMaskPair[0] = "Id";
+        simpleMaskPair[1] = propertyForEditing.getURI();
         epo.getSimpleMask().add(simpleMaskPair);
 
 
@@ -127,9 +126,10 @@ public class PropertyRetryController extends BaseEditController {
         try {
             Class<?>[] args = new Class[1];
             args[0] = String.class;
-            epo.setGetMethod(propDao.getClass().getDeclaredMethod("getObjectPropertyByURI",args));
+            epo.setGetMethod(propDao.getClass().getDeclaredMethod("getObjectPropertyByURI", args));
         } catch (NoSuchMethodException e) {
-            log.error("PropertyRetryController could not find the getPropertyByURI method in the PropertyWebappDao");
+            log.error(
+                "PropertyRetryController could not find the getPropertyByURI method in the PropertyWebappDao");
         }
 
         FormObject foo = new FormObject();
@@ -143,31 +143,40 @@ public class PropertyRetryController extends BaseEditController {
             throw new RuntimeException(e);
         }
 
-        optionMap.put("HiddenFromDisplayBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getDisplayOptionsList(propertyForEditing));
-        optionMap.put("ProhibitedFromUpdateBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getUpdateOptionsList(propertyForEditing));
-        optionMap.put("HiddenFromPublishBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getPublishOptionsList(propertyForEditing));
+        optionMap.put("HiddenFromDisplayBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getDisplayOptionsList(propertyForEditing));
+        optionMap.put("ProhibitedFromUpdateBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getUpdateOptionsList(propertyForEditing));
+        optionMap.put("HiddenFromPublishBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getPublishOptionsList(propertyForEditing));
 
-        List<Option> groupOptList = FormUtils.makeOptionListFromBeans(request.getUnfilteredWebappDaoFactory().getPropertyGroupDao().getPublicGroups(true),"URI","Name", ((propertyForEditing.getGroupURI()==null) ? "" : propertyForEditing.getGroupURI()), null, (propertyForEditing.getGroupURI()!=null));
-        HashMap<String,Option> hashMap = new HashMap<String,Option>();
-        groupOptList = getSortedList(hashMap,groupOptList,request);
-        groupOptList.add(0,new Option("","none"));
+        List<Option> groupOptList = FormUtils.makeOptionListFromBeans(
+            request.getUnfilteredWebappDaoFactory().getPropertyGroupDao().getPublicGroups(true),
+            "URI", "Name",
+            ((propertyForEditing.getGroupURI() == null) ? "" : propertyForEditing.getGroupURI()),
+            null, (propertyForEditing.getGroupURI() != null));
+        HashMap<String, Option> hashMap = new HashMap<String, Option>();
+        groupOptList = getSortedList(hashMap, groupOptList, request);
+        groupOptList.add(0, new Option("", "none"));
         optionMap.put("GroupURI", groupOptList);
 
         foo.setOptionLists(optionMap);
 
-        request.setAttribute("transitive",propertyForEditing.getTransitive());
-        request.setAttribute("symmetric",propertyForEditing.getSymmetric());
-        request.setAttribute("functional",propertyForEditing.getFunctional());
-        request.setAttribute("inverseFunctional",propertyForEditing.getInverseFunctional());
-        request.setAttribute("selectFromExisting",propertyForEditing.getSelectFromExisting());
+        request.setAttribute("transitive", propertyForEditing.getTransitive());
+        request.setAttribute("symmetric", propertyForEditing.getSymmetric());
+        request.setAttribute("functional", propertyForEditing.getFunctional());
+        request.setAttribute("inverseFunctional", propertyForEditing.getInverseFunctional());
+        request.setAttribute("selectFromExisting", propertyForEditing.getSelectFromExisting());
         request.setAttribute("offerCreateNewOption", propertyForEditing.getOfferCreateNewOption());
-        request.setAttribute("objectIndividualSortPropertyURI", propertyForEditing.getObjectIndividualSortPropertyURI());
-        request.setAttribute("domainEntitySortDirection", propertyForEditing.getDomainEntitySortDirection());
+        request.setAttribute("objectIndividualSortPropertyURI",
+            propertyForEditing.getObjectIndividualSortPropertyURI());
+        request.setAttribute("domainEntitySortDirection",
+            propertyForEditing.getDomainEntitySortDirection());
         request.setAttribute("collateBySubclass", propertyForEditing.getCollateBySubclass());
 
         //checkboxes are pretty annoying : we don't know if someone *unchecked* a box, so we have to default to false on updates.
         if (propertyForEditing.getURI() != null) {
-             propertyForEditing.setTransitive(false);
+            propertyForEditing.setTransitive(false);
             propertyForEditing.setSymmetric(false);
             propertyForEditing.setFunctional(false);
             propertyForEditing.setInverseFunctional(false);
@@ -179,14 +188,14 @@ public class PropertyRetryController extends BaseEditController {
 
         epo.setFormObject(foo);
 
-        FormUtils.populateFormFromBean(propertyForEditing,action,foo,epo.getBadValueMap());
+        FormUtils.populateFormFromBean(propertyForEditing, action, foo, epo.getBadValueMap());
 
-        request.setAttribute("colspan","5");
-        request.setAttribute("formJsp","/templates/edit/specific/property_retry.jsp");
-        request.setAttribute("scripts","/templates/edit/formBasic.js");
-        request.setAttribute("title","Property Editing Form");
-        request.setAttribute("_action",action);
-        setRequestAttributes(request,epo);
+        request.setAttribute("colspan", "5");
+        request.setAttribute("formJsp", "/templates/edit/specific/property_retry.jsp");
+        request.setAttribute("scripts", "/templates/edit/formBasic.js");
+        request.setAttribute("title", "Property Editing Form");
+        request.setAttribute("_action", action);
+        setRequestAttributes(request, epo);
 
         try {
             JSPPageHandler.renderBasicPage(request, response, "/templates/edit/formBasic.jsp");
@@ -199,7 +208,7 @@ public class PropertyRetryController extends BaseEditController {
     }
 
     @Override
-	public void doGet (HttpServletRequest request, HttpServletResponse response) {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
         doPost(request, response);
     }
 
@@ -210,70 +219,72 @@ public class PropertyRetryController extends BaseEditController {
                                    ObjectPropertyDao propDao) {
 
         List<Option> namespaceIdList = FormUtils.makeOptionListFromBeans(
-                ontDao.getAllOntologies(), "URI", "Name",
-                        ((propertyForEditing.getNamespace() == null)
-                                ? ""
-                                : propertyForEditing.getNamespace()),
-                        null, (propertyForEditing.getNamespace() != null));
+            ontDao.getAllOntologies(), "URI", "Name",
+            ((propertyForEditing.getNamespace() == null)
+                ? ""
+                : propertyForEditing.getNamespace()),
+            null, (propertyForEditing.getNamespace() != null));
         namespaceIdList.add(0, new Option(
-                request.getUnfilteredWebappDaoFactory().getDefaultNamespace(), "default"));
+            request.getUnfilteredWebappDaoFactory().getDefaultNamespace(), "default"));
         optionMap.put("Namespace", namespaceIdList);
 
         List<Option> namespaceIdInverseList = FormUtils.makeOptionListFromBeans(
-                ontDao.getAllOntologies(), "URI", "Name",
-                        ((propertyForEditing.getNamespaceInverse() == null)
-                                ? ""
-                                : propertyForEditing.getNamespaceInverse()),
-                        null, (propertyForEditing.getNamespaceInverse() != null));
+            ontDao.getAllOntologies(), "URI", "Name",
+            ((propertyForEditing.getNamespaceInverse() == null)
+                ? ""
+                : propertyForEditing.getNamespaceInverse()),
+            null, (propertyForEditing.getNamespaceInverse() != null));
         namespaceIdInverseList.add(0, new Option(
-                request.getUnfilteredWebappDaoFactory().getDefaultNamespace(),"default"));
+            request.getUnfilteredWebappDaoFactory().getDefaultNamespace(), "default"));
         optionMap.put("NamespaceInverse", namespaceIdInverseList);
 
         List<ObjectProperty> objPropList = propDao.getAllObjectProperties();
         Collections.sort(objPropList);
         List<Option> parentIdList = FormUtils.makeOptionListFromBeans(
-                objPropList,"URI","PickListName",propertyForEditing.getParentURI(),null);
-        HashMap<String,Option> hashMap = new HashMap<String,Option>();
-        parentIdList = getSortedList(hashMap,parentIdList,request);
-        parentIdList.add(0,new Option("-1","none (root property)", false));
+            objPropList, "URI", "PickListName", propertyForEditing.getParentURI(), null);
+        HashMap<String, Option> hashMap = new HashMap<String, Option>();
+        parentIdList = getSortedList(hashMap, parentIdList, request);
+        parentIdList.add(0, new Option("-1", "none (root property)", false));
         optionMap.put("ParentURI", parentIdList);
 
         List<Option> domainOptionList = FormUtils.makeVClassOptionList(
-                request.getUnfilteredWebappDaoFactory(),
-                        propertyForEditing.getDomainVClassURI());
+            request.getUnfilteredWebappDaoFactory(),
+            propertyForEditing.getDomainVClassURI());
         if (propertyForEditing.getDomainVClass() != null
-                && propertyForEditing.getDomainVClass().isAnonymous()) {
+            && propertyForEditing.getDomainVClass().isAnonymous()) {
             domainOptionList.add(0, new Option(
-                    propertyForEditing.getDomainVClass().getURI(),
-                    propertyForEditing.getDomainVClass().getPickListName(),
-                    true));
+                propertyForEditing.getDomainVClass().getURI(),
+                propertyForEditing.getDomainVClass().getPickListName(),
+                true));
         }
-        domainOptionList.add(0, new Option("","(none specified)"));
+        domainOptionList.add(0, new Option("", "(none specified)"));
         optionMap.put("DomainVClassURI", domainOptionList);
 
         List<Option> rangeOptionList = FormUtils.makeVClassOptionList(
-                request.getUnfilteredWebappDaoFactory(),
-                        propertyForEditing.getRangeVClassURI());
+            request.getUnfilteredWebappDaoFactory(),
+            propertyForEditing.getRangeVClassURI());
         if (propertyForEditing.getRangeVClass() != null
-                && propertyForEditing.getRangeVClass().isAnonymous()) {
+            && propertyForEditing.getRangeVClass().isAnonymous()) {
             rangeOptionList.add(0, new Option(
-                    propertyForEditing.getRangeVClass().getURI(),
-                    propertyForEditing.getRangeVClass().getPickListName(),
-                    true));
+                propertyForEditing.getRangeVClass().getURI(),
+                propertyForEditing.getRangeVClass().getPickListName(),
+                true));
         }
-        rangeOptionList.add(0, new Option("","(none specified)"));
+        rangeOptionList.add(0, new Option("", "(none specified)"));
         optionMap.put("RangeVClassURI", rangeOptionList);
     }
 
     private static class PropertyInsertPageForwarder implements PageForwarder {
         @Override
-		public void doForward(HttpServletRequest request, HttpServletResponse response, EditProcessObject epo){
+        public void doForward(HttpServletRequest request, HttpServletResponse response,
+                              EditProcessObject epo) {
             String newPropertyUrl = "propertyEdit?uri=";
             ObjectProperty p = (ObjectProperty) epo.getNewBean();
             try {
-                newPropertyUrl += URLEncoder.encode(p.getURI(),"UTF-8");
+                newPropertyUrl += URLEncoder.encode(p.getURI(), "UTF-8");
             } catch (Exception e) {
-                log.error(this.getClass().getName()+" could not use UTF-8 encoding to encode new URL");
+                log.error(
+                    this.getClass().getName() + " could not use UTF-8 encoding to encode new URL");
             }
             try {
                 response.sendRedirect(newPropertyUrl);

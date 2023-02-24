@@ -17,50 +17,50 @@ import edu.cornell.mannlib.vitro.webapp.modules.tripleSource.ContentTripleSource
  * The interface that holds the modules and extensions together.
  */
 public interface Application {
-	ServletContext getServletContext();
+    ServletContext getServletContext();
 
-	VitroHomeDirectory getHomeDirectory();
+    VitroHomeDirectory getHomeDirectory();
 
-	SearchEngine getSearchEngine();
+    SearchEngine getSearchEngine();
 
-	SearchIndexer getSearchIndexer();
+    SearchIndexer getSearchIndexer();
 
-	ImageProcessor getImageProcessor();
+    ImageProcessor getImageProcessor();
 
-	FileStorage getFileStorage();
+    FileStorage getFileStorage();
 
-	ContentTripleSource getContentTripleSource();
+    ContentTripleSource getContentTripleSource();
 
-	ConfigurationTripleSource getConfigurationTripleSource();
+    ConfigurationTripleSource getConfigurationTripleSource();
 
-	TBoxReasonerModule getTBoxReasonerModule();
+    TBoxReasonerModule getTBoxReasonerModule();
 
-	void shutdown();
+    void shutdown();
 
-	public interface Component {
-		enum LifecycleState {
-			NEW, ACTIVE, STOPPED
-		}
+    public interface Component {
+        /**
+         * This should be called only once, and should be the first call on this
+         * Component.
+         */
+        void startup(Application application, ComponentStartupStatus ss);
 
-		/**
-		 * This should be called only once, and should be the first call on this
-		 * Component.
-		 */
-		void startup(Application application, ComponentStartupStatus ss);
+        /**
+         * This should be called only once, and should be the last call on this
+         * Component.
+         */
+        void shutdown(Application application);
 
-		/**
-		 * This should be called only once, and should be the last call on this
-		 * Component.
-		 */
-		void shutdown(Application application);
-	}
+        enum LifecycleState {
+            NEW, ACTIVE, STOPPED
+        }
+    }
 
-	public static interface Module extends Component {
-		// Nothing except lifecycle so far.
-	}
+    public static interface Module extends Component {
+        // Nothing except lifecycle so far.
+    }
 
-	public static interface Extension extends Component {
-		// Nothing except lifecycle so far.
-	}
+    public static interface Extension extends Component {
+        // Nothing except lifecycle so far.
+    }
 
 }

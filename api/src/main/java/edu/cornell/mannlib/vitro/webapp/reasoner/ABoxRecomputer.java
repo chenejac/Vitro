@@ -16,17 +16,21 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
+import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames;
+import edu.cornell.mannlib.vitro.webapp.modules.searchIndexer.SearchIndexer;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeSet;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.ResultSetConsumer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
-import org.apache.jena.query.ResultSetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
@@ -41,20 +45,14 @@ import org.apache.jena.vocabulary.OWL;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 
-import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames;
-import edu.cornell.mannlib.vitro.webapp.modules.searchIndexer.SearchIndexer;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeSet;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.ResultSetConsumer;
-
 public class ABoxRecomputer {
 
     private static final Log log = LogFactory.getLog(ABoxRecomputer.class);
-
+    private static final boolean RUN_PLUGINS = true;
+    private static final boolean SKIP_PLUGINS = !RUN_PLUGINS;
     private final SearchIndexer searchIndexer;
-
+    private final int BATCH_SIZE = 500;
+    private final int REPORTING_INTERVAL = 1000;
     private OntModel tboxModel;             // asserted and inferred TBox axioms
     private OntModel aboxModel;
     private RDFService rdfService;
@@ -63,18 +61,15 @@ public class ABoxRecomputer {
     private volatile boolean recomputing = false;
     private boolean stopRequested = false;
 
-    private final int BATCH_SIZE = 500;
-    private final int REPORTING_INTERVAL = 1000;
-
     /**
      * @param tboxModel - input.  This model contains both asserted and inferred TBox axioms
      * @param aboxModel - input.  This model contains asserted ABox statements
      */
     public ABoxRecomputer(OntModel tboxModel,
-            OntModel aboxModel,
-            RDFService rdfService,
-            SimpleReasoner simpleReasoner,
-            SearchIndexer searchIndexer) {
+                          OntModel aboxModel,
+                          RDFService rdfService,
+                          SimpleReasoner simpleReasoner,
+                          SearchIndexer searchIndexer) {
         this.tboxModel = tboxModel;
         this.aboxModel = aboxModel;
         this.rdfService = rdfService;
@@ -112,14 +107,14 @@ public class ABoxRecomputer {
             }
             log.info("Recomputing ABox inferences.");
             log.info("Finding individuals in ABox.");
-            Queue<String>individualURIs = this.getAllIndividualURIs();
+            Queue<String> individualURIs = this.getAllIndividualURIs();
             log.info("Recomputing inferences for " + individualURIs.size() + " individuals");
             // Create a type cache for this execution and pass it to the recompute function
             // Ensures that caches are only valid for the length of one recompute
             recomputeIndividuals(individualURIs, new TypeCaches());
             log.info("Finished recomputing inferences");
         } finally {
-            if(searchIndexer != null) {
+            if (searchIndexer != null) {
                 searchIndexer.unpause();
             }
             synchronized (lock1) {
@@ -135,7 +130,7 @@ public class ABoxRecomputer {
     public void recompute(Queue<String> individualURIs) {
         boolean sizableRecompute = (individualURIs.size() > 20);
         try {
-            if(sizableRecompute && searchIndexer != null) {
+            if (sizableRecompute && searchIndexer != null) {
                 searchIndexer.pause();
             }
             recomputeIndividuals(individualURIs);
@@ -172,7 +167,7 @@ public class ABoxRecomputer {
             String individualURI = individuals.poll();
             try {
                 additionalInferences.add(recomputeIndividual(
-                        individualURI, rebuildModel, caches, individuals));
+                    individualURI, rebuildModel, caches, individuals));
                 numInds++;
                 individualsInBatch.add(individualURI);
                 boolean batchFilled = (numInds % BATCH_SIZE) == 0;
@@ -185,22 +180,23 @@ public class ABoxRecomputer {
                 }
                 if (reportingInterval) {
                     log.info("Still recomputing inferences ("
-                            + numInds + "/" + size + " individuals)");
+                        + numInds + "/" + size + " individuals)");
                     log.info((System.currentTimeMillis() - start) / numInds + " ms per individual");
                 }
                 if (stopRequested) {
-                    log.info("a stopRequested signal was received during recomputeIndividuals. Halting Processing.");
+                    log.info(
+                        "a stopRequested signal was received during recomputeIndividuals. Halting Processing.");
                     return;
                 }
             } catch (Exception e) {
                 log.error("Error recomputing inferences for individual <" + individualURI + ">", e);
             }
         }
-        if(additionalInferences.size() > 0) {
+        if (additionalInferences.size() > 0) {
             log.debug("Writing additional inferences generated by reasoner plugins.");
             ChangeSet change = rdfService.manufactureChangeSet();
             change.addAddition(makeN3InputStream(additionalInferences),
-                    RDFService.ModelSerializationFormat.N3, ModelNames.ABOX_INFERENCES);
+                RDFService.ModelSerializationFormat.N3, ModelNames.ABOX_INFERENCES);
             try {
                 rdfService.changeSetUpdate(change);
             } catch (RDFServiceException e) {
@@ -209,12 +205,10 @@ public class ABoxRecomputer {
         }
     }
 
-    private static final boolean RUN_PLUGINS = true;
-    private static final boolean SKIP_PLUGINS = !RUN_PLUGINS;
-
     private Model recomputeIndividual(String individualURI,
-            Model rebuildModel, TypeCaches caches, Collection<String> individualQueue)
-                    throws RDFServiceException {
+                                      Model rebuildModel, TypeCaches caches,
+                                      Collection<String> individualQueue)
+        throws RDFServiceException {
         long start = System.currentTimeMillis();
         Model assertions = getAssertions(individualURI);
         log.debug((System.currentTimeMillis() - start) + " ms to get assertions.");
@@ -225,35 +219,37 @@ public class ABoxRecomputer {
                 // sameAs for plugins is handled by the SimpleReasoner
                 Model sameAsIndAssertions = getAssertions(sameAsInd);
                 rebuildModel.add(
-                        rewriteInferences(getAssertions(sameAsInd), individualURI));
+                    rewriteInferences(getAssertions(sameAsInd), individualURI));
                 Resource indRes = ResourceFactory.createResource(individualURI);
                 Resource sameAsIndRes = ResourceFactory.createResource(sameAsInd);
-                if(!assertions.contains(indRes, OWL.sameAs, sameAsIndRes)) {
-                    if(!rebuildModel.contains(indRes, OWL.sameAs, sameAsIndRes)) {
+                if (!assertions.contains(indRes, OWL.sameAs, sameAsIndRes)) {
+                    if (!rebuildModel.contains(indRes, OWL.sameAs, sameAsIndRes)) {
                         individualQueue.add(sameAsInd);
                         rebuildModel.add(indRes, OWL.sameAs, sameAsIndRes);
                     }
                 }
             }
-            if(rebuildModel.size() - prevRebuildSize > 0) {
+            if (rebuildModel.size() - prevRebuildSize > 0) {
                 individualQueue.addAll(sameAsInds);
             }
         }
         Model additionalInferences = recomputeIndividual(
-                individualURI, null, assertions, rebuildModel, caches, RUN_PLUGINS);
+            individualURI, null, assertions, rebuildModel, caches, RUN_PLUGINS);
         return additionalInferences;
     }
 
     /**
      * Adds inferences to temporary rebuildmodel
+     *
      * @param individualURI The individual
-     * @param rebuildModel The rebuild model
+     * @param rebuildModel  The rebuild model
      * @return any additional inferences produced by plugins that affect other
-     *         individuals
+     * individuals
      */
     private Model recomputeIndividual(String individualURI, String aliasURI,
-            Model assertions, Model rebuildModel, TypeCaches caches, boolean runPlugins)
-                    throws RDFServiceException {
+                                      Model assertions, Model rebuildModel, TypeCaches caches,
+                                      boolean runPlugins)
+        throws RDFServiceException {
 
         Model additionalInferences = ModelFactory.createDefaultModel();
         Resource individual = ResourceFactory.createResource(individualURI);
@@ -262,21 +258,25 @@ public class ABoxRecomputer {
         Model types = ModelFactory.createDefaultModel();
         types.add(assertions.listStatements(individual, RDF.type, (RDFNode) null));
         types.add(rebuildModel.listStatements(individual, RDF.type, (RDFNode) null));
-        Model inferredTypes = rewriteInferences(getInferredTypes(individual, types, caches), aliasURI);
+        Model inferredTypes =
+            rewriteInferences(getInferredTypes(individual, types, caches), aliasURI);
         rebuildModel.add(inferredTypes);
-        log.trace((System.currentTimeMillis() - start) + " to infer " + inferredTypes.size() + " types");
+        log.trace(
+            (System.currentTimeMillis() - start) + " to infer " + inferredTypes.size() + " types");
 
         start = System.currentTimeMillis();
         types.add(inferredTypes);
         Model mst = getMostSpecificTypes(individual, types, caches);
         rebuildModel.add(rewriteInferences(mst, aliasURI));
-        log.trace((System.currentTimeMillis() - start) + " to infer " + mst.size() + " mostSpecificTypes");
+        log.trace((System.currentTimeMillis() - start) + " to infer " + mst.size() +
+            " mostSpecificTypes");
 
         start = System.currentTimeMillis();
         Model inferredInvs = getInferredInverseStatements(individualURI);
         inferredInvs.remove(assertions);
         rebuildModel.add(rewriteInferences(inferredInvs, aliasURI));
-        log.trace((System.currentTimeMillis() - start) + " to infer " + inferredInvs.size() + " inverses");
+        log.trace((System.currentTimeMillis() - start) + " to infer " + inferredInvs.size() +
+            " inverses");
 
         List<ReasonerPlugin> pluginList = simpleReasoner.getPluginList();
         if (runPlugins && pluginList.size() > 0) {
@@ -289,9 +289,9 @@ public class ABoxRecomputer {
                 }
             }
             StmtIterator tmpIt = tmpModel.listStatements();
-            while(tmpIt.hasNext()) {
+            while (tmpIt.hasNext()) {
                 Statement tmpStmt = tmpIt.nextStatement();
-                if(individual.equals(tmpStmt.getSubject())) {
+                if (individual.equals(tmpStmt.getSubject())) {
                     rebuildModel.add(tmpStmt);
                 } else {
                     additionalInferences.add(tmpStmt);
@@ -303,13 +303,13 @@ public class ABoxRecomputer {
 
     private Model getAssertions(String individualURI) throws RDFServiceException {
         String queryStr = "CONSTRUCT { \n" +
-                "    <" + individualURI + "> ?p ?value \n" +
-                "} WHERE { \n" +
-                "    GRAPH ?g { \n" +
-                "        <" + individualURI + "> ?p ?value \n" +
-                "    } \n" +
-                "    FILTER (?g != <" + ModelNames.ABOX_INFERENCES + ">)\n" +
-                "} \n";
+            "    <" + individualURI + "> ?p ?value \n" +
+            "} WHERE { \n" +
+            "    GRAPH ?g { \n" +
+            "        <" + individualURI + "> ?p ?value \n" +
+            "    } \n" +
+            "    FILTER (?g != <" + ModelNames.ABOX_INFERENCES + ">)\n" +
+            "} \n";
 
         Model model = ModelFactory.createDefaultModel();
         rdfService.sparqlConstructQuery(queryStr, model);
@@ -334,17 +334,17 @@ public class ABoxRecomputer {
     private Model getInferredTypes(Resource individual, Model assertedTypes) {
         new TypeList(assertedTypes, RDF.type);
         String queryStr = "CONSTRUCT { \n" +
-                "    <" + individual.getURI() + "> a ?type \n" +
-                "} WHERE { \n" +
-                "    <" + individual.getURI() + "> a ?assertedType .\n" +
-                "    { ?assertedType <" + RDFS.subClassOf.getURI() + "> ?type } \n" +
-                "     UNION \n" +
-                "    { ?assertedType <" + OWL.equivalentClass.getURI() + "> ?type } \n" +
-                "    FILTER (isURI(?type)) \n" +
-                "    FILTER NOT EXISTS { \n" +
-                "        <" + individual.getURI() + "> a ?type \n" +
-                "    } \n" +
-                "} \n";
+            "    <" + individual.getURI() + "> a ?type \n" +
+            "} WHERE { \n" +
+            "    <" + individual.getURI() + "> a ?assertedType .\n" +
+            "    { ?assertedType <" + RDFS.subClassOf.getURI() + "> ?type } \n" +
+            "     UNION \n" +
+            "    { ?assertedType <" + OWL.equivalentClass.getURI() + "> ?type } \n" +
+            "    FILTER (isURI(?type)) \n" +
+            "    FILTER NOT EXISTS { \n" +
+            "        <" + individual.getURI() + "> a ?type \n" +
+            "    } \n" +
+            "} \n";
         Model union = ModelFactory.createUnion(assertedTypes, tboxModel);
         tboxModel.enterCriticalSection(Lock.READ);
         try {
@@ -356,7 +356,8 @@ public class ABoxRecomputer {
         }
     }
 
-    private Model getMostSpecificTypes(Resource individual, Model assertedTypes, TypeCaches caches) {
+    private Model getMostSpecificTypes(Resource individual, Model assertedTypes,
+                                       TypeCaches caches) {
         if (caches == null) {
             return getMostSpecificTypes(individual, assertedTypes);
         }
@@ -372,20 +373,22 @@ public class ABoxRecomputer {
 
     private Model getMostSpecificTypes(Resource individual, Model assertedTypes) {
         String queryStr = "CONSTRUCT { \n" +
-                "    <" + individual.getURI() + "> <" + VitroVocabulary.MOST_SPECIFIC_TYPE + "> ?type \n" +
-                "} WHERE { \n" +
-                "    <" + individual.getURI() + "> a ?type .\n" +
-                "    FILTER (isURI(?type)) \n" +
-                "    FILTER NOT EXISTS { \n" +
-                "        <" + individual.getURI() + "> a ?type2 . \n" +
-                "        ?type2 <" + RDFS.subClassOf.getURI() + "> ?type. \n" +
-                "        FILTER (?type != ?type2) \n" +
-                "        FILTER NOT EXISTS { ?type <" + OWL.equivalentClass + "> ?type2 } \n" +
-                "    } \n" +
-                "    FILTER NOT EXISTS { \n" +
-                "        <" + individual.getURI() + "> <" + VitroVocabulary.MOST_SPECIFIC_TYPE + "> ?type \n" +
-                "    } \n" +
-                "} \n";
+            "    <" + individual.getURI() + "> <" + VitroVocabulary.MOST_SPECIFIC_TYPE +
+            "> ?type \n" +
+            "} WHERE { \n" +
+            "    <" + individual.getURI() + "> a ?type .\n" +
+            "    FILTER (isURI(?type)) \n" +
+            "    FILTER NOT EXISTS { \n" +
+            "        <" + individual.getURI() + "> a ?type2 . \n" +
+            "        ?type2 <" + RDFS.subClassOf.getURI() + "> ?type. \n" +
+            "        FILTER (?type != ?type2) \n" +
+            "        FILTER NOT EXISTS { ?type <" + OWL.equivalentClass + "> ?type2 } \n" +
+            "    } \n" +
+            "    FILTER NOT EXISTS { \n" +
+            "        <" + individual.getURI() + "> <" + VitroVocabulary.MOST_SPECIFIC_TYPE +
+            "> ?type \n" +
+            "    } \n" +
+            "} \n";
         Model union = ModelFactory.createUnion(assertedTypes, tboxModel);
         tboxModel.enterCriticalSection(Lock.READ);
         try {
@@ -399,17 +402,17 @@ public class ABoxRecomputer {
 
     private Model getInferredInverseStatements(String individualURI) throws RDFServiceException {
         String queryStr = "CONSTRUCT { \n" +
-                "    <" + individualURI + "> ?inv ?value \n" +
-                "} WHERE { \n" +
-                "    GRAPH ?gr { \n" +
-                "        ?value ?prop <" + individualURI + "> \n" +
-                "    } \n" +
-                "   FILTER (isURI(?value)) \n" +
-                "   FILTER (?gr != <" + ModelNames.ABOX_INFERENCES + ">) \n" +
-                "    { ?prop <" + OWL.inverseOf.getURI() + "> ?inv } \n" +
-                "     UNION \n" +
-                "    { ?inv <" + OWL.inverseOf.getURI() + "> ?prop } \n" +
-                "} \n";
+            "    <" + individualURI + "> ?inv ?value \n" +
+            "} WHERE { \n" +
+            "    GRAPH ?gr { \n" +
+            "        ?value ?prop <" + individualURI + "> \n" +
+            "    } \n" +
+            "   FILTER (isURI(?value)) \n" +
+            "   FILTER (?gr != <" + ModelNames.ABOX_INFERENCES + ">) \n" +
+            "    { ?prop <" + OWL.inverseOf.getURI() + "> ?inv } \n" +
+            "     UNION \n" +
+            "    { ?inv <" + OWL.inverseOf.getURI() + "> ?prop } \n" +
+            "} \n";
 
         Model model = ModelFactory.createDefaultModel();
         rdfService.sparqlConstructQuery(queryStr, model);
@@ -423,7 +426,7 @@ public class ABoxRecomputer {
         Model rewrite = ModelFactory.createDefaultModel();
         Resource alias = ResourceFactory.createResource(aliasURI);
         StmtIterator sit = inferences.listStatements();
-        while(sit.hasNext()) {
+        while (sit.hasNext()) {
             Statement stmt = sit.nextStatement();
             rewrite.add(alias, stmt.getPredicate(), stmt.getObject());
         }
@@ -439,12 +442,12 @@ public class ABoxRecomputer {
         tboxModel.enterCriticalSection(Lock.READ);
         try {
             StmtIterator classIt = tboxModel.listStatements(
-                    (Resource) null, RDF.type, OWL.Class);
-            while(classIt.hasNext()) {
+                (Resource) null, RDF.type, OWL.Class);
+            while (classIt.hasNext()) {
                 Statement stmt = classIt.nextStatement();
-                if(stmt.getSubject().isURIResource()
-                        && stmt.getSubject().getURI() != null
-                        && !stmt.getSubject().getURI().isEmpty()) {
+                if (stmt.getSubject().isURIResource()
+                    && stmt.getSubject().getURI() != null
+                    && !stmt.getSubject().getURI().isEmpty()) {
                     classList.add(stmt.getSubject().getURI());
                 }
             }
@@ -464,7 +467,7 @@ public class ABoxRecomputer {
         final AtomicBoolean done = new AtomicBoolean(false);
         while (!done.get()) {
             String queryStr = queryString + " LIMIT " + batchSize + " OFFSET " + offset;
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug(queryStr);
             }
             try {
@@ -493,24 +496,25 @@ public class ABoxRecomputer {
             } catch (RDFServiceException e) {
                 throw new RuntimeException(e);
             }
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug(individuals.size() + " in set");
             }
             offset += batchSize;
         }
     }
 
-    protected void addInferenceStatementsFor(String individualUri, Model addTo) throws RDFServiceException {
+    protected void addInferenceStatementsFor(String individualUri, Model addTo)
+        throws RDFServiceException {
         StringBuilder builder = new StringBuilder();
         builder.append("CONSTRUCT\n")
-                .append("{\n").append("   <").append(individualUri).append("> ?p ?o .\n")
-                .append("}\n")
-                .append("WHERE\n")
-                .append("{\n")
-                .append("   GRAPH <").append(ModelNames.ABOX_INFERENCES).append(">\n")
-                .append("   {\n").append("       <").append(individualUri).append("> ?p ?o .\n")
-                .append("   }\n")
-                .append("}\n");
+            .append("{\n").append("   <").append(individualUri).append("> ?p ?o .\n")
+            .append("}\n")
+            .append("WHERE\n")
+            .append("{\n")
+            .append("   GRAPH <").append(ModelNames.ABOX_INFERENCES).append(">\n")
+            .append("   {\n").append("       <").append(individualUri).append("> ?p ?o .\n")
+            .append("   }\n")
+            .append("}\n");
 
         rdfService.sparqlConstructQuery(builder.toString(), addTo);
     }
@@ -519,7 +523,7 @@ public class ABoxRecomputer {
      * reconcile a set of inferences into the application inference model
      */
     protected void updateInferenceModel(Model rebuildModel,
-            Collection<String> individuals) throws RDFServiceException {
+                                        Collection<String> individuals) throws RDFServiceException {
         Model existing = ModelFactory.createDefaultModel();
         for (String individualURI : individuals) {
             addInferenceStatementsFor(individualURI, existing);
@@ -531,16 +535,16 @@ public class ABoxRecomputer {
             ChangeSet change = rdfService.manufactureChangeSet();
             if (retractions.size() > 0) {
                 change.addRemoval(makeN3InputStream(retractions),
-                        RDFService.ModelSerializationFormat.N3, ModelNames.ABOX_INFERENCES);
+                    RDFService.ModelSerializationFormat.N3, ModelNames.ABOX_INFERENCES);
             }
             if (additions.size() > 0) {
                 change.addAddition(makeN3InputStream(additions),
-                        RDFService.ModelSerializationFormat.N3, ModelNames.ABOX_INFERENCES);
+                    RDFService.ModelSerializationFormat.N3, ModelNames.ABOX_INFERENCES);
             }
             rdfService.changeSetUpdate(change);
             log.debug((System.currentTimeMillis() - start) +
-                    " ms to retract " + retractions.size() +
-                    " statements and add " + additions.size() + " statements");
+                " ms to retract " + retractions.size() +
+                " statements and add " + additions.size() + " statements");
         }
     }
 
@@ -563,15 +567,17 @@ public class ABoxRecomputer {
             final List<String> addedURIs = new ArrayList<String>();
             StringBuilder builder = new StringBuilder();
             builder.append("SELECT\n")
-                    .append("   ?object\n")
-                    .append("WHERE {\n")
-                    .append("    GRAPH ?g { \n")
-                    .append("        {\n").append("            <").append(individualUri).append("> <").append(OWL.sameAs).append("> ?object .\n")
-                    .append("        } UNION {\n").append("            ?object <").append(OWL.sameAs).append("> <").append(individualUri).append("> .\n")
-                    .append("        }\n")
-                    .append("    } \n")
-                    .append("    FILTER (?g != <" + ModelNames.ABOX_INFERENCES + ">)\n")
-                    .append("}\n");
+                .append("   ?object\n")
+                .append("WHERE {\n")
+                .append("    GRAPH ?g { \n")
+                .append("        {\n").append("            <").append(individualUri).append("> <")
+                .append(OWL.sameAs).append("> ?object .\n")
+                .append("        } UNION {\n").append("            ?object <").append(OWL.sameAs)
+                .append("> <").append(individualUri).append("> .\n")
+                .append("        }\n")
+                .append("    } \n")
+                .append("    FILTER (?g != <" + ModelNames.ABOX_INFERENCES + ">)\n")
+                .append("}\n");
             rdfService.sparqlSelectQuery(builder.toString(), new ResultSetConsumer() {
                 @Override
                 protected void processQuerySolution(QuerySolution qs) {
@@ -586,7 +592,7 @@ public class ABoxRecomputer {
                 getSameAsIndividuals(indUri, sameAsInds);
             }
         } catch (RDFServiceException e) {
-            log.error(e,e);
+            log.error(e, e);
         }
     }
 
@@ -601,7 +607,7 @@ public class ABoxRecomputer {
      * Caches for types -> inferred types, and types -> most specific type
      */
     private static class TypeCaches {
-        private Map<TypeList, TypeList> inferredTypes     = new HashMap<TypeList, TypeList>();
+        private Map<TypeList, TypeList> inferredTypes = new HashMap<TypeList, TypeList>();
         private Map<TypeList, TypeList> mostSpecificTypes = new HashMap<TypeList, TypeList>();
 
         void cacheInferredTypes(TypeList key, Model model) {
@@ -617,7 +623,8 @@ public class ABoxRecomputer {
         }
 
         void cacheMostSpecificTypes(TypeList key, Model model) {
-            mostSpecificTypes.put(key, new TypeList(model, model.createProperty(VitroVocabulary.MOST_SPECIFIC_TYPE)));
+            mostSpecificTypes.put(key,
+                new TypeList(model, model.createProperty(VitroVocabulary.MOST_SPECIFIC_TYPE)));
         }
 
         Model getMostSpecificTypesToModel(TypeList key, Resource individual) {
@@ -682,7 +689,7 @@ public class ABoxRecomputer {
                 return false;
             }
 
-            TypeList otherKey = (TypeList)obj;
+            TypeList otherKey = (TypeList) obj;
 
             if (typeUris.size() != otherKey.typeUris.size()) {
                 return false;

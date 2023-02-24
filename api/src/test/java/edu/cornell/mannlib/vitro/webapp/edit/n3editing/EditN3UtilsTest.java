@@ -2,16 +2,13 @@
 
 package edu.cornell.mannlib.vitro.webapp.edit.n3editing;
 
-import org.junit.Assert;
-
+import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.N3EditUtils;
 import org.apache.commons.io.output.NullOutputStream;
-import org.junit.Test;
-
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.vocabulary.RDFS;
-
-import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.N3EditUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 
 public class EditN3UtilsTest {
@@ -28,7 +25,7 @@ public class EditN3UtilsTest {
         Assert.assertFalse(isSerializableAsXML(m));
 
         String stripped = N3EditUtils.stripInvalidXMLChars(
-                                containsInvalidXMLChars);
+            containsInvalidXMLChars);
         Assert.assertEquals(clean, stripped);
 
         // clear the model of any statements

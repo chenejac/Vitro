@@ -9,18 +9,18 @@ import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
  * that it doesn't know about. Nothing is authorized by this Permission.
  */
 public class BrokenPermission extends Permission {
-	public BrokenPermission(String uri) {
-		super(uri);
-	}
+    public BrokenPermission(String uri) {
+        super(uri);
+    }
 
-	@Override
-	public boolean isAuthorized(RequestedAction whatToAuth) {
-		return false;
-	}
+    @Override
+    public boolean isAuthorized(RequestedAction whatToAuth) {
+        return false;
+    }
 
-	@Override
-	public String toString() {
-		return "BrokenPermission[" + uri + "]";
-	}
+    @Override
+    public String toString() {
+        return "BrokenPermission[" + uri + "]";
+    }
 
 }

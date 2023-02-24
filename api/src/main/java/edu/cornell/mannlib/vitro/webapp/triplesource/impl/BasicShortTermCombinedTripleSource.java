@@ -5,6 +5,8 @@ package edu.cornell.mannlib.vitro.webapp.triplesource.impl;
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess.WhichService.CONFIGURATION;
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess.WhichService.CONTENT;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Enumeration;
@@ -12,12 +14,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vitro.webapp.config.ConfigurationProperties;
 import edu.cornell.mannlib.vitro.webapp.dao.PropertyDao.FullPropertyKey;
@@ -30,122 +26,124 @@ import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.filter.LanguageFilteringUtils;
 import edu.cornell.mannlib.vitro.webapp.triplesource.ShortTermCombinedTripleSource;
 import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * The simple implementation of ShortTermCombinedTripleSource.
- *
+ * <p>
  * The short-term RDFServices are cached, lest we somehow create duplicates for
  * the same request. Similarly with the short-term OntModels.
  */
 public class BasicShortTermCombinedTripleSource implements
-		ShortTermCombinedTripleSource {
-	private static final Log log = LogFactory
-			.getLog(BasicShortTermCombinedTripleSource.class);
+    ShortTermCombinedTripleSource {
+    private static final Log log = LogFactory
+        .getLog(BasicShortTermCombinedTripleSource.class);
 
-	private final HttpServletRequest req;
-	private final ServletContext ctx;
-	private final ConfigurationProperties props;
-	private final BasicCombinedTripleSource parent;
-	private final Map<WhichService, TripleSource> sources;
-	private final Map<WhichService, RDFService> rdfServices;
-	private final OntModelCache ontModelCache;
+    private final HttpServletRequest req;
+    private final ServletContext ctx;
+    private final ConfigurationProperties props;
+    private final BasicCombinedTripleSource parent;
+    private final Map<WhichService, TripleSource> sources;
+    private final Map<WhichService, RDFService> rdfServices;
+    private final OntModelCache ontModelCache;
 
-	public BasicShortTermCombinedTripleSource(HttpServletRequest req,
-			BasicCombinedTripleSource parent,
-			final Map<WhichService, TripleSource> sources) {
-		this.req = req;
-		this.ctx = req.getSession().getServletContext();
-		this.props = ConfigurationProperties.getBean(ctx);
-		this.parent = parent;
-		this.sources = sources;
-		this.rdfServices = populateRdfServicesMap();
-		this.ontModelCache = createOntModelCache();
-	}
+    public BasicShortTermCombinedTripleSource(HttpServletRequest req,
+                                              BasicCombinedTripleSource parent,
+                                              final Map<WhichService, TripleSource> sources) {
+        this.req = req;
+        this.ctx = req.getSession().getServletContext();
+        this.props = ConfigurationProperties.getBean(ctx);
+        this.parent = parent;
+        this.sources = sources;
+        this.rdfServices = populateRdfServicesMap();
+        this.ontModelCache = createOntModelCache();
+    }
 
-	private Map<WhichService, RDFService> populateRdfServicesMap() {
-		Map<WhichService, RDFService> map = new EnumMap<>(WhichService.class);
-		for (WhichService which : WhichService.values()) {
-			map.put(which, parent.getRDFServiceFactory(which)
-					.getShortTermRDFService());
-		}
-		return Collections.unmodifiableMap(map);
-	}
+    private Map<WhichService, RDFService> populateRdfServicesMap() {
+        Map<WhichService, RDFService> map = new EnumMap<>(WhichService.class);
+        for (WhichService which : WhichService.values()) {
+            map.put(which, parent.getRDFServiceFactory(which)
+                .getShortTermRDFService());
+        }
+        return Collections.unmodifiableMap(map);
+    }
 
-	private OntModelCache createOntModelCache() {
-		return new JoinedOntModelCache(shortModels(CONTENT),
-				shortModels(CONFIGURATION));
-	}
+    private OntModelCache createOntModelCache() {
+        return new JoinedOntModelCache(shortModels(CONTENT),
+            shortModels(CONFIGURATION));
+    }
 
-	/**
-	 * Ask each triple source what short-term models should mask their long-term
-	 * counterparts.
-	 */
-	private OntModelCache shortModels(WhichService which) {
-		return sources.get(which).getShortTermOntModels(rdfServices.get(which),
-				parent.getOntModels(which));
-	}
+    /**
+     * Ask each triple source what short-term models should mask their long-term
+     * counterparts.
+     */
+    private OntModelCache shortModels(WhichService which) {
+        return sources.get(which).getShortTermOntModels(rdfServices.get(which),
+            parent.getOntModels(which));
+    }
 
-	@Override
-	public RDFService getRDFService(WhichService whichService) {
-		return rdfServices.get(whichService);
-	}
+    @Override
+    public RDFService getRDFService(WhichService whichService) {
+        return rdfServices.get(whichService);
+    }
 
-	@Override
-	public OntModelCache getOntModelCache() {
-		return ontModelCache;
-	}
+    @Override
+    public OntModelCache getOntModelCache() {
+        return ontModelCache;
+    }
 
-	@Override
-	public WebappDaoFactoryConfig getWebappDaoFactoryConfig() {
-		List<String> langs = getPreferredLanguages();
-		List<Locale> locales = Collections.list(getPreferredLocales());
-		WebappDaoFactoryConfig config = new WebappDaoFactoryConfig();
-		config.setDefaultNamespace(props.getProperty("Vitro.defaultNamespace"));
-		config.setPreferredLanguages(langs);
-		config.setPreferredLocales(locales);
-		config.setUnderlyingStoreReasoned(isStoreReasoned());
-		config.setCustomListViewConfigFileMap(getCustomListViewConfigFileMap());
-		return config;
-	}
+    @Override
+    public WebappDaoFactoryConfig getWebappDaoFactoryConfig() {
+        List<String> langs = getPreferredLanguages();
+        List<Locale> locales = Collections.list(getPreferredLocales());
+        WebappDaoFactoryConfig config = new WebappDaoFactoryConfig();
+        config.setDefaultNamespace(props.getProperty("Vitro.defaultNamespace"));
+        config.setPreferredLanguages(langs);
+        config.setPreferredLocales(locales);
+        config.setUnderlyingStoreReasoned(isStoreReasoned());
+        config.setCustomListViewConfigFileMap(getCustomListViewConfigFileMap());
+        return config;
+    }
 
-	private List<String> getPreferredLanguages() {
-		log.debug("Accept-Language: " + req.getHeader("Accept-Language"));
-		return LanguageFilteringUtils.localesToLanguages(getPreferredLocales());
-	}
+    private List<String> getPreferredLanguages() {
+        log.debug("Accept-Language: " + req.getHeader("Accept-Language"));
+        return LanguageFilteringUtils.localesToLanguages(getPreferredLocales());
+    }
 
-	private Enumeration<Locale> getPreferredLocales() {
-		return req.getLocales();
-	}
+    private Enumeration<Locale> getPreferredLocales() {
+        return req.getLocales();
+    }
 
-	private boolean isStoreReasoned() {
-		String isStoreReasoned = props.getProperty(
-				"VitroConnection.DataSource.isStoreReasoned", "true");
-		return ("true".equals(isStoreReasoned));
-	}
+    private boolean isStoreReasoned() {
+        String isStoreReasoned = props.getProperty(
+            "VitroConnection.DataSource.isStoreReasoned", "true");
+        return ("true".equals(isStoreReasoned));
+    }
 
-	private Map<FullPropertyKey, String> getCustomListViewConfigFileMap() {
-		@SuppressWarnings("unchecked")
-		Map<FullPropertyKey, String> map = (Map<FullPropertyKey, String>) ctx
-				.getAttribute("customListViewConfigFileMap");
-		if (map == null) {
-			map = new ConcurrentHashMap<FullPropertyKey, String>();
-			ctx.setAttribute("customListViewConfigFileMap", map);
-		}
-		return map;
-	}
+    private Map<FullPropertyKey, String> getCustomListViewConfigFileMap() {
+        @SuppressWarnings("unchecked")
+        Map<FullPropertyKey, String> map = (Map<FullPropertyKey, String>) ctx
+            .getAttribute("customListViewConfigFileMap");
+        if (map == null) {
+            map = new ConcurrentHashMap<FullPropertyKey, String>();
+            ctx.setAttribute("customListViewConfigFileMap", map);
+        }
+        return map;
+    }
 
-	@Override
-	public void close() {
-		for (WhichService which : WhichService.values()) {
-			rdfServices.get(which).close();
-		}
-	}
+    @Override
+    public void close() {
+        for (WhichService which : WhichService.values()) {
+            rdfServices.get(which).close();
+        }
+    }
 
-	@Override
-	public String toString() {
-		return "BasicShortTermCombinedTripleSource[" + ToString.hashHex(this)
-				+ ", req=" + ToString.hashHex(req) + ", sources=" + sources
-				+ ", ontModels=" + ontModelCache + "]";
-	}
+    @Override
+    public String toString() {
+        return "BasicShortTermCombinedTripleSource[" + ToString.hashHex(this)
+            + ", req=" + ToString.hashHex(req) + ", sources=" + sources
+            + ", ontModels=" + ontModelCache + "]";
+    }
 
 }

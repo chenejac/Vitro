@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
+import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchQuery;
+import edu.cornell.mannlib.vitro.webapp.searchengine.base.BaseSearchQuery;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
@@ -21,10 +24,6 @@ import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
 import org.apache.http.entity.ContentType;
 import org.apache.http.util.EntityUtils;
-
-import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
-import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchQuery;
-import edu.cornell.mannlib.vitro.webapp.searchengine.base.BaseSearchQuery;
 
 /**
  * The nuts and bolts of deleting documents from the Elasticsearch index.
@@ -42,7 +41,7 @@ public class ESDeleter {
     }
 
     public void deleteByIds(Collection<String> ids)
-            throws SearchEngineException {
+        throws SearchEngineException {
         for (String id : ids) {
             deleteById(id);
         }
@@ -51,7 +50,7 @@ public class ESDeleter {
     private void deleteById(String id) throws SearchEngineException {
         try {
             String url = baseUrl + "/_doc/"
-                    + URLEncoder.encode(id, "UTF8");
+                + URLEncoder.encode(id, "UTF8");
             Response response = Request.Delete(url).execute();
             String json = response.returnContent().asString();
         } catch (HttpResponseException e) {
@@ -59,11 +58,11 @@ public class ESDeleter {
                 // Don't care if it has already been deleted.
             } else {
                 throw new SearchEngineException(
-                        "Failed to delete Elasticsearch document " + id, e);
+                    "Failed to delete Elasticsearch document " + id, e);
             }
         } catch (Exception e) {
             throw new SearchEngineException(
-                    "Failed to delete Elasticsearch document " + id, e);
+                "Failed to delete Elasticsearch document " + id, e);
         }
     }
 
@@ -74,20 +73,20 @@ public class ESDeleter {
 
         try {
             Response response = Request.Post(url)
-                    .bodyString(queryJson, ContentType.APPLICATION_JSON)
-                    .execute();
+                .bodyString(queryJson, ContentType.APPLICATION_JSON)
+                .execute();
 
             BaseResponseHandler handler = new BaseResponseHandler();
             response.handleResponse(handler);
             if (handler.getStatusCode() >= 400) {
                 log.warn(String.format(
-                        "Failed to delete Elasticsearch documents by query: %s, %d - %s\n%s",
-                        queryString, handler.getStatusCode(),
-                        handler.getReasonPhrase(), handler.getContentString()));
+                    "Failed to delete Elasticsearch documents by query: %s, %d - %s\n%s",
+                    queryString, handler.getStatusCode(),
+                    handler.getReasonPhrase(), handler.getContentString()));
             }
         } catch (IOException e) {
             throw new SearchEngineException("Failed to delete Elasticsearch "
-                    + "documents by query " + queryString, e);
+                + "documents by query " + queryString, e);
         }
     }
 
@@ -103,7 +102,7 @@ public class ESDeleter {
 
         @Override
         public Object handleResponse(org.apache.http.HttpResponse innerResponse)
-                throws IOException {
+            throws IOException {
             StatusLine statusLine = innerResponse.getStatusLine();
             statusCode = statusLine.getStatusCode();
             reasonPhrase = statusLine.getReasonPhrase();

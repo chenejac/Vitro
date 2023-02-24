@@ -4,16 +4,20 @@ package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.TBOX_ASSERTIONS;
 
-import java.util.HashMap;
-import java.util.Iterator;
-
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Iterator;
 
+import edu.cornell.mannlib.vedit.beans.EditProcessObject;
+import edu.cornell.mannlib.vedit.controller.BaseEditController;
+import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
+import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
+import edu.cornell.mannlib.vitro.webapp.dao.jena.event.EditEvent;
+import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.ontology.OntClass;
@@ -27,29 +31,23 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.shared.Lock;
 
-import edu.cornell.mannlib.vedit.beans.EditProcessObject;
-import edu.cornell.mannlib.vedit.controller.BaseEditController;
-import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
-import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
-import edu.cornell.mannlib.vitro.webapp.dao.jena.event.EditEvent;
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
-
-@WebServlet(name = "RestrictionOperationController", urlPatterns = {"/addRestriction"} )
+@WebServlet(name = "RestrictionOperationController", urlPatterns = {"/addRestriction"})
 public class RestrictionOperationController extends BaseEditController {
 
-	private static final Log log = LogFactory.getLog(RestrictionOperationController.class.getName());
+    private static final Log log =
+        LogFactory.getLog(RestrictionOperationController.class.getName());
 
-	public void doPost(HttpServletRequest req, HttpServletResponse response) {
+    public void doPost(HttpServletRequest req, HttpServletResponse response) {
         if (!isAuthorizedToDisplayPage(req, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-        	return;
+            return;
         }
 
-		VitroRequest request = new VitroRequest(req);
-		String defaultLandingPage = getDefaultLandingPage(request);
+        VitroRequest request = new VitroRequest(req);
+        String defaultLandingPage = getDefaultLandingPage(request);
 
-	    try {
-			OntModel ontModel = ModelAccess.on(req)
-					.getOntModel(TBOX_ASSERTIONS);
+        try {
+            OntModel ontModel = ModelAccess.on(req)
+                .getOntModel(TBOX_ASSERTIONS);
 
             HashMap epoHash = null;
             EditProcessObject epo = null;
@@ -67,7 +65,7 @@ public class RestrictionOperationController extends BaseEditController {
                 return;
             }
 
-            if ( (request.getParameter("_cancel") == null ) ) {
+            if ((request.getParameter("_cancel") == null)) {
                 processRestriction(request, epo, ontModel);
             }
 
@@ -79,31 +77,34 @@ public class RestrictionOperationController extends BaseEditController {
                 response.sendRedirect(referer);
             }
 
-	    } catch (Exception e) {
-	    	log.error(e, e);
-	    	try {
-	    		response.sendRedirect(defaultLandingPage);
+        } catch (Exception e) {
+            log.error(e, e);
+            try {
+                response.sendRedirect(defaultLandingPage);
             } catch (Exception f) {
                 log.error(f, f);
                 throw new RuntimeException(f);
-	    	}
-	    }
-	}
+            }
+        }
+    }
 
-	private void processRestriction(VitroRequest request, EditProcessObject epo, OntModel ontModel) {
+    private void processRestriction(VitroRequest request, EditProcessObject epo,
+                                    OntModel ontModel) {
         ontModel.enterCriticalSection(Lock.WRITE);
         try {
 
-            ontModel.getBaseModel().notifyEvent(new EditEvent(request.getUnfilteredWebappDaoFactory().getUserURI(),true));
+            ontModel.getBaseModel().notifyEvent(
+                new EditEvent(request.getUnfilteredWebappDaoFactory().getUserURI(), true));
 
             if ("delete".equals(request.getParameter("_action"))) {
                 processDelete(request, ontModel);
-            }  else {
+            } else {
                 processCreate(request, epo, ontModel);
             }
 
         } finally {
-            ontModel.getBaseModel().notifyEvent(new EditEvent(request.getUnfilteredWebappDaoFactory().getUserURI(),false));
+            ontModel.getBaseModel().notifyEvent(
+                new EditEvent(request.getUnfilteredWebappDaoFactory().getUserURI(), false));
             ontModel.leaveCriticalSection();
         }
 
@@ -115,20 +116,20 @@ public class RestrictionOperationController extends BaseEditController {
 
         if (restId != null) {
 
-            OntClass restrictedClass = ontModel.getOntClass( request.getParameter( "classUri" ) );
+            OntClass restrictedClass = ontModel.getOntClass(request.getParameter("classUri"));
 
             OntClass rest = null;
 
-            for ( Iterator i = restrictedClass.listEquivalentClasses(); i.hasNext(); ) {
+            for (Iterator i = restrictedClass.listEquivalentClasses(); i.hasNext(); ) {
                 OntClass equivClass = (OntClass) i.next();
                 if (equivClass.isAnon() && equivClass.getId().toString().equals(restId)) {
                     rest = equivClass;
                 }
             }
 
-            if ( rest == null ) {
-                for ( Iterator i = restrictedClass.listSuperClasses(); i.hasNext(); ) {
-                    OntClass  superClass = (OntClass) i.next();
+            if (rest == null) {
+                for (Iterator i = restrictedClass.listSuperClasses(); i.hasNext(); ) {
+                    OntClass superClass = (OntClass) i.next();
                     if (superClass.isAnon() && superClass.getId().toString().equals(restId)) {
                         rest = superClass;
                     }
@@ -140,7 +141,7 @@ public class RestrictionOperationController extends BaseEditController {
              * stick together and are processed appropriately by the bulk update
              * handler
              */
-            if ( rest != null ) {
+            if (rest != null) {
                 Model temp = ModelFactory.createDefaultModel();
                 temp.add(rest.listProperties());
                 ontModel.getBaseModel().remove(temp);
@@ -155,14 +156,15 @@ public class RestrictionOperationController extends BaseEditController {
         Model dynamicUnion = ModelFactory.createUnion(temp, origModel);
         OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM, dynamicUnion);
 
-        OntProperty onProperty = ontModel.getOntProperty( (String) request.getParameter("onProperty") );
+        OntProperty onProperty =
+            ontModel.getOntProperty((String) request.getParameter("onProperty"));
 
         String conditionTypeStr = request.getParameter("conditionType");
 
         String restrictionTypeStr = (String) epo.getAttribute("restrictionType");
         Restriction rest = null;
 
-        OntClass ontClass = ontModel.getOntClass( (String) epo.getAttribute("VClassURI") );
+        OntClass ontClass = ontModel.getOntClass((String) epo.getAttribute("VClassURI"));
 
         String roleFillerURIStr = request.getParameter("ValueClass");
         Resource roleFiller = null;
@@ -200,7 +202,8 @@ public class RestrictionOperationController extends BaseEditController {
                             try {
                                 dtype = TypeMapper.getInstance().getSafeTypeByName(valueDatatype);
                             } catch (Exception e) {
-                                log.warn("Unable to get safe type " + valueDatatype + " using TypeMapper");
+                                log.warn("Unable to get safe type " + valueDatatype +
+                                    " using TypeMapper");
                             }
                             if (dtype != null) {
                                 value = ontModel.createTypedLiteral(valueLexicalForm, dtype);

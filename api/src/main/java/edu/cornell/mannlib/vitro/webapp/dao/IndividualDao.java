@@ -13,43 +13,47 @@ import edu.cornell.mannlib.vitro.webapp.edit.EditLiteral;
 
 public interface IndividualDao {
 
-	/**
-	 * Returns a collection of DataPropertyStatements involving all the external ID literals for a given Individual.
-	 */
+    /**
+     * Returns a collection of DataPropertyStatements involving all the external ID literals for a given Individual.
+     */
     public abstract Collection<DataPropertyStatement> getExternalIds(String individualURI);
 
-    public abstract Collection<DataPropertyStatement> getExternalIds(String individualURI, String dataPropertyURI);
+    public abstract Collection<DataPropertyStatement> getExternalIds(String individualURI,
+                                                                     String dataPropertyURI);
 
     /**
      * Adds the specified Individual to the specified VClass (i.e. adds rdf:type).
+     *
      * @param individualURI Individual URI
-     * @param vclassURI URI for VClass
+     * @param vclassURI     URI for VClass
      */
     public abstract void addVClass(String individualURI, String vclassURI);
 
     /**
      * Removes the specified Individual from the specificed VClass (i.e. retracts rdf:type)
+     *
      * @param individualURI Individual URI
-     * @param vclassURI URI for VCLass
+     * @param vclassURI     URI for VCLass
      */
     public abstract void removeVClass(String individualURI, String vclassURI);
 
     /**
      * Returns a list of all the Individuals in the specified VClass.
+     *
      * @param vclass VClass
      */
-    public abstract List <Individual> getIndividualsByVClass(VClass vclass);
+    public abstract List<Individual> getIndividualsByVClass(VClass vclass);
 
     /**
      * Returns a list of Individuals in a given VClass.
      */
-    public abstract List <Individual> getIndividualsByVClassURI(String vclassURI);
+    public abstract List<Individual> getIndividualsByVClassURI(String vclassURI);
 
     /**
      * Returns a list of Individuals in a given VClass.
      */
-    public abstract List <Individual> getIndividualsByVClassURI(String vclassURI, int offset,
-            int quantity);
+    public abstract List<Individual> getIndividualsByVClassURI(String vclassURI, int offset,
+                                                               int quantity);
 
     /**
      * @return new individual URI  if success.
@@ -58,12 +62,14 @@ public interface IndividualDao {
 
     /**
      * updates a single individual in the knowledge base.
+     *
      * @return 0 on failed
      */
     public abstract int updateIndividual(Individual individual);
 
     /**
      * deletes a single individual from the knowledge base.
+     *
      * @param individualURI URI of an individual
      * @return 0 on failed
      */
@@ -77,6 +83,7 @@ public interface IndividualDao {
      * Get a row from the entities table and make an Entity.
      * PropertiesList will not be filled out.
      * VClass will be filled out.
+     *
      * @param individualURI URI for Individual
      * @return an Entity object or null if not found.
      */
@@ -100,18 +107,20 @@ public interface IndividualDao {
      */
     public List<Individual> getIndividualsByDataProperty(String dataPropertyUri, String value);
 
-    public List<Individual> getIndividualsByDataProperty(String dataPropertyUri, String value, String datatypeUri, String lang);
+    public List<Individual> getIndividualsByDataProperty(String dataPropertyUri, String value,
+                                                         String datatypeUri, String lang);
 
-	void fillVClassForIndividual(Individual individual);
+    void fillVClassForIndividual(Individual individual);
 
-	/**
-	 * Standard way to get a new URI that is not yet used.
-	 * @param individual, may be null
-	 * @return new URI that is not found in the subject, predicate or object position of any statement.
-	 * @throws InsertException Could not create a URI
-	 */
-	String getUnusedURI(Individual individual) throws InsertException;
+    /**
+     * Standard way to get a new URI that is not yet used.
+     *
+     * @param individual, may be null
+     * @return new URI that is not found in the subject, predicate or object position of any statement.
+     * @throws InsertException Could not create a URI
+     */
+    String getUnusedURI(Individual individual) throws InsertException;
 
-	EditLiteral getLabelEditLiteral(String individualUri);
+    EditLiteral getLabelEditLiteral(String individualUri);
 
 }

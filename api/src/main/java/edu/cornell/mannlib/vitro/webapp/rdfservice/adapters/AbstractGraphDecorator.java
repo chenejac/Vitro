@@ -1,5 +1,6 @@
 package edu.cornell.mannlib.vitro.webapp.rdfservice.adapters;
 
+import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
 import org.apache.jena.graph.Capabilities;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.GraphEventManager;
@@ -12,17 +13,15 @@ import org.apache.jena.shared.DeleteDeniedException;
 import org.apache.jena.shared.PrefixMapping;
 import org.apache.jena.util.iterator.ExtendedIterator;
 
-import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
-
 /**
  * The base class for a delegating graph decorator.
- *
+ * <p>
  * As implemented, all methods simply delegate to the inner graph. Subclasses
  * should override selected methods to provide functionality.
  */
-public abstract class AbstractGraphDecorator implements 
-        Graph {
-    
+public abstract class AbstractGraphDecorator implements
+    Graph {
+
     private final Graph inner;
 
     protected AbstractGraphDecorator(Graph g) {
@@ -35,7 +34,7 @@ public abstract class AbstractGraphDecorator implements
     @Override
     public String toString() {
         return ToString.simpleName(this) + "[" + ToString.hashHex(this)
-                + ", inner=" + ToString.graphToString(inner) + "]";
+            + ", inner=" + ToString.graphToString(inner) + "]";
     }
 
     @Override
@@ -132,5 +131,5 @@ public abstract class AbstractGraphDecorator implements
     public int size() {
         return inner.size();
     }
-    
+
 }

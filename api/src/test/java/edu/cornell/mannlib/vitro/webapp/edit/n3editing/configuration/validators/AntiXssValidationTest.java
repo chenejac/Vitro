@@ -6,96 +6,95 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import edu.cornell.mannlib.vitro.testing.AbstractTestClass;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.EditConfigurationVTwo;
 import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.MultiValueEditSubmission;
 import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.fields.FieldVTwo;
-
+import org.junit.Assert;
+import org.junit.Test;
 import stubs.javax.servlet.http.HttpServletRequestStub;
 
-public class AntiXssValidationTest extends AbstractTestClass{
+public class AntiXssValidationTest extends AbstractTestClass {
 
     @Test
-    public void  testLiteral( ){
+    public void testLiteral() {
         //test all fields constructor
-        AntiXssValidation validator =new AntiXssValidation();
+        AntiXssValidation validator = new AntiXssValidation();
 
         EditConfigurationVTwo eConf = new EditConfigurationVTwo();
         eConf.setEditKey("fakeEditKey");
-        eConf.addField( new FieldVTwo().setName("X") );
-        eConf.setLiteralsOnForm( Arrays.asList("X") );
+        eConf.addField(new FieldVTwo().setName("X"));
+        eConf.setLiteralsOnForm(Arrays.asList("X"));
 
-        Map<String, String[]> params = new HashMap<String,String[]>();
-        String[] vals= { "some sort of string" };
+        Map<String, String[]> params = new HashMap<String, String[]>();
+        String[] vals = {"some sort of string"};
         params.put("X", vals);
 
         VitroRequest vreq = createRequestWithParameters(params);
 
         MultiValueEditSubmission mvEditSub =
-            new MultiValueEditSubmission(vreq,eConf);
+            new MultiValueEditSubmission(vreq, eConf);
 
         Map<String, String> res = validator.validate(eConf, mvEditSub);
         Assert.assertEquals(null, res);
     }
 
     @Test
-    public void  testAllURI( ){
+    public void testAllURI() {
         //test all fields constructor
-        AntiXssValidation validator =new AntiXssValidation();
+        AntiXssValidation validator = new AntiXssValidation();
 
         EditConfigurationVTwo eConf = new EditConfigurationVTwo();
         eConf.setEditKey("fakeEditKey");
-        eConf.setUrisOnform( Arrays.asList("X","Y","Z"));
+        eConf.setUrisOnform(Arrays.asList("X", "Y", "Z"));
 
-        Map<String, String[]> params = new HashMap<String,String[]>();
+        Map<String, String[]> params = new HashMap<String, String[]>();
         String[] strings0 = {"no problem 0"};
-        params.put("X", strings0 );
+        params.put("X", strings0);
         String[] strings1 = {"no problem 1"};
-        params.put("Y", strings1 );
+        params.put("Y", strings1);
         String[] strings2 = {"no problem 2"};
-        params.put("Z", strings2 );
+        params.put("Z", strings2);
 
         VitroRequest vreq = createRequestWithParameters(params);
 
         MultiValueEditSubmission mvEditSub =
-            new MultiValueEditSubmission(vreq,eConf);
+            new MultiValueEditSubmission(vreq, eConf);
 
         Map<String, String> res = validator.validate(eConf, mvEditSub);
-        Assert.assertNull( res );
+        Assert.assertNull(res);
     }
 
-    protected Map<String, String> testURI( String ... strings){
+    protected Map<String, String> testURI(String... strings) {
 
         AntiXssValidation validator =
             new AntiXssValidation(Arrays.asList("X"));
 
         EditConfigurationVTwo eConf = new EditConfigurationVTwo();
         eConf.setEditKey("fakeEditKey");
-        eConf.setUrisOnform( Arrays.asList("X"));
+        eConf.setUrisOnform(Arrays.asList("X"));
 
-        Map<String, String[]> params = new HashMap<String,String[]>();
-        params.put("X", strings );
+        Map<String, String[]> params = new HashMap<String, String[]>();
+        params.put("X", strings);
 
         VitroRequest vreq = createRequestWithParameters(params);
 
         MultiValueEditSubmission mvEditSub =
-            new MultiValueEditSubmission(vreq,eConf);
+            new MultiValueEditSubmission(vreq, eConf);
 
         return validator.validate(eConf, mvEditSub);
     }
 
     @Test
-    public void testURIValidation(){
-        Map<String, String> result = testURI("http://this.should.be.fine.com/xyz#lskd?junk=a&bkeck=%23");
+    public void testURIValidation() {
+        Map<String, String> result =
+            testURI("http://this.should.be.fine.com/xyz#lskd?junk=a&bkeck=%23");
         Assert.assertNull(result);
     }
 
     @Test
-    public void testURIValidationWithScriptTagLevel1(){
+    public void testURIValidationWithScriptTagLevel1() {
         Map<String, String> result = null;
         result = testURI("http:<SCRIPT SRC=http://ha.ckers.org/xss.js></SCRIPT>//bad.news.com");
         Assert.assertNotNull(result);
@@ -114,24 +113,29 @@ public class AntiXssValidationTest extends AbstractTestClass{
     }
 
     @Test
-    public void testURIValidationWithScriptTagLevel2(){
+    public void testURIValidationWithScriptTagLevel2() {
         Map<String, String> result = null;
-        result = testURI("http:<IMG SRC=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;>//bad.news.com");
+        result = testURI(
+            "http:<IMG SRC=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;>//bad.news.com");
         Assert.assertNotNull(result);
 
-        result = testURI("http:<IMG SRC=&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041>//bad.news.com");
+        result = testURI(
+            "http:<IMG SRC=&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041>//bad.news.com");
         Assert.assertNotNull(result);
 
-        result = testURI("http:<IMG SRC=&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29>//bad.news.com");
+        result = testURI(
+            "http:<IMG SRC=&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29>//bad.news.com");
         Assert.assertNotNull(result);
 
         result = testURI("http:<<SCRIPT>alert(\"XSS\");//<</SCRIPT>//bad.news.com");
         Assert.assertNotNull(result);
 
-        result = testURI("http:<IMG SRC=&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041>//bad.news.com");
+        result = testURI(
+            "http:<IMG SRC=&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041>//bad.news.com");
         Assert.assertNotNull(result);
 
-        result = testURI("http:<IMG SRC=&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041>//bad.news.com");
+        result = testURI(
+            "http:<IMG SRC=&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041>//bad.news.com");
         Assert.assertNotNull(result);
     }
 

@@ -8,9 +8,12 @@ import static edu.cornell.mannlib.vitro.webapp.dao.DisplayVocabulary.SEARCH_INDE
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
+import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames;
+import edu.cornell.mannlib.vitro.webapp.utils.configuration.ContextModelsUser;
+import edu.cornell.mannlib.vitro.webapp.utils.configuration.Validation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
@@ -28,38 +31,34 @@ import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.shared.Lock;
 
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames;
-import edu.cornell.mannlib.vitro.webapp.utils.configuration.ContextModelsUser;
-import edu.cornell.mannlib.vitro.webapp.utils.configuration.Validation;
-
 /**
  * This excludes based on types defined as EXCLUDE_CLASS in the
  * configuration RDF model.
  */
-public class SyncingExcludeBasedOnType extends ExcludeBasedOnType implements ModelChangedListener, ContextModelsUser {
+public class SyncingExcludeBasedOnType extends ExcludeBasedOnType
+    implements ModelChangedListener, ContextModelsUser {
     static final Log log = LogFactory.getLog(SyncingExcludeBasedOnType.class);
 
     private static final String queryForProhibitedClasses =
         "SELECT ?prohibited WHERE{" +
-        "?searchConfig <" + EXCLUDE_CLASS + "> ?prohibited . " +
-        "}";
+            "?searchConfig <" + EXCLUDE_CLASS + "> ?prohibited . " +
+            "}";
 
     private ContextModelAccess models;
 
     @Override
-	public void setContextModels(ContextModelAccess models) {
-		this.models = models;
-	}
+    public void setContextModels(ContextModelAccess models) {
+        this.models = models;
+    }
 
-	@Validation
-    public void buildClassList( ){
-		OntModel model = models.getOntModel(ModelNames.DISPLAY);
-        this.setExcludedTypes( buildProhibitedClassesList(SEARCH_INDEX_URI, model) );
+    @Validation
+    public void buildClassList() {
+        OntModel model = models.getOntModel(ModelNames.DISPLAY);
+        this.setExcludedTypes(buildProhibitedClassesList(SEARCH_INDEX_URI, model));
         log.debug(this);
     }
 
-    private List<String> buildProhibitedClassesList( String URI, Model model){
+    private List<String> buildProhibitedClassesList(String URI, Model model) {
         List<String> newProhibitedClasses = new ArrayList<String>();
 
         QuerySolutionMap initialBinding = new QuerySolutionMap();
@@ -68,23 +67,28 @@ public class SyncingExcludeBasedOnType extends ExcludeBasedOnType implements Mod
 
         Query query = QueryFactory.create(queryForProhibitedClasses);
         model.enterCriticalSection(Lock.READ);
-        try{
-            QueryExecution qExec = QueryExecutionFactory.create(query,model,initialBinding);
-            try{
+        try {
+            QueryExecution qExec = QueryExecutionFactory.create(query, model, initialBinding);
+            try {
                 ResultSet results = qExec.execSelect();
-                for(;results.hasNext();){
+                for (; results.hasNext(); ) {
                     QuerySolution soln = results.nextSolution();
                     RDFNode n = soln.get("prohibited");
-                    if( n.isResource() && !n.isAnon()){
+                    if (n.isResource() && !n.isAnon()) {
                         newProhibitedClasses.add(((Resource) n).getURI());
-                    }else{
-                        log.warn("unexpected node in object position for prohibited classes: " + n.toString());
+                    } else {
+                        log.warn("unexpected node in object position for prohibited classes: " +
+                            n.toString());
                     }
                 }
-            }catch(Throwable t){
-                log.error(t,t);
-            }finally{ qExec.close(); }
-        }finally{ model.leaveCriticalSection(); }
+            } catch (Throwable t) {
+                log.error(t, t);
+            } finally {
+                qExec.close();
+            }
+        } finally {
+            model.leaveCriticalSection();
+        }
 
         return newProhibitedClasses;
     }
@@ -94,54 +98,54 @@ public class SyncingExcludeBasedOnType extends ExcludeBasedOnType implements Mod
 
     @Override
     public void addedStatement(Statement s) {
-        try{
-            if( isExcludeClassPredicate( s ) && isAboutSearchIndex(s)){
-                if( s.getObject() != null && s.getObject().isURIResource()){
+        try {
+            if (isExcludeClassPredicate(s) && isAboutSearchIndex(s)) {
+                if (s.getObject() != null && s.getObject().isURIResource()) {
                     String classURI = s.getObject().asResource().getURI();
                     this.addTypeToExclude(classURI);
                     log.debug("prohibited classes: " + this);
                 }
             }
-        }catch(Exception ex){
-            log.error("could not add statement",ex);
+        } catch (Exception ex) {
+            log.error("could not add statement", ex);
         }
 
     }
 
     @Override
     public void removedStatement(Statement s) {
-        try{
-            if( isExcludeClassPredicate( s ) && isAboutSearchIndex(s)){
-                if( s.getObject() != null && s.getObject().isURIResource()){
+        try {
+            if (isExcludeClassPredicate(s) && isAboutSearchIndex(s)) {
+                if (s.getObject() != null && s.getObject().isURIResource()) {
                     String classURI = s.getObject().asResource().getURI();
                     this.removeTypeToExclude(classURI);
                     log.debug("prohibited classes: " + this);
                 }
             }
-        }catch(Exception ex){
-            log.error("could not remove statement",ex);
+        } catch (Exception ex) {
+            log.error("could not remove statement", ex);
         }
     }
 
-    private boolean isExcludeClassPredicate(Statement s){
+    private boolean isExcludeClassPredicate(Statement s) {
         return s != null
             && s.getPredicate() != null
-            && EXCLUDE_CLASS.getURI().equals( s.getPredicate().getURI());
+            && EXCLUDE_CLASS.getURI().equals(s.getPredicate().getURI());
     }
 
-    private boolean isAboutSearchIndex(Statement s){
-        if( s.getSubject() != null ){
-            String subURI = s.getSubject().getURI() ;
+    private boolean isAboutSearchIndex(Statement s) {
+        if (s.getSubject() != null) {
+            String subURI = s.getSubject().getURI();
             return SEARCH_INDEX_URI.equals(subURI);
-        }else{
+        } else {
             return false;
         }
     }
 
     @Override
     public void addedStatements(Statement[] stmts) {
-        if( stmts != null ){
-            for( Statement stmt : stmts){
+        if (stmts != null) {
+            for (Statement stmt : stmts) {
                 addedStatement(stmt);
             }
         }
@@ -149,8 +153,8 @@ public class SyncingExcludeBasedOnType extends ExcludeBasedOnType implements Mod
 
     @Override
     public void addedStatements(List<Statement> stmts) {
-        if( stmts != null ){
-            for( Statement stmt : stmts){
+        if (stmts != null) {
+            for (Statement stmt : stmts) {
                 addedStatement(stmt);
             }
         }
@@ -158,7 +162,7 @@ public class SyncingExcludeBasedOnType extends ExcludeBasedOnType implements Mod
 
     @Override
     public void addedStatements(StmtIterator it) {
-        while(it.hasNext()){
+        while (it.hasNext()) {
             Statement stmt = it.nextStatement();
             addedStatement(stmt);
         }
@@ -166,10 +170,10 @@ public class SyncingExcludeBasedOnType extends ExcludeBasedOnType implements Mod
 
     @Override
     public void addedStatements(Model model) {
-        if( model != null){
-			addedStatements(model.listStatements(
-					model.createResource(SEARCH_INDEX_URI), EXCLUDE_CLASS,
-					(RDFNode) null));
+        if (model != null) {
+            addedStatements(model.listStatements(
+                model.createResource(SEARCH_INDEX_URI), EXCLUDE_CLASS,
+                (RDFNode) null));
         }
     }
 
@@ -180,8 +184,8 @@ public class SyncingExcludeBasedOnType extends ExcludeBasedOnType implements Mod
 
     @Override
     public void removedStatements(Statement[] stmts) {
-        if( stmts != null ){
-            for( Statement stmt : stmts){
+        if (stmts != null) {
+            for (Statement stmt : stmts) {
                 removedStatement(stmt);
             }
         }
@@ -189,8 +193,8 @@ public class SyncingExcludeBasedOnType extends ExcludeBasedOnType implements Mod
 
     @Override
     public void removedStatements(List<Statement> stmts) {
-        if( stmts != null ){
-            for( Statement stmt : stmts){
+        if (stmts != null) {
+            for (Statement stmt : stmts) {
                 removedStatement(stmt);
             }
         }
@@ -198,7 +202,7 @@ public class SyncingExcludeBasedOnType extends ExcludeBasedOnType implements Mod
 
     @Override
     public void removedStatements(StmtIterator it) {
-        while(it.hasNext()){
+        while (it.hasNext()) {
             Statement stmt = it.nextStatement();
             removedStatement(stmt);
         }
@@ -206,10 +210,10 @@ public class SyncingExcludeBasedOnType extends ExcludeBasedOnType implements Mod
 
     @Override
     public void removedStatements(Model model) {
-        if( model != null){
-			removedStatements(model.listStatements(
-					model.createResource(SEARCH_INDEX_URI), EXCLUDE_CLASS,
-					(RDFNode) null));
+        if (model != null) {
+            removedStatements(model.listStatements(
+                model.createResource(SEARCH_INDEX_URI), EXCLUDE_CLASS,
+                (RDFNode) null));
         }
     }
 

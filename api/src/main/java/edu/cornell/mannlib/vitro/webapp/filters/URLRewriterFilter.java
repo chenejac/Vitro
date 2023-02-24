@@ -2,8 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.filters;
 
-import java.io.IOException;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -14,6 +12,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * This filter overrides the HTTPServletResponse's encodeURL method
@@ -21,31 +20,33 @@ import javax.servlet.http.HttpServletResponse;
  * are rewritten to use faux directories representing namespaces.
  * It will also remove home parameters and rewrite them as URL
  * prefixes
- * @author bjl23
  *
+ * @author bjl23
  */
 @WebFilter(filterName = "URL Rewriter Filter", urlPatterns = {"/*"})
 public class URLRewriterFilter implements Filter {
 
-	private ServletContext _context;
+    private ServletContext _context;
 
-	public void destroy() {
-		// Nothing to do here
-	}
+    public void destroy() {
+        // Nothing to do here
+    }
 
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain chain) throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response,
+                         FilterChain chain) throws IOException, ServletException {
 
-		if (response instanceof HttpServletResponse) {
-			chain.doFilter(request, new URLRewritingHttpServletResponse((HttpServletResponse)response,(HttpServletRequest)request,_context));
-		} else {
-			chain.doFilter(request,response);
-		}
+        if (response instanceof HttpServletResponse) {
+            chain.doFilter(request,
+                new URLRewritingHttpServletResponse((HttpServletResponse) response,
+                    (HttpServletRequest) request, _context));
+        } else {
+            chain.doFilter(request, response);
+        }
 
-	}
+    }
 
-	public void init(FilterConfig config) throws ServletException {
-		_context = config.getServletContext();
-	}
+    public void init(FilterConfig config) throws ServletException {
+        _context = config.getServletContext();
+    }
 
 }

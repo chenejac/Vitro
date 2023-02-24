@@ -8,10 +8,10 @@ import org.apache.jena.rdf.model.Statement;
 
 /**
  * An ordered list of IndexingUriFinder objects, in a handy package.
- *
+ * <p>
  * Implementations should make a protective copy of the list of
  * IndexingUriFinders. Implementations must be thread-safe.
- *
+ * <p>
  * The life-cycle is:
  *
  * <pre>
@@ -22,20 +22,20 @@ import org.apache.jena.rdf.model.Statement;
  */
 public interface IndexingUriFinderList {
 
-	/**
-	 * Do any required setup on the individual finders.
-	 */
-	void startIndexing();
+    /**
+     * Do any required setup on the individual finders.
+     */
+    void startIndexing();
 
-	/**
-	 * Do any required teardown on the individual finders.
-	 */
-	void stopIndexing();
+    /**
+     * Do any required teardown on the individual finders.
+     */
+    void stopIndexing();
 
-	/**
-	 * Exercise the list of finders, and return a set of the URIs that they
-	 * found for this statement.
-	 */
-	Set<String> findAdditionalUris(Statement stmt);
+    /**
+     * Exercise the list of finders, and return a set of the URIs that they
+     * found for this statement.
+     */
+    Set<String> findAdditionalUris(Statement stmt);
 
 }

@@ -4,21 +4,19 @@ package edu.cornell.mannlib.vitro.webapp.web.beanswrappers;
 
 import java.lang.reflect.Method;
 
+import freemarker.ext.beans.BeansWrapper;
 import freemarker.ext.beans.MethodAppearanceFineTuner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import freemarker.ext.beans.BeansWrapper;
-import freemarker.ext.beans.BeansWrapper.MethodAppearanceDecision;
-
-/** A BeansWrapper that is more restrictive than EXPOSE_SAFE, by
+/**
+ * A BeansWrapper that is more restrictive than EXPOSE_SAFE, by
  * exposing getters but not setters. A setter is defined for this
  * purpose as a method that returns void, or whose name
  * starts with "set". It also hides built-in methods of Java
  * utility classes like Map.put(), etc.
  *
  * @author rjy7
- *
  */
 public class ReadOnlyBeansWrapper extends BeansWrapper {
 
@@ -29,14 +27,15 @@ public class ReadOnlyBeansWrapper extends BeansWrapper {
         setExposureLevel(EXPOSE_SAFE);
         setMethodAppearanceFineTuner(new MethodAppearanceFineTuner() {
             @Override
-            public void process(MethodAppearanceDecisionInput methodAppearanceDecisionInput, MethodAppearanceDecision methodAppearanceDecision) {
+            public void process(MethodAppearanceDecisionInput methodAppearanceDecisionInput,
+                                MethodAppearanceDecision methodAppearanceDecision) {
                 Method method = methodAppearanceDecisionInput.getMethod();
                 // How to define a setter? This is a weak approximation: a method whose name
                 // starts with "set" or returns void.
-                if ( method.getName().startsWith("set") ) {
+                if (method.getName().startsWith("set")) {
                     methodAppearanceDecision.setExposeMethodAs(null);
 
-                } else if ( method.getReturnType().getName().equals("void") ) {
+                } else if (method.getReturnType().getName().equals("void")) {
                     methodAppearanceDecision.setExposeMethodAs(null);
 
                 } else {

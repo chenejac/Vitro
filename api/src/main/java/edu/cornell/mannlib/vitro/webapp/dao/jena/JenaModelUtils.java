@@ -8,9 +8,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import edu.cornell.mannlib.vitro.webapp.beans.VClass;
+import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
+import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
+import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactoryConfig;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.ontology.Individual;
 import org.apache.jena.ontology.OntClass;
 import org.apache.jena.ontology.OntModel;
@@ -32,16 +35,11 @@ import org.apache.jena.vocabulary.OWL;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 
-import edu.cornell.mannlib.vitro.webapp.beans.VClass;
-import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
-import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
-import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactoryConfig;
-
 public class JenaModelUtils {
 
     private static final Log log = LogFactory.getLog(JenaModelUtils.class.getName());
 
-    private static final Set<String>  nonIndividualTypeURIs ;
+    private static final Set<String> nonIndividualTypeURIs;
 
     static {
         nonIndividualTypeURIs = new HashSet<String>();
@@ -55,67 +53,72 @@ public class JenaModelUtils {
         nonIndividualTypeURIs.add(RDF.Property.getURI());
     }
 
+    private final OntModelSpec DEFAULT_ONT_MODEL_SPEC = OntModelSpec.OWL_MEM;
+    private final boolean NORMAL = false;
+    private final boolean AGGRESSIVE = true;
+
     /**
      * Creates a set of vitro:ClassGroup resources for each root class in
      * an ontology.  Also creates annotations to place each root class and all
      * of its children in the appropriate groups.  In the case of multiple
      * inheritance, classgroup assignment will be arbitrary.
-     * @param wadf DAO Factory
+     *
+     * @param wadf      DAO Factory
      * @param tboxModel containing ontology classes
      * @return resultArray of OntModels, where resultArray[0] is the model containing
      * the triples about the classgroups, and resultArray[1] is the model containing
      * annotation triples assigning ontology classes to classgroups.
      */
     public synchronized static OntModel[] makeClassGroupsFromRootClasses(
-            WebappDaoFactory wadf, Model tboxModel) {
+        WebappDaoFactory wadf, Model tboxModel) {
 
         OntModel ontModel = ModelFactory.createOntologyModel(
-                OntModelSpec.OWL_DL_MEM, tboxModel);
+            OntModelSpec.OWL_DL_MEM, tboxModel);
         OntModel modelForClassgroups = ModelFactory.createOntologyModel(
-                OntModelSpec.OWL_DL_MEM);
+            OntModelSpec.OWL_DL_MEM);
         OntModel modelForClassgroupAnnotations = ModelFactory.createOntologyModel(
-                OntModelSpec.OWL_DL_MEM);
+            OntModelSpec.OWL_DL_MEM);
         SimpleOntModelSelector oms = new SimpleOntModelSelector();
         oms.setTBoxModel(ontModel);
         oms.setApplicationMetadataModel(modelForClassgroups);
         WebappDaoFactoryConfig config = new WebappDaoFactoryConfig();
         config.setDefaultNamespace(wadf.getDefaultNamespace());
         WebappDaoFactory myWebappDaoFactory = new WebappDaoFactoryJena(
-                new SimpleOntModelSelector(ontModel), config, null);
+            new SimpleOntModelSelector(ontModel), config, null);
 
         Resource classGroupClass = ResourceFactory.createResource(
-                VitroVocabulary.CLASSGROUP);
+            VitroVocabulary.CLASSGROUP);
         Property inClassGroupProperty = ResourceFactory.createProperty(
-                VitroVocabulary.IN_CLASSGROUP);
+            VitroVocabulary.IN_CLASSGROUP);
 
         ontModel.enterCriticalSection(Lock.READ);
         try {
             try {
                 List<VClass> rootClasses = myWebappDaoFactory.getVClassDao()
-                        .getRootClasses();
+                    .getRootClasses();
                 for (VClass rootClass : rootClasses) {
                     Individual classGroup = modelForClassgroups.createIndividual(
-                            wadf.getDefaultNamespace() + "vitroClassGroup" +
-                                    rootClass.getLocalName(), classGroupClass);
+                        wadf.getDefaultNamespace() + "vitroClassGroup" +
+                            rootClass.getLocalName(), classGroupClass);
                     classGroup.setLabel(rootClass.getName(), null);
 
                     Resource rootClassRes = modelForClassgroupAnnotations.getResource(
-                            rootClass.getURI());
+                        rootClass.getURI());
                     modelForClassgroupAnnotations.add(
-                            rootClassRes, inClassGroupProperty, classGroup);
+                        rootClassRes, inClassGroupProperty, classGroup);
                     for (String childURI : myWebappDaoFactory.getVClassDao()
-                            .getAllSubClassURIs(rootClass.getURI())) {
+                        .getAllSubClassURIs(rootClass.getURI())) {
                         Resource childClass = modelForClassgroupAnnotations
-                                .getResource(childURI);
+                            .getResource(childURI);
                         if (!modelForClassgroupAnnotations.contains(
-                                childClass, inClassGroupProperty, (RDFNode) null)) {
+                            childClass, inClassGroupProperty, (RDFNode) null)) {
                             childClass.addProperty(inClassGroupProperty, classGroup);
                         }
                     }
                 }
             } catch (Exception e) {
                 String errMsg = "Unable to create class groups automatically " +
-                        "based on class hierarchy";
+                    "based on class hierarchy";
                 log.error(errMsg, e);
                 throw new RuntimeException(errMsg, e);
             }
@@ -128,53 +131,50 @@ public class JenaModelUtils {
         return resultArray;
     }
 
-    private final OntModelSpec DEFAULT_ONT_MODEL_SPEC = OntModelSpec.OWL_MEM;
-    private final boolean NORMAL = false;
-    private final boolean AGGRESSIVE = true;
-
-
-    public OntModel extractTBox( Model inputModel ) {
+    public OntModel extractTBox(Model inputModel) {
         return extractTBox(inputModel, null);
     }
 
-    public OntModel extractTBox( Model inputModel, boolean MODE ) {
+    public OntModel extractTBox(Model inputModel, boolean MODE) {
         Dataset dataset = DatasetFactory.create(inputModel);
         return extractTBox(dataset, null, null, MODE);
     }
 
-    public OntModel extractTBox( Model inputModel, String namespace ) {
+    public OntModel extractTBox(Model inputModel, String namespace) {
         Dataset dataset = DatasetFactory.create(inputModel);
-        return extractTBox( dataset, namespace, null, NORMAL );
+        return extractTBox(dataset, namespace, null, NORMAL);
     }
 
-    public OntModel extractTBox( Dataset dataset, String namespace, String graphURI) {
-        return extractTBox( dataset, namespace, graphURI, NORMAL);
+    public OntModel extractTBox(Dataset dataset, String namespace, String graphURI) {
+        return extractTBox(dataset, namespace, graphURI, NORMAL);
     }
 
-    public OntModel extractTBox( Dataset dataset, String namespace, String graphURI, boolean mode ) {
+    public OntModel extractTBox(Dataset dataset, String namespace, String graphURI, boolean mode) {
         OntModel tboxModel = ModelFactory.createOntologyModel(DEFAULT_ONT_MODEL_SPEC);
 
         List<String> queryStrList = new LinkedList<String>();
 
         // Use SPARQL DESCRIBE queries to extract the RDF for named ontology entities
 
-        queryStrList.add( makeDescribeQueryStr( OWL.Class.getURI(), namespace, graphURI ) );
-        queryStrList.add( makeDescribeQueryStr( OWL.Restriction.getURI(), namespace, graphURI ) );
-        queryStrList.add( makeDescribeQueryStr( OWL.ObjectProperty.getURI(), namespace, graphURI ) );
-        queryStrList.add( makeDescribeQueryStr( OWL.DatatypeProperty.getURI(), namespace, graphURI ) );
-        queryStrList.add( makeDescribeQueryStr( OWL.AnnotationProperty.getURI(), namespace, graphURI ) );
+        queryStrList.add(makeDescribeQueryStr(OWL.Class.getURI(), namespace, graphURI));
+        queryStrList.add(makeDescribeQueryStr(OWL.Restriction.getURI(), namespace, graphURI));
+        queryStrList.add(makeDescribeQueryStr(OWL.ObjectProperty.getURI(), namespace, graphURI));
+        queryStrList.add(makeDescribeQueryStr(OWL.DatatypeProperty.getURI(), namespace, graphURI));
+        queryStrList
+            .add(makeDescribeQueryStr(OWL.AnnotationProperty.getURI(), namespace, graphURI));
         // if we're using to a hash namespace, the URI of the Ontology resource will be
         // that namespace minus the final hash mark.
-        if ( namespace != null && namespace.endsWith("#") ) {
-            queryStrList.add( makeDescribeQueryStr( OWL.Ontology.getURI(), namespace.substring(0,namespace.length()-1), graphURI ) );
+        if (namespace != null && namespace.endsWith("#")) {
+            queryStrList.add(makeDescribeQueryStr(OWL.Ontology.getURI(),
+                namespace.substring(0, namespace.length() - 1), graphURI));
         } else {
-            queryStrList.add( makeDescribeQueryStr( OWL.Ontology.getURI(), namespace, graphURI ) );
+            queryStrList.add(makeDescribeQueryStr(OWL.Ontology.getURI(), namespace, graphURI));
         }
 
         // Perform the SPARQL DESCRIBEs
-        for ( String queryStr : queryStrList ) {
+        for (String queryStr : queryStrList) {
             Query tboxSparqlQuery = QueryFactory.create(queryStr);
-            QueryExecution qe = QueryExecutionFactory.create(tboxSparqlQuery,dataset);
+            QueryExecution qe = QueryExecutionFactory.create(tboxSparqlQuery, dataset);
             try {
                 dataset.getLock().enterCriticalSection(Lock.READ);
                 qe.execDescribe(tboxModel);
@@ -202,51 +202,51 @@ public class JenaModelUtils {
             tboxModel.add(construct(dataset, namespace, graphURI, OWL.cardinality));
             tboxModel.add(construct(dataset, namespace, graphURI, OWL.disjointWith));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.DISPLAY_LIMIT)));
+                VitroVocabulary.DISPLAY_LIMIT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.DISPLAY_RANK_ANNOT)));
+                VitroVocabulary.DISPLAY_RANK_ANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.IN_CLASSGROUP)));
+                VitroVocabulary.IN_CLASSGROUP)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.IN_CLASSGROUP)));
+                VitroVocabulary.IN_CLASSGROUP)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_INPROPERTYGROUPANNOT)));
+                VitroVocabulary.PROPERTY_INPROPERTYGROUPANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT)));
+                VitroVocabulary.PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT)));
+                VitroVocabulary.HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-            		                                              VitroVocabulary.HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT)));
+                VitroVocabulary.HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.DESCRIPTION_ANNOT)));
+                VitroVocabulary.DESCRIPTION_ANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.SHORTDEF)));
+                VitroVocabulary.SHORTDEF)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.EXAMPLE_ANNOT)));
+                VitroVocabulary.EXAMPLE_ANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.vitroURI + "extendedLinkedData")));
+                VitroVocabulary.vitroURI + "extendedLinkedData")));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_OFFERCREATENEWOPTIONANNOT)));
+                VitroVocabulary.PROPERTY_OFFERCREATENEWOPTIONANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_COLLATEBYSUBCLASSANNOT)));
+                VitroVocabulary.PROPERTY_COLLATEBYSUBCLASSANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_CUSTOM_LIST_VIEW_ANNOT)));
+                VitroVocabulary.PROPERTY_CUSTOM_LIST_VIEW_ANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_CUSTOMDISPLAYVIEWANNOT)));
+                VitroVocabulary.PROPERTY_CUSTOMDISPLAYVIEWANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_CUSTOMENTRYFORMANNOT)));
+                VitroVocabulary.PROPERTY_CUSTOMENTRYFORMANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_CUSTOMSEARCHVIEWANNOT)));
+                VitroVocabulary.PROPERTY_CUSTOMSEARCHVIEWANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_CUSTOMSHORTVIEWANNOT)));
+                VitroVocabulary.PROPERTY_CUSTOMSHORTVIEWANNOT)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_ENTITYSORTDIRECTION)));
+                VitroVocabulary.PROPERTY_ENTITYSORTDIRECTION)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_ENTITYSORTFIELD)));
+                VitroVocabulary.PROPERTY_ENTITYSORTFIELD)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_OBJECTINDIVIDUALSORTPROPERTY)));
+                VitroVocabulary.PROPERTY_OBJECTINDIVIDUALSORTPROPERTY)));
             tboxModel.add(construct(dataset, namespace, graphURI, ResourceFactory.createResource(
-                                                                  VitroVocabulary.PROPERTY_SELECTFROMEXISTINGANNOT)));
+                VitroVocabulary.PROPERTY_SELECTFROMEXISTINGANNOT)));
         }
         return tboxModel;
     }
@@ -258,7 +258,8 @@ public class JenaModelUtils {
         dataset.getLock().enterCriticalSection(Lock.READ);
         try {
             StringBuilder buff = new StringBuilder();
-            buff.append("CONSTRUCT { \n").append("  ?res <").append(property.getURI()).append("> ?o } WHERE { \n");
+            buff.append("CONSTRUCT { \n").append("  ?res <").append(property.getURI())
+                .append("> ?o } WHERE { \n");
             if (graphURI != null) {
                 buff.append("    GRAPH ").append(graphURI).append(" { \n");
             }
@@ -280,29 +281,29 @@ public class JenaModelUtils {
         }
     }
 
-    private String makeDescribeQueryStr( String typeURI, String namespace ) {
-        return makeDescribeQueryStr( typeURI, namespace, null );
+    private String makeDescribeQueryStr(String typeURI, String namespace) {
+        return makeDescribeQueryStr(typeURI, namespace, null);
     }
 
-    private String makeDescribeQueryStr( String typeURI, String namespace, String graphURI ) {
+    private String makeDescribeQueryStr(String typeURI, String namespace, String graphURI) {
 
         StringBuilder describeQueryStrBuff = new StringBuilder()
             .append("PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n")
             .append("DESCRIBE ?res WHERE { \n");
-            if (graphURI != null) {
-                describeQueryStrBuff.append("GRAPH ").append(graphURI).append("{ \n");
-            }
-            describeQueryStrBuff
+        if (graphURI != null) {
+            describeQueryStrBuff.append("GRAPH ").append(graphURI).append("{ \n");
+        }
+        describeQueryStrBuff
             .append("    ?res rdf:type <").append(typeURI).append("> . \n");
 
-            describeQueryStrBuff
+        describeQueryStrBuff
             .append("    FILTER (!isBlank(?res)) \n")
 
             .append(getNamespaceFilter(namespace));
 
         if (graphURI != null) {
             describeQueryStrBuff
-            .append("} \n");
+                .append("} \n");
         }
 
         describeQueryStrBuff.append("} \n");
@@ -317,28 +318,28 @@ public class JenaModelUtils {
             // exclude resources in the Vitro internal namespace or in the
             // OWL namespace, but allow all others
             buff
-            .append("    FILTER (REPLACE(STR(?res),\"^(.*)(#)(.*)$\", \"$1$2\") != \"")
-            .append("http://www.w3.org/2002/07/owl#")
-            .append("\") \n")
-            .append("    FILTER (?res != <")
-            .append("http://www.w3.org/2002/07/owl")
-            .append(">) \n");
+                .append("    FILTER (REPLACE(STR(?res),\"^(.*)(#)(.*)$\", \"$1$2\") != \"")
+                .append("http://www.w3.org/2002/07/owl#")
+                .append("\") \n")
+                .append("    FILTER (?res != <")
+                .append("http://www.w3.org/2002/07/owl")
+                .append(">) \n");
         } else {
             // limit resources to those in the supplied namespace
             buff
-            .append("    FILTER (regex(str(?res), \"^")
-            .append(namespace)
-            .append("\")) \n");
+                .append("    FILTER (regex(str(?res), \"^")
+                .append(namespace)
+                .append("\")) \n");
         }
         return buff.toString();
     }
 
-    public Model extractABox(Model inputModel){
+    public Model extractABox(Model inputModel) {
         Dataset dataset = DatasetFactory.create(inputModel);
         return extractABox(dataset, null, null);
     }
 
-    public Model extractABox( Dataset unionDataset, Dataset baseOrInfDataset, String graphURI ) {
+    public Model extractABox(Dataset unionDataset, Dataset baseOrInfDataset, String graphURI) {
 
         Model aboxModel = ModelFactory.createDefaultModel();
 
@@ -356,34 +357,34 @@ public class JenaModelUtils {
             ontModel.enterCriticalSection(Lock.READ);
             Iterator classIt = ontModel.listNamedClasses();
             QueryExecution qe = null;
-            while ( classIt.hasNext() ) {
+            while (classIt.hasNext()) {
 
                 OntClass ontClass = (OntClass) classIt.next();
                 //if ( !(ontClass.getNameSpace().startsWith(OWL.getURI()) )
                 // && !(ontClass.getNameSpace().startsWith(VitroVocabulary.vitroURI))    ) {
-             if(!(ontClass.getNameSpace().startsWith(OWL.getURI()))){
+                if (!(ontClass.getNameSpace().startsWith(OWL.getURI()))) {
 
-                    String queryStr = makeDescribeQueryStr( ontClass.getURI(), null, graphURI );
+                    String queryStr = makeDescribeQueryStr(ontClass.getURI(), null, graphURI);
 
                     Query aboxSparqlQuery = QueryFactory.create(queryStr);
-                    if(baseOrInfDataset != null){
-                        qe = QueryExecutionFactory.create(aboxSparqlQuery,baseOrInfDataset);
+                    if (baseOrInfDataset != null) {
+                        qe = QueryExecutionFactory.create(aboxSparqlQuery, baseOrInfDataset);
+                    } else {
+                        qe = QueryExecutionFactory.create(aboxSparqlQuery, unionDataset);
                     }
-                    else{
-                        qe = QueryExecutionFactory.create(aboxSparqlQuery,unionDataset);
-                    }
-                    if(baseOrInfDataset != null){
+                    if (baseOrInfDataset != null) {
                         try {
                             baseOrInfDataset.getLock().enterCriticalSection(Lock.READ);
-                            qe.execDescribe(aboxModel); // puts the statements about each resource into aboxModel.
+                            qe.execDescribe(
+                                aboxModel); // puts the statements about each resource into aboxModel.
                         } finally {
                             baseOrInfDataset.getLock().leaveCriticalSection();
                         }
-                    }
-                    else{
+                    } else {
                         try {
                             unionDataset.getLock().enterCriticalSection(Lock.READ);
-                            qe.execDescribe(aboxModel); // puts the statements about each resource into aboxModel.
+                            qe.execDescribe(
+                                aboxModel); // puts the statements about each resource into aboxModel.
                         } finally {
                             unionDataset.getLock().leaveCriticalSection();
                         }

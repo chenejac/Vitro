@@ -4,54 +4,20 @@ package edu.cornell.mannlib.vitro.webapp.web;
 
 import java.lang.reflect.Method;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.beans.VClass;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Class to find custom class views for individuals
- * @author rjy7
  *
+ * @author rjy7
  */
 public class ViewFinder {
 
     private static final Log log = LogFactory.getLog(ViewFinder.class);
-
-    public enum ClassView {
-        DISPLAY("getCustomDisplayView", "view-display-default.ftl"),
-        // NB this is not the value currently used for custom forms - we use the value on the object property.
-        // This value is specifiable from the backend editor, however.
-        FORM("getCustomEntryForm", "form-default.ftl"),
-        SEARCH("getCustomSearchView", "view-search-default.ftl");
-
-        private Method method = null;
-        private String defaultTemplate = null;
-
-        ClassView(String methodName, String defaultTemplate) {
-            Class<VClass> vc = VClass.class;
-            this.defaultTemplate = defaultTemplate;
-            try {
-                method = vc.getMethod(methodName);
-            } catch (SecurityException e) {
-                log.error("Access denied to method " + methodName + " or class " + vc.getName());
-            } catch (NoSuchMethodException e) {
-                log.error("Method " + methodName + " not defined for class " + vc.getName());
-            }
-        }
-
-        protected Method getMethod() {
-            return method;
-        }
-
-        protected String getDefaultTemplate() {
-            return defaultTemplate;
-        }
-
-    }
-
     private ClassView view;
 
     public ViewFinder(ClassView view) {
@@ -124,6 +90,38 @@ public class ViewFinder {
 //        }
 
         return null;
+
+    }
+
+    public enum ClassView {
+        DISPLAY("getCustomDisplayView", "view-display-default.ftl"),
+        // NB this is not the value currently used for custom forms - we use the value on the object property.
+        // This value is specifiable from the backend editor, however.
+        FORM("getCustomEntryForm", "form-default.ftl"),
+        SEARCH("getCustomSearchView", "view-search-default.ftl");
+
+        private Method method = null;
+        private String defaultTemplate = null;
+
+        ClassView(String methodName, String defaultTemplate) {
+            Class<VClass> vc = VClass.class;
+            this.defaultTemplate = defaultTemplate;
+            try {
+                method = vc.getMethod(methodName);
+            } catch (SecurityException e) {
+                log.error("Access denied to method " + methodName + " or class " + vc.getName());
+            } catch (NoSuchMethodException e) {
+                log.error("Method " + methodName + " not defined for class " + vc.getName());
+            }
+        }
+
+        protected Method getMethod() {
+            return method;
+        }
+
+        protected String getDefaultTemplate() {
+            return defaultTemplate;
+        }
 
     }
 

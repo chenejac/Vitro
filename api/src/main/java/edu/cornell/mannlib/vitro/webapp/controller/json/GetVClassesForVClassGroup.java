@@ -5,42 +5,41 @@ package edu.cornell.mannlib.vitro.webapp.controller.json;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.beans.VClass;
 import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassGroupsForRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.jena.VClassGroupCache;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  *
  */
 public class GetVClassesForVClassGroup extends JsonObjectProducer {
-	private static final Log log = LogFactory
-			.getLog(GetVClassesForVClassGroup.class);
+    private static final Log log = LogFactory
+        .getLog(GetVClassesForVClassGroup.class);
 
-	public GetVClassesForVClassGroup(VitroRequest vreq) {
-		super(vreq);
-	}
+    public GetVClassesForVClassGroup(VitroRequest vreq) {
+        super(vreq);
+    }
 
-	@Override
-	protected ObjectNode process() throws Exception {
+    @Override
+    protected ObjectNode process() throws Exception {
         ObjectNode map = JsonNodeFactory.instance.objectNode();
         String vcgUri = vreq.getParameter("classgroupUri");
-        if( vcgUri == null ){
+        if (vcgUri == null) {
             throw new Exception("no URI passed for classgroupUri");
         }
 
         VClassGroupsForRequest vcgc = VClassGroupCache.getVClassGroups(vreq);
         VClassGroup vcg = vcgc.getGroup(vcgUri);
-        if( vcg == null ){
+        if (vcg == null) {
             throw new Exception("Could not find vclassgroup: " + vcgUri);
         }
 
         ArrayNode classes = JsonNodeFactory.instance.arrayNode();
-        for( VClass vc : vcg){
+        for (VClass vc : vcg) {
             ObjectNode vcObj = JsonNodeFactory.instance.objectNode();
             vcObj.put("name", vc.getName());
             vcObj.put("URI", vc.getURI());

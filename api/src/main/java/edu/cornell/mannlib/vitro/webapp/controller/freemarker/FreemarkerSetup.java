@@ -13,18 +13,18 @@ public class FreemarkerSetup implements ServletContextListener {
 
     private static final Log log = LogFactory.getLog(FreemarkerSetup.class);
 
-	@Override
-	public void contextInitialized(ServletContextEvent event) {
-		ServletContext sc = event.getServletContext();
+    @Override
+    public void contextInitialized(ServletContextEvent event) {
+        ServletContext sc = event.getServletContext();
         FreemarkerComponentGenerator.setServletContext(sc);
-		UrlBuilder.contextPath = sc.getContextPath();
+        UrlBuilder.contextPath = sc.getContextPath();
 
-		log.info("Freemarker templating system initialized.");
-	}
+        log.info("Freemarker templating system initialized.");
+    }
 
-	@Override
-	public void contextDestroyed(ServletContextEvent event) {
-		// nothing to do here
-	}
+    @Override
+    public void contextDestroyed(ServletContextEvent event) {
+        // nothing to do here
+    }
 
 }

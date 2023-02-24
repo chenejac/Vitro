@@ -10,6 +10,26 @@ public class Option implements Serializable {
     private String body = null;
     private boolean selected = false;
 
+    //default constructor
+    public Option() {
+    }
+
+    public Option(String value, String body, boolean selected) {
+        this.value = value;
+        this.body = body;
+        this.selected = selected;
+    }
+
+    // construct an Option with body and value
+    public Option(String value, String body) {
+        this(value, body, false);
+    }
+
+    // construct an Option with equal body and value
+    public Option(String name) {
+        this(name, name, false);
+    }
+
     public String getValue() {
         return value;
     }
@@ -26,34 +46,13 @@ public class Option implements Serializable {
         this.body = body;
     }
 
-    public boolean getSelected (){
+    public boolean getSelected() {
         return selected;
     }
 
-    public void setSelected (boolean selected){
+    public void setSelected(boolean selected) {
         this.selected = selected;
     }
-
-    //default constructor
-    public Option() {
-    }
-
-    public Option (String value, String body, boolean selected) {
-        this.value = value;
-        this.body = body;
-        this.selected = selected;
-    }
-
-    // construct an Option with body and value
-    public Option(String value, String body) {
-        this(value, body, false);
-    }
-
-    // construct an Option with equal body and value
-    public Option (String name){
-    	this(name, name, false);
-    }
-
 
 
 }

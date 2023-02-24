@@ -3,11 +3,6 @@
 package edu.cornell.mannlib.vitro.webapp.dao.jena;
 
 import edu.cornell.mannlib.vitro.testing.AbstractTestClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.beans.IndividualImpl;
@@ -23,60 +18,64 @@ import edu.cornell.mannlib.vitro.webapp.dao.OntologyDao;
 import edu.cornell.mannlib.vitro.webapp.dao.UserAccountsDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import stubs.edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccessFactoryStub;
 import stubs.javax.servlet.ServletContextStub;
 
 /**
  * Test that the Jena DAOs write different types of data to the appropriate models.
- * @author bjl23
  *
+ * @author bjl23
  */
 public class OntModelSegementationTest extends AbstractTestClass {
 
-private WebappDaoFactoryJena wadf;
+    private WebappDaoFactoryJena wadf;
 
-	@Before
-	public void setUpWebappDaoFactoryJena() {
-		super.setUp();
-		wadf = new WebappDaoFactoryJena(new SimpleOntModelSelector());
-		ServletContextStub ctx = new ServletContextStub();
-		new ModelAccessFactoryStub().get(ctx).setWebappDaoFactory(wadf);
-	}
+    @Before
+    public void setUpWebappDaoFactoryJena() {
+        super.setUp();
+        wadf = new WebappDaoFactoryJena(new SimpleOntModelSelector());
+        ServletContextStub ctx = new ServletContextStub();
+        new ModelAccessFactoryStub().get(ctx).setWebappDaoFactory(wadf);
+    }
 
-	@Test
-	public void testUserAccountModel() {
+    @Test
+    public void testUserAccountModel() {
 
-		UserAccountsDao uadao = wadf.getUserAccountsDao();
-		OntModelSelector oms = wadf.getOntModelSelector();
+        UserAccountsDao uadao = wadf.getUserAccountsDao();
+        OntModelSelector oms = wadf.getOntModelSelector();
 
-		UserAccount user = new UserAccount();
-		user.setFirstName("Chuck");
-		user.setLastName("Roast");
-		user.setExternalAuthId("chuckroast");
+        UserAccount user = new UserAccount();
+        user.setFirstName("Chuck");
+        user.setLastName("Roast");
+        user.setExternalAuthId("chuckroast");
 
-		uadao.insertUserAccount(user);
-		Assert.assertTrue(oms.getUserAccountsModel().size() > 0);
-		Assert.assertTrue(oms.getFullModel().size() == 0);
-		Assert.assertTrue(oms.getABoxModel().size() == 0);
-		Assert.assertTrue(oms.getTBoxModel().size() == 0);
-		Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
+        uadao.insertUserAccount(user);
+        Assert.assertTrue(oms.getUserAccountsModel().size() > 0);
+        Assert.assertTrue(oms.getFullModel().size() == 0);
+        Assert.assertTrue(oms.getABoxModel().size() == 0);
+        Assert.assertTrue(oms.getTBoxModel().size() == 0);
+        Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
 
-		user.setEmailAddress("todd@somewhere");
-		uadao.updateUserAccount(user);
-		Assert.assertTrue(oms.getUserAccountsModel().size() > 0);
-		Assert.assertTrue(oms.getFullModel().size() == 0);
-		Assert.assertTrue(oms.getABoxModel().size() == 0);
-		Assert.assertTrue(oms.getTBoxModel().size() == 0);
-		Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
+        user.setEmailAddress("todd@somewhere");
+        uadao.updateUserAccount(user);
+        Assert.assertTrue(oms.getUserAccountsModel().size() > 0);
+        Assert.assertTrue(oms.getFullModel().size() == 0);
+        Assert.assertTrue(oms.getABoxModel().size() == 0);
+        Assert.assertTrue(oms.getTBoxModel().size() == 0);
+        Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
 
-		uadao.deleteUserAccount(user.getUri());
-		Assert.assertTrue(oms.getUserAccountsModel().size() == 0);
-		Assert.assertTrue(oms.getFullModel().size() == 0);
-		Assert.assertTrue(oms.getABoxModel().size() == 0);
-		Assert.assertTrue(oms.getTBoxModel().size() == 0);
-		Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
+        uadao.deleteUserAccount(user.getUri());
+        Assert.assertTrue(oms.getUserAccountsModel().size() == 0);
+        Assert.assertTrue(oms.getFullModel().size() == 0);
+        Assert.assertTrue(oms.getABoxModel().size() == 0);
+        Assert.assertTrue(oms.getTBoxModel().size() == 0);
+        Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
 
-	}
+    }
 
 	/*
 	@Test
@@ -144,87 +143,87 @@ private WebappDaoFactoryJena wadf;
 	}
 	*/
 
-	@Test
-	public void testTBoxModel() throws InsertException {
+    @Test
+    public void testTBoxModel() throws InsertException {
 
-		OntModelSelector oms = wadf.getOntModelSelector();
-		VClassDao vcDao = wadf.getVClassDao();
-		ObjectPropertyDao opDao = wadf.getObjectPropertyDao();
-		DataPropertyDao dpDao = wadf.getDataPropertyDao();
-		OntologyDao oDao = wadf.getOntologyDao();
+        OntModelSelector oms = wadf.getOntModelSelector();
+        VClassDao vcDao = wadf.getVClassDao();
+        ObjectPropertyDao opDao = wadf.getObjectPropertyDao();
+        DataPropertyDao dpDao = wadf.getDataPropertyDao();
+        OntologyDao oDao = wadf.getOntologyDao();
 
-		VClass vclass = new VClass();
-		vclass.setURI("http://example.org/vclass");
-		vcDao.insertNewVClass(vclass);
-		this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
+        VClass vclass = new VClass();
+        vclass.setURI("http://example.org/vclass");
+        vcDao.insertNewVClass(vclass);
+        this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
 
-		ObjectProperty op = new ObjectProperty();
-		op.setURI("http://example.org/objectProperty");
-		opDao.insertObjectProperty(op);
-		this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
+        ObjectProperty op = new ObjectProperty();
+        op.setURI("http://example.org/objectProperty");
+        opDao.insertObjectProperty(op);
+        this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
 
-		DataProperty dp = new DataProperty();
-		dp.setURI("http://example.org/dataProperty");
-		dpDao.insertDataProperty(dp);
-		this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
+        DataProperty dp = new DataProperty();
+        dp.setURI("http://example.org/dataProperty");
+        dpDao.insertDataProperty(dp);
+        this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
 
-		Ontology o = new Ontology();
-		o.setURI("http://example.org/");
-		oDao.insertNewOntology(o);
-		this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
+        Ontology o = new Ontology();
+        o.setURI("http://example.org/");
+        oDao.insertNewOntology(o);
+        this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
 
-		vclass.setName("vclass");
-		op.setDomainPublic("objectProperty");
-		dp.setPublicName("dataProperty");
-		o.setName("ontology");
+        vclass.setName("vclass");
+        op.setDomainPublic("objectProperty");
+        dp.setPublicName("dataProperty");
+        o.setName("ontology");
 
-		vcDao.updateVClass(vclass);
-		this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
+        vcDao.updateVClass(vclass);
+        this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
 
-		opDao.updateObjectProperty(op);
-		this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
+        opDao.updateObjectProperty(op);
+        this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
 
-		dpDao.updateDataProperty(dp);
-		this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
+        dpDao.updateDataProperty(dp);
+        this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
 
-		oDao.updateOntology(o);
-		this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
+        oDao.updateOntology(o);
+        this.assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
 
-		vcDao.deleteVClass(vclass);
-		opDao.deleteObjectProperty(op);
-		dpDao.deleteDataProperty(dp);
-		oDao.deleteOntology(o);
+        vcDao.deleteVClass(vclass);
+        opDao.deleteObjectProperty(op);
+        dpDao.deleteDataProperty(dp);
+        oDao.deleteOntology(o);
 
-		this.assertAllModelsExceptAppMetadataAreEmpty(oms);
+        this.assertAllModelsExceptAppMetadataAreEmpty(oms);
 
-	}
+    }
 
-	@Test
-	public void testAboxModel() throws InsertException {
+    @Test
+    public void testAboxModel() throws InsertException {
 
-		OntModelSelector oms = wadf.getOntModelSelector();
-		IndividualDao iDao = wadf.getIndividualDao();
+        OntModelSelector oms = wadf.getOntModelSelector();
+        IndividualDao iDao = wadf.getIndividualDao();
 
-		Individual ind = new IndividualImpl("http://example.org/individual");
-		iDao.insertNewIndividual(ind);
-		this.assertABoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
+        Individual ind = new IndividualImpl("http://example.org/individual");
+        iDao.insertNewIndividual(ind);
+        this.assertABoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
 
-		ind.setName("ind");
-		iDao.updateIndividual(ind);
-		this.assertABoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
+        ind.setName("ind");
+        iDao.updateIndividual(ind);
+        this.assertABoxModelNonemptyAndAllOtherModelsAreEmpty(oms);
 
-		iDao.deleteIndividual(ind);
-		this.assertAllModelsExceptAppMetadataAreEmpty(oms);
+        iDao.deleteIndividual(ind);
+        this.assertAllModelsExceptAppMetadataAreEmpty(oms);
 
-	}
+    }
 
-	private void assertAllModelsExceptAppMetadataAreEmpty(OntModelSelector oms) {
-		//Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
-		Assert.assertTrue(oms.getFullModel().size() == 0);
-		Assert.assertTrue(oms.getABoxModel().size() == 0);
-		Assert.assertTrue(oms.getTBoxModel().size() == 0);
-		Assert.assertTrue(oms.getUserAccountsModel().size() == 0);
-	}
+    private void assertAllModelsExceptAppMetadataAreEmpty(OntModelSelector oms) {
+        //Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
+        Assert.assertTrue(oms.getFullModel().size() == 0);
+        Assert.assertTrue(oms.getABoxModel().size() == 0);
+        Assert.assertTrue(oms.getTBoxModel().size() == 0);
+        Assert.assertTrue(oms.getUserAccountsModel().size() == 0);
+    }
 
 	/*
 	private void assertMetadataModelNonemptyAndAllOtherModelsAreEmpty(OntModelSelector oms) {
@@ -236,63 +235,63 @@ private WebappDaoFactoryJena wadf;
 	}
 	*/
 
-	private void assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(OntModelSelector oms) {
-		Assert.assertTrue(oms.getTBoxModel().size() > 0);
-		Assert.assertTrue(oms.getFullModel().size() == oms.getTBoxModel().size());
-		Assert.assertTrue(oms.getABoxModel().size() == 0);
-		Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
-		Assert.assertTrue(oms.getUserAccountsModel().size() == 0);
-	}
+    private void assertTBoxModelNonemptyAndAllOtherModelsAreEmpty(OntModelSelector oms) {
+        Assert.assertTrue(oms.getTBoxModel().size() > 0);
+        Assert.assertTrue(oms.getFullModel().size() == oms.getTBoxModel().size());
+        Assert.assertTrue(oms.getABoxModel().size() == 0);
+        Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
+        Assert.assertTrue(oms.getUserAccountsModel().size() == 0);
+    }
 
-	private void assertABoxModelNonemptyAndAllOtherModelsAreEmpty(OntModelSelector oms) {
-		Assert.assertTrue(oms.getABoxModel().size() > 0);
-		Assert.assertTrue(oms.getFullModel().size() == oms.getABoxModel().size());
-		Assert.assertTrue(oms.getTBoxModel().size() == 0);
-		Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
-		Assert.assertTrue(oms.getUserAccountsModel().size() == 0);
-	}
+    private void assertABoxModelNonemptyAndAllOtherModelsAreEmpty(OntModelSelector oms) {
+        Assert.assertTrue(oms.getABoxModel().size() > 0);
+        Assert.assertTrue(oms.getFullModel().size() == oms.getABoxModel().size());
+        Assert.assertTrue(oms.getTBoxModel().size() == 0);
+        Assert.assertTrue(oms.getApplicationMetadataModel().size() == 0);
+        Assert.assertTrue(oms.getUserAccountsModel().size() == 0);
+    }
 
-	@Ignore
-	@Test
-	public void testConcurrency() throws InsertException {
-		(new Thread(new ClassLister(wadf))).start();
-		(new Thread(new ClassLister(wadf))).start();
-		VClass v = null;
-		for (int i = 0; i < 50; i++) {
-			v = new VClass();
-			v.setURI("http://example.org/vclass" + i);
-			wadf.getVClassDao().insertNewVClass(v);
-		}
-		for (int i = 0; i < 500; i++) {
-			v.setName("blah " + i);
-			wadf.getVClassDao().updateVClass(v);
-		}
+    @Ignore
+    @Test
+    public void testConcurrency() throws InsertException {
+        (new Thread(new ClassLister(wadf))).start();
+        (new Thread(new ClassLister(wadf))).start();
+        VClass v = null;
+        for (int i = 0; i < 50; i++) {
+            v = new VClass();
+            v.setURI("http://example.org/vclass" + i);
+            wadf.getVClassDao().insertNewVClass(v);
+        }
+        for (int i = 0; i < 500; i++) {
+            v.setName("blah " + i);
+            wadf.getVClassDao().updateVClass(v);
+        }
 
-	}
+    }
 
-	private class ClassLister implements Runnable {
+    private class ClassLister implements Runnable {
 
-		private WebappDaoFactory wadf;
+        private WebappDaoFactory wadf;
 
-		public ClassLister(WebappDaoFactory wadf) {
-			this.wadf = wadf;
-		}
+        public ClassLister(WebappDaoFactory wadf) {
+            this.wadf = wadf;
+        }
 
-		public void run() {
+        public void run() {
 
-			//int vclassTotal = wadf.getVClassDao().getAllVclasses().size();
+            //int vclassTotal = wadf.getVClassDao().getAllVclasses().size();
 
-			for (int i = 0; i < 1500; i++) {
+            for (int i = 0; i < 1500; i++) {
 
-				wadf.getVClassDao().getAllVclasses().size();
+                wadf.getVClassDao().getAllVclasses().size();
 
-			//	if (vclassTotal != wadf.getVClassDao().getAllVclasses().size()) {
-			//		throw new RuntimeException("Inconsistent VClass list size");
-			//	}
-			}
+                //	if (vclassTotal != wadf.getVClassDao().getAllVclasses().size()) {
+                //		throw new RuntimeException("Inconsistent VClass list size");
+                //	}
+            }
 
-		}
+        }
 
-	}
+    }
 
 }

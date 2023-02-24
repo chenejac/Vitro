@@ -2,14 +2,13 @@
 
 package edu.cornell.mannlib.vitro.webapp.rdfservice.filter;
 
+import javax.servlet.ServletRequest;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
-import javax.servlet.ServletRequest;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.jena.ontology.OntModel;
@@ -21,24 +20,28 @@ import org.apache.jena.rdf.model.ModelFactory;
  */
 public class LanguageFilteringUtils {
 
-	private static final String UNDERSCORE = "_";
-	private static final String HYPHEN = "-";
-	private static final String DEFAULT_LANG_STRING = "en";
+    private static final String UNDERSCORE = "_";
+    private static final String HYPHEN = "-";
+    private static final String DEFAULT_LANG_STRING = "en";
+
+    private LanguageFilteringUtils() {
+        // Nothing to instantiate
+    }
 
     /**
      * Take a Locale object, such as we might get from a
      * request, and convert to a language string used in RDF.
-     *
+     * <p>
      * While converting, change all underscores (as in Locale names) to hyphens
      * (as in RDF language specifiers).
      */
     public static String localeToLanguage(Locale locale) {
         return locale.toLanguageTag().replace(UNDERSCORE, HYPHEN);
     }
-	
+
     /**
      * Take a language string and convert to a Locale.
-     *
+     * <p>
      * While converting, change all hyphens (as in RDF language specifiers) to
      * underscores (as in Locale names). Ensure language string is lowercase
      * and country abbreviation is uppercase.
@@ -47,69 +50,65 @@ public class LanguageFilteringUtils {
         String[] langParts = langStr.split(HYPHEN);
         if (langParts.length > 2) {
             langStr = String.join(UNDERSCORE, langParts[0].toLowerCase(),
-                    langParts[1].toUpperCase(), langParts[2]);
+                langParts[1].toUpperCase(), langParts[2]);
         } else if (langParts.length > 1) {
             langStr = String.join(UNDERSCORE, langParts[0].toLowerCase(),
-                    langParts[1].toUpperCase());
+                langParts[1].toUpperCase());
         } else {
             langStr = langParts[0].toLowerCase();
         }
         return LocaleUtils.toLocale(langStr);
     }
-	
-	/**
-	 * Take an Enumeration of Locale objects, such as we might get from a
-	 * request, and convert to a List of language strings, such as are needed
-	 * by the LanguageFilteringRDFService.
-	 *
-	 * While converting, change all underscores (as in Locale names) to hyphens
-	 * (as in RDF language specifiers).
-	 */
-	public static List<String> localesToLanguages(Enumeration<?> locales) {
-		List<String> langs = new ArrayList<>();
-		while (locales.hasMoreElements()) {
-			Locale locale = (Locale) locales.nextElement();
-			langs.add(locale.toLanguageTag().replace(UNDERSCORE, HYPHEN));
-		}
-		if (!langs.contains(DEFAULT_LANG_STRING)) {
-			langs.add(DEFAULT_LANG_STRING);
-		}
 
-		return langs;
-	}
+    /**
+     * Take an Enumeration of Locale objects, such as we might get from a
+     * request, and convert to a List of language strings, such as are needed
+     * by the LanguageFilteringRDFService.
+     * <p>
+     * While converting, change all underscores (as in Locale names) to hyphens
+     * (as in RDF language specifiers).
+     */
+    public static List<String> localesToLanguages(Enumeration<?> locales) {
+        List<String> langs = new ArrayList<>();
+        while (locales.hasMoreElements()) {
+            Locale locale = (Locale) locales.nextElement();
+            langs.add(locale.toLanguageTag().replace(UNDERSCORE, HYPHEN));
+        }
+        if (!langs.contains(DEFAULT_LANG_STRING)) {
+            langs.add(DEFAULT_LANG_STRING);
+        }
 
-	/**
-	 * Take a List of language strings and convert to a List of Locale.
-	 *
-	 * While converting, change all hyphens (as in RDF language specifiers) to
-	 * under scores (as in Locale names). Ensure language string is lowercase
-	 * and country abbreviation is uppercase.
-	 */
-	public static List<Locale> languagesToLocales(List<String> langs) {
-		Set<Locale> locales = new HashSet<>();
-		langs.forEach(langStr -> {			
-			locales.add(languageToLocale(langStr));
-		});
-		if (locales.isEmpty()) {
-			locales.add(LocaleUtils.toLocale(DEFAULT_LANG_STRING));
-		}
+        return langs;
+    }
 
-		return new ArrayList<>(locales);
-	}
+    /**
+     * Take a List of language strings and convert to a List of Locale.
+     * <p>
+     * While converting, change all hyphens (as in RDF language specifiers) to
+     * under scores (as in Locale names). Ensure language string is lowercase
+     * and country abbreviation is uppercase.
+     */
+    public static List<Locale> languagesToLocales(List<String> langs) {
+        Set<Locale> locales = new HashSet<>();
+        langs.forEach(langStr -> {
+            locales.add(languageToLocale(langStr));
+        });
+        if (locales.isEmpty()) {
+            locales.add(LocaleUtils.toLocale(DEFAULT_LANG_STRING));
+        }
 
-	/**
-	 * Add a Language Filtering layer to an OntModel
-	 */
-	public static OntModel wrapOntModelInALanguageFilter(OntModel rawModel,
-			ServletRequest req) {
-		List<String> languages = new AcceptableLanguages(localesToLanguages(req.getLocales()));
-		return ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
-		        ModelFactory.createModelForGraph(new LanguageFilteringGraph(
-		                rawModel.getGraph(), languages)));
-	}
+        return new ArrayList<>(locales);
+    }
 
-	private LanguageFilteringUtils() {
-		// Nothing to instantiate
-	}
+    /**
+     * Add a Language Filtering layer to an OntModel
+     */
+    public static OntModel wrapOntModelInALanguageFilter(OntModel rawModel,
+                                                         ServletRequest req) {
+        List<String> languages = new AcceptableLanguages(localesToLanguages(req.getLocales()));
+        return ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+            ModelFactory.createModelForGraph(new LanguageFilteringGraph(
+                rawModel.getGraph(), languages)));
+    }
 
 }

@@ -8,5 +8,5 @@ import java.util.Map;
  * This can be used to filter the results of the search query.
  */
 public interface SearchResponseFilter {
-	boolean accept(Map<String, String> map);
+    boolean accept(Map<String, String> map);
 }

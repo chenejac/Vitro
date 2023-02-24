@@ -6,11 +6,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.jena.rdf.model.Literal;
-
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
+import org.apache.jena.rdf.model.Literal;
 
 /**
  * Created by IntelliJ IDEA.
@@ -28,26 +27,39 @@ public interface DataPropertyStatementDao {
 
     List<DataPropertyStatement> getDataPropertyStatements(DataProperty dataProperty);
 
-    List<DataPropertyStatement> getDataPropertyStatements(DataProperty dataProperty, int startIndex, int endIndex);
+    List<DataPropertyStatement> getDataPropertyStatements(DataProperty dataProperty, int startIndex,
+                                                          int endIndex);
 
     @SuppressWarnings("unchecked")
-    Collection<DataPropertyStatement> getDataPropertyStatementsForIndividualByDataPropertyURI(Individual entity,String datapropURI);
+    Collection<DataPropertyStatement> getDataPropertyStatementsForIndividualByDataPropertyURI(
+        Individual entity, String datapropURI);
 
-    Individual fillExistingDataPropertyStatementsForIndividual(Individual individual/*, boolean allowAnyNameSpace*/);
+    Individual fillExistingDataPropertyStatementsForIndividual(
+        Individual individual/*, boolean allowAnyNameSpace*/);
 
-    void deleteDataPropertyStatementsForIndividualByDataProperty(String individualURI, String dataPropertyURI);
+    void deleteDataPropertyStatementsForIndividualByDataProperty(String individualURI,
+                                                                 String dataPropertyURI);
 
-    void deleteDataPropertyStatementsForIndividualByDataProperty(Individual individual, DataProperty dataProperty);
+    void deleteDataPropertyStatementsForIndividualByDataProperty(Individual individual,
+                                                                 DataProperty dataProperty);
 
-    int insertNewDataPropertyStatement(DataPropertyStatement dataPropertyStatement );
+    int insertNewDataPropertyStatement(DataPropertyStatement dataPropertyStatement);
 
-    List<Literal> getDataPropertyValuesForIndividualByProperty(Individual subject, DataProperty property);
+    List<Literal> getDataPropertyValuesForIndividualByProperty(Individual subject,
+                                                               DataProperty property);
 
-    List<Literal> getDataPropertyValuesForIndividualByProperty(String subjectUri, String propertyUri);
+    List<Literal> getDataPropertyValuesForIndividualByProperty(String subjectUri,
+                                                               String propertyUri);
 
-    List<Literal> getDataPropertyValuesForIndividualByProperty(Individual subject, DataProperty property, String queryString, Set<String> constructQueryStrings);
+    List<Literal> getDataPropertyValuesForIndividualByProperty(Individual subject,
+                                                               DataProperty property,
+                                                               String queryString,
+                                                               Set<String> constructQueryStrings);
 
-    List<Literal> getDataPropertyValuesForIndividualByProperty(String subjectUri, String propertyUri, String queryString, Set<String> constructQueryStrings);
+    List<Literal> getDataPropertyValuesForIndividualByProperty(String subjectUri,
+                                                               String propertyUri,
+                                                               String queryString,
+                                                               Set<String> constructQueryStrings);
 
 }
 

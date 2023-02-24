@@ -10,9 +10,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import freemarker.core.Environment;
 import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateException;
@@ -20,6 +17,8 @@ import freemarker.template.TemplateHashModel;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
 import freemarker.template.utility.DeepUnwrap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class DumpAllDirective extends BaseDumpDirective {
 
@@ -29,7 +28,7 @@ public class DumpAllDirective extends BaseDumpDirective {
     @SuppressWarnings("rawtypes")
     @Override
     public void execute(Environment env, Map params, TemplateModel[] loopVars,
-            TemplateDirectiveBody body) throws TemplateException, IOException {
+                        TemplateDirectiveBody body) throws TemplateException, IOException {
 
         if (params.size() != 0) {
             throw new TemplateModelException(
@@ -56,7 +55,8 @@ public class DumpAllDirective extends BaseDumpDirective {
         TemplateHashModel dataModel = env.getDataModel();
         // Need to unwrap in order to iterate through the variables
         @SuppressWarnings("unchecked")
-        Map<String, Object> unwrappedDataModel = (Map<String, Object>) DeepUnwrap.permissiveUnwrap(dataModel);
+        Map<String, Object> unwrappedDataModel =
+            (Map<String, Object>) DeepUnwrap.permissiveUnwrap(dataModel);
         List<String> varNames = new ArrayList<String>(unwrappedDataModel.keySet());
 
         for (String varName : varNames) {

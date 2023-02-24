@@ -14,79 +14,79 @@ import org.apache.jena.rdf.model.Statement;
  * the TBox reasoner.
  */
 public class TBoxChanges {
-	private final List<Statement> addedStatements = Collections
-			.synchronizedList(new ArrayList<Statement>());
+    private final List<Statement> addedStatements = Collections
+        .synchronizedList(new ArrayList<Statement>());
 
-	private final List<Statement> removedStatements = Collections
-			.synchronizedList(new ArrayList<Statement>());
+    private final List<Statement> removedStatements = Collections
+        .synchronizedList(new ArrayList<Statement>());
 
-	private final List<String> deletedDataPropertyUris = Collections
-			.synchronizedList(new ArrayList<String>());
+    private final List<String> deletedDataPropertyUris = Collections
+        .synchronizedList(new ArrayList<String>());
 
-	private final List<String> deletedObjectPropertyUris = Collections
-			.synchronizedList(new ArrayList<String>());
+    private final List<String> deletedObjectPropertyUris = Collections
+        .synchronizedList(new ArrayList<String>());
 
-	// ----------------------------------------------------------------------
-	// These methods are called when populating the changeSet. They must be
-	// thread-safe.
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // These methods are called when populating the changeSet. They must be
+    // thread-safe.
+    // ----------------------------------------------------------------------
 
-	public void addStatement(Statement stmt) {
-		addedStatements.add(stmt);
-	}
+    public void addStatement(Statement stmt) {
+        addedStatements.add(stmt);
+    }
 
-	public void removeStatement(Statement stmt) {
-		removedStatements.add(stmt);
-	}
+    public void removeStatement(Statement stmt) {
+        removedStatements.add(stmt);
+    }
 
-	public void deleteDataProperty(Statement stmt) {
-		Resource subject = stmt.getSubject();
-		if (subject.isURIResource()) {
-			deletedDataPropertyUris.add(subject.getURI());
-		}
-	}
+    public void deleteDataProperty(Statement stmt) {
+        Resource subject = stmt.getSubject();
+        if (subject.isURIResource()) {
+            deletedDataPropertyUris.add(subject.getURI());
+        }
+    }
 
-	public void deleteObjectProperty(Statement stmt) {
-		Resource subject = stmt.getSubject();
-		if (subject.isURIResource()) {
-			deletedObjectPropertyUris.add(subject.getURI());
-		}
-	}
+    public void deleteObjectProperty(Statement stmt) {
+        Resource subject = stmt.getSubject();
+        if (subject.isURIResource()) {
+            deletedObjectPropertyUris.add(subject.getURI());
+        }
+    }
 
-	// ----------------------------------------------------------------------
-	// These methods are called when processing the changeSet. By that time, it
-	// is owned and accessed by a single thread.
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // These methods are called when processing the changeSet. By that time, it
+    // is owned and accessed by a single thread.
+    // ----------------------------------------------------------------------
 
-	public boolean isEmpty() {
-		return addedStatements.isEmpty() && removedStatements.isEmpty()
-				&& deletedDataPropertyUris.isEmpty()
-				&& deletedObjectPropertyUris.isEmpty();
-	}
+    public boolean isEmpty() {
+        return addedStatements.isEmpty() && removedStatements.isEmpty()
+            && deletedDataPropertyUris.isEmpty()
+            && deletedObjectPropertyUris.isEmpty();
+    }
 
-	public List<Statement> getAddedStatements() {
-		return addedStatements;
-	}
+    public List<Statement> getAddedStatements() {
+        return addedStatements;
+    }
 
-	public List<Statement> getRemovedStatements() {
-		return removedStatements;
-	}
+    public List<Statement> getRemovedStatements() {
+        return removedStatements;
+    }
 
-	public List<String> getDeletedDataPropertyUris() {
-		return deletedDataPropertyUris;
-	}
+    public List<String> getDeletedDataPropertyUris() {
+        return deletedDataPropertyUris;
+    }
 
-	public List<String> getDeletedObjectPropertyUris() {
-		return deletedObjectPropertyUris;
-	}
+    public List<String> getDeletedObjectPropertyUris() {
+        return deletedObjectPropertyUris;
+    }
 
-	@Override
-	public String toString() {
-		return "TBoxChanges[addedStatements=" + addedStatements
-				+ ", removedStatements=" + removedStatements
-				+ ", deletedDataPropertyUris=" + deletedDataPropertyUris
-				+ ", deletedObjectPropertyUris=" + deletedObjectPropertyUris
-				+ "]";
-	}
+    @Override
+    public String toString() {
+        return "TBoxChanges[addedStatements=" + addedStatements
+            + ", removedStatements=" + removedStatements
+            + ", deletedDataPropertyUris=" + deletedDataPropertyUris
+            + ", deletedObjectPropertyUris=" + deletedObjectPropertyUris
+            + "]";
+    }
 
 }

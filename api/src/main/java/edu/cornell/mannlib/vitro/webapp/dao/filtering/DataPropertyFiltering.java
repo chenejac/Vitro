@@ -5,17 +5,17 @@ package edu.cornell.mannlib.vitro.webapp.dao.filtering;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.sf.jga.algorithms.Filter;
 import edu.cornell.mannlib.vitro.webapp.beans.BaseResourceBean;
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
 import edu.cornell.mannlib.vitro.webapp.dao.filtering.filters.VitroFilters;
+import net.sf.jga.algorithms.Filter;
 
 public class DataPropertyFiltering extends DataProperty {
     private VitroFilters filters;
     private DataProperty innerDataProperty;
 
-    public DataPropertyFiltering(DataProperty innerDataProperty, VitroFilters filters){
+    public DataPropertyFiltering(DataProperty innerDataProperty, VitroFilters filters) {
         this.innerDataProperty = innerDataProperty;
         this.filters = filters;
     }
@@ -26,19 +26,27 @@ public class DataPropertyFiltering extends DataProperty {
      */
     @Override
     public List<DataPropertyStatement> getDataPropertyStatements() {
-        List<DataPropertyStatement> propStmts =  innerDataProperty.getDataPropertyStatements();
-        if( propStmts == null ) return null;
+        List<DataPropertyStatement> propStmts = innerDataProperty.getDataPropertyStatements();
+        if (propStmts == null) {
+            return null;
+        }
 
         List<DataPropertyStatement> filteredStmts = new LinkedList<DataPropertyStatement>();
         Filter.filter(propStmts, filters.getDataPropertyStatementFilter(), filteredStmts);
 
         List<DataPropertyStatement> wrappedStmts = new LinkedList<DataPropertyStatement>();
-        for( DataPropertyStatement stmt : filteredStmts){
-            wrappedStmts.add( new DataPropertyStatementFiltering(stmt, filters) );
+        for (DataPropertyStatement stmt : filteredStmts) {
+            wrappedStmts.add(new DataPropertyStatementFiltering(stmt, filters));
         }
         return wrappedStmts;
     }
 
+    @Override
+    public void setDataPropertyStatements(
+        List<DataPropertyStatement> objectPropertyStatements) {
+        innerDataProperty
+            .setDataPropertyStatements(objectPropertyStatements);
+    }
 
     /* the rest of the methods are delegated with no filtering */
     @Override
@@ -57,8 +65,18 @@ public class DataPropertyFiltering extends DataProperty {
     }
 
     @Override
+    public void setDescription(String description) {
+        innerDataProperty.setDescription(description);
+    }
+
+    @Override
     public int getDisplayLimit() {
         return innerDataProperty.getDisplayLimit();
+    }
+
+    @Override
+    public void setDisplayLimit(int displayLimit) {
+        innerDataProperty.setDisplayLimit(displayLimit);
     }
 
     @Override
@@ -67,8 +85,18 @@ public class DataPropertyFiltering extends DataProperty {
     }
 
     @Override
+    public void setDisplayTier(int displayTier) {
+        innerDataProperty.setDisplayTier(displayTier);
+    }
+
+    @Override
     public String getDomainClassURI() {
         return innerDataProperty.getDomainClassURI();
+    }
+
+    @Override
+    public void setDomainClassURI(String domainClassURI) {
+        innerDataProperty.setDomainClassURI(domainClassURI);
     }
 
     @Override
@@ -77,8 +105,18 @@ public class DataPropertyFiltering extends DataProperty {
     }
 
     @Override
+    public void setPublicName(String publicName) {
+        innerDataProperty.setPublicName(publicName);
+    }
+
+    @Override
     public String getLabel() {
         return innerDataProperty.getLabel();
+    }
+
+    @Override
+    public void setLabel(String label) {
+        innerDataProperty.setLabel(label);
     }
 
     @Override
@@ -87,8 +125,18 @@ public class DataPropertyFiltering extends DataProperty {
     }
 
     @Override
+    public void setExample(String example) {
+        innerDataProperty.setExample(example);
+    }
+
+    @Override
     public String getGroupURI() {
         return innerDataProperty.getGroupURI();
+    }
+
+    @Override
+    public void setGroupURI(String in) {
+        innerDataProperty.setGroupURI(in);
     }
 
     @Override
@@ -97,8 +145,18 @@ public class DataPropertyFiltering extends DataProperty {
     }
 
     @Override
+    public void setHiddenFromDisplayBelowRoleLevel(RoleLevel eR) {
+        innerDataProperty.setHiddenFromDisplayBelowRoleLevel(eR);
+    }
+
+    @Override
     public RoleLevel getProhibitedFromUpdateBelowRoleLevel() {
         return innerDataProperty.getProhibitedFromUpdateBelowRoleLevel();
+    }
+
+    @Override
+    public void setProhibitedFromUpdateBelowRoleLevel(RoleLevel eR) {
+        innerDataProperty.setProhibitedFromUpdateBelowRoleLevel(eR);
     }
 
     @Override
@@ -107,8 +165,18 @@ public class DataPropertyFiltering extends DataProperty {
     }
 
     @Override
+    public void setHiddenFromPublishBelowRoleLevel(RoleLevel eR) {
+        innerDataProperty.setHiddenFromPublishBelowRoleLevel(eR);
+    }
+
+    @Override
     public String getLocalName() {
         return innerDataProperty.getLocalName();
+    }
+
+    @Override
+    public void setLocalName(String localName) {
+        innerDataProperty.setLocalName(localName);
     }
 
     @Override
@@ -117,8 +185,18 @@ public class DataPropertyFiltering extends DataProperty {
     }
 
     @Override
+    public void setLocalNameWithPrefix(String localNameWithPrefix) {
+        innerDataProperty.setLocalNameWithPrefix(localNameWithPrefix);
+    }
+
+    @Override
     public String getPickListName() {
         return innerDataProperty.getPickListName();
+    }
+
+    @Override
+    public void setPickListName(String pickListName) {
+        innerDataProperty.setPickListName(pickListName);
     }
 
     @Override
@@ -127,13 +205,28 @@ public class DataPropertyFiltering extends DataProperty {
     }
 
     @Override
+    public void setNamespace(String namespace) {
+        innerDataProperty.setNamespace(namespace);
+    }
+
+    @Override
     public String getPublicDescription() {
         return innerDataProperty.getPublicDescription();
     }
 
     @Override
+    public void setPublicDescription(String s) {
+        innerDataProperty.setPublicDescription(s);
+    }
+
+    @Override
     public String getURI() {
         return innerDataProperty.getURI();
+    }
+
+    @Override
+    public void setURI(String URI) {
+        innerDataProperty.setURI(URI);
     }
 
     @Override
@@ -152,110 +245,21 @@ public class DataPropertyFiltering extends DataProperty {
     }
 
     @Override
-    public void setDescription(String description) {
-        innerDataProperty.setDescription(description);
-    }
-
-    @Override
-    public void setPublicName(String publicName) {
-        innerDataProperty.setPublicName(publicName);
-    }
-
-    @Override
-    public void setDomainClassURI(String domainClassURI) {
-        innerDataProperty.setDomainClassURI(domainClassURI);
-    }
-
-    @Override
-    public void setLabel(String label) {
-        innerDataProperty.setLabel(label);
-    }
-
-    @Override
-    public void setExample(String example) {
-        innerDataProperty.setExample(example);
-    }
-
-    @Override
-    public void setGroupURI(String in) {
-        innerDataProperty.setGroupURI(in);
-    }
-
-    @Override
-    public void setHiddenFromDisplayBelowRoleLevel(RoleLevel eR) {
-        innerDataProperty.setHiddenFromDisplayBelowRoleLevel(eR);
-    }
-
-    @Override
     public void setHiddenFromDisplayBelowRoleLevelUsingRoleUri(String roleUri) {
-        innerDataProperty.setHiddenFromDisplayBelowRoleLevel(BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
-    }
-
-    @Override
-    public void setProhibitedFromUpdateBelowRoleLevel(RoleLevel eR) {
-        innerDataProperty.setProhibitedFromUpdateBelowRoleLevel(eR);
+        innerDataProperty
+            .setHiddenFromDisplayBelowRoleLevel(BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
     }
 
     @Override
     public void setProhibitedFromUpdateBelowRoleLevelUsingRoleUri(String roleUri) {
-        innerDataProperty.setProhibitedFromUpdateBelowRoleLevel(BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
-    }
-
-    @Override
-    public void setHiddenFromPublishBelowRoleLevel(RoleLevel eR) {
-        innerDataProperty.setHiddenFromPublishBelowRoleLevel(eR);
+        innerDataProperty.setProhibitedFromUpdateBelowRoleLevel(
+            BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
     }
 
     @Override
     public void setHiddenFromPublishBelowRoleLevelUsingRoleUri(String roleUri) {
-        innerDataProperty.setHiddenFromPublishBelowRoleLevel(BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
-    }
-
-    @Override
-    public void setLocalName(String localName) {
-        innerDataProperty.setLocalName(localName);
-    }
-
-    @Override
-    public void setLocalNameWithPrefix(String localNameWithPrefix) {
-        innerDataProperty.setLocalNameWithPrefix(localNameWithPrefix);
-    }
-
-    @Override
-    public void setPickListName(String pickListName) {
-        innerDataProperty.setPickListName(pickListName);
-    }
-
-    @Override
-    public void setNamespace(String namespace) {
-        innerDataProperty.setNamespace(namespace);
-    }
-
-    @Override
-    public void setDataPropertyStatements(
-            List<DataPropertyStatement> objectPropertyStatements) {
         innerDataProperty
-                .setDataPropertyStatements(objectPropertyStatements);
-    }
-
-    @Override
-    public void setPublicDescription(String s) {
-        innerDataProperty.setPublicDescription(s);
-    }
-
-    @Override
-    public void setDisplayLimit(int displayLimit) {
-        innerDataProperty.setDisplayLimit(displayLimit);
-    }
-
-    @Override
-    public void setDisplayTier(int displayTier) {
-        innerDataProperty.setDisplayTier(displayTier);
-    }
-
-    @Override
-    public void setURI(String URI) {
-        innerDataProperty.setURI(URI);
+            .setHiddenFromPublishBelowRoleLevel(BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
     }
 
     @Override

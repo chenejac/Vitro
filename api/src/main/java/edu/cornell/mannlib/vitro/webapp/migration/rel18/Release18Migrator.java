@@ -13,19 +13,19 @@ import edu.cornell.mannlib.vitro.webapp.servlet.setup.UpdateKnowledgeBase;
  */
 public class Release18Migrator implements ServletContextListener {
 
-	@Override
-	public void contextInitialized(ServletContextEvent sce) {
-		ServletContext ctx = sce.getServletContext();
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        ServletContext ctx = sce.getServletContext();
 
-		new UpdateKnowledgeBase("/WEB-INF/ontologies/update17to18/", this).contextInitialized(sce);
+        new UpdateKnowledgeBase("/WEB-INF/ontologies/update17to18/", this).contextInitialized(sce);
 
-		new FauxPropertiesUpdater(ctx, this).migrate();
-		new RemoveObsoleteMetadataGraphs(ctx, this).migrate();
-	}
+        new FauxPropertiesUpdater(ctx, this).migrate();
+        new RemoveObsoleteMetadataGraphs(ctx, this).migrate();
+    }
 
-	@Override
-	public void contextDestroyed(ServletContextEvent sce) {
-		// Nothing to tear down.
-	}
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) {
+        // Nothing to tear down.
+    }
 
 }

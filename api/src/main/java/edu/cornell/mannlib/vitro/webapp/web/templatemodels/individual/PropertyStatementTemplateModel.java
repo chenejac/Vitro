@@ -7,7 +7,7 @@ import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.BaseTemplateModel;
 
 public abstract class PropertyStatementTemplateModel extends BaseTemplateModel {
-	protected static final String EDIT_PATH = "editRequestDispatch";
+    protected static final String EDIT_PATH = "editRequestDispatch";
 
     protected final VitroRequest vreq;
     protected final String subjectUri;
@@ -22,9 +22,11 @@ public abstract class PropertyStatementTemplateModel extends BaseTemplateModel {
     /* Template properties */
 
     public abstract String getEditUrl();
+
     public abstract String getDeleteUrl();
+
     public boolean isEditable() {
-        return ! getEditUrl().isEmpty();
+        return !getEditUrl().isEmpty();
     }
 
 }

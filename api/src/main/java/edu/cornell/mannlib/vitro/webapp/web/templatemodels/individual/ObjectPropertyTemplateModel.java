@@ -12,10 +12,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.auth.policy.PolicyHelper;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.propstmt.AddObjectPropertyStatement;
@@ -32,6 +28,9 @@ import edu.cornell.mannlib.vitro.webapp.freemarker.config.FreemarkerConfiguratio
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.customlistview.InvalidConfigurationException;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.customlistview.PropertyListConfig;
 import freemarker.cache.TemplateLoader;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel {
 
@@ -48,7 +47,7 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
          * ORDER BY DESC(?subclass) DESC(?dateTimeEnd)
          */
         Pattern.compile("ORDER\\s+BY\\s+((DESC\\()?\\?subclass\\)?\\s+)?DESC\\s*\\(\\s*\\?" +
-                END_DATE_TIME_VARIABLE + "\\)", Pattern.CASE_INSENSITIVE);
+            END_DATE_TIME_VARIABLE + "\\)", Pattern.CASE_INSENSITIVE);
 
     private static final String KEY_SUBJECT = "subject";
     private static final String KEY_PROPERTY = "property";
@@ -56,37 +55,13 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
     private static final Pattern SUBJECT_PROPERTY_OBJECT_PATTERN =
         // ?subject ?property ?\w+
         Pattern.compile("\\?" + KEY_SUBJECT + "\\s+\\?" + KEY_PROPERTY + "\\s+\\?(\\w+)");
-
-    public static enum ConfigError {
-        NO_SELECT_QUERY("Missing select query specification"),
-        NO_SUBCLASS_SELECT("Query does not select a subclass variable"),
-        NO_SUBCLASS_ORDER_BY("Query does not sort first by subclass variable"),
-        NO_TEMPLATE("Missing template specification"),
-        TEMPLATE_NOT_FOUND("Specified template does not exist");
-
-        String message;
-
-        ConfigError(String message) {
-            this.message = message;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public String toString() {
-            return getMessage();
-        }
-    }
-
     private PropertyListConfig config;
     private String objectKey;
     private String sortDirection;
     private String publicDescription;
-	private int displayLimit;
-
+    private int displayLimit;
     ObjectPropertyTemplateModel(ObjectProperty op, Individual subject, VitroRequest vreq,
-            boolean editing)
+                                boolean editing)
         throws InvalidConfigurationException {
 
         super(op, subject, vreq, op.getDomainPublic());
@@ -95,11 +70,11 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
         domainUri = op.getDomainVClassURI();
         rangeUri = op.getRangeVClassURI();
         publicDescription = op.getPublicDescription();
-		displayLimit = op.getDomainDisplayLimit();
+        displayLimit = op.getDomainDisplayLimit();
 
         // Get the config for this object property
         try {
-        	config = new PropertyListConfig(this, getFreemarkerTemplateLoader(), vreq, op, editing);
+            config = new PropertyListConfig(this, getFreemarkerTemplateLoader(), vreq, op, editing);
         } catch (InvalidConfigurationException e) {
             throw e;
         } catch (Exception e) {
@@ -109,35 +84,86 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
         objectKey = getQueryObjectVariableName();
 
         if (editing) {
-        	setAddUrl(op);
+            setAddUrl(op);
         }
     }
 
+    protected static String getImageUploadUrl(String subjectUri, String action) {
+        ParamMap params = new ParamMap(
+            "entityUri", subjectUri,
+            "action", action);
+        return UrlBuilder.getUrl(IMAGE_UPLOAD_PATH, params);
+    }
+
+    public static ObjectPropertyTemplateModel getObjectPropertyTemplateModel(ObjectProperty op,
+                                                                             Individual subject,
+                                                                             VitroRequest vreq,
+                                                                             boolean editing,
+                                                                             List<ObjectProperty> populatedObjectPropertyList) {
+        if (op.getCollateBySubclass()) {
+            try {
+                return new CollatedObjectPropertyTemplateModel(op, subject, vreq, editing,
+                    populatedObjectPropertyList);
+            } catch (InvalidConfigurationException e) {
+                log.warn(e.getMessage());
+                // If the collated config is invalid, instantiate an UncollatedObjectPropertyTemplateModel instead.
+            }
+        }
+        try {
+            return new UncollatedObjectPropertyTemplateModel(op, subject, vreq, editing,
+                populatedObjectPropertyList);
+        } catch (InvalidConfigurationException e) {
+            log.error(e.getMessage());
+            return null;
+        }
+    }
+
+    protected static boolean isFileStoreProperty(Property property) {
+        return property.getRangeVClassURI() != null &&
+            property.getRangeVClassURI().equals(VitroVocabulary.FS_FILE_CLASS);
+    }
+
+    public static String getDeleteFileUrl(String subjectUri, String predicateUri,
+                                          String objectUri) {
+        ParamMap params =
+            new ParamMap("subjectUri", subjectUri, "predicateUri", predicateUri, "fileUri",
+                objectUri,
+                "action", "delete");
+        return UrlBuilder.getUrl(FILE_UPLOAD_PATH, params);
+    }
+
+    private static String getFileUploadUrl(String subjectUri, String predicateUri) {
+        ParamMap params =
+            new ParamMap("subjectUri", subjectUri, "predicateUri", predicateUri, "action",
+                "upload");
+        return UrlBuilder.getUrl(FILE_UPLOAD_PATH, params);
+    }
+
     protected void setAddUrl(Property property) {
-    	// Is the add link suppressed for this property?
-    	if (property.isAddLinkSuppressed()) {
-    		return;
-    	}
+        // Is the add link suppressed for this property?
+        if (property.isAddLinkSuppressed()) {
+            return;
+        }
 
         // Determine whether a new statement can be added
-		RequestedAction action = new AddObjectPropertyStatement(
-				vreq.getJenaOntModel(), subjectUri, property, SOME_URI);
-        if ( ! PolicyHelper.isAuthorizedForActions(vreq, action) ) {
+        RequestedAction action = new AddObjectPropertyStatement(
+            vreq.getJenaOntModel(), subjectUri, property, SOME_URI);
+        if (!PolicyHelper.isAuthorizedForActions(vreq, action)) {
             return;
         }
 
         String rangeUri = (property instanceof ObjectProperty)
-                ? ((ObjectProperty) property).getRangeVClassURI()
-                : "data";
+            ? ((ObjectProperty) property).getRangeVClassURI()
+            : "data";
 
         if (propertyUri.equals(VitroVocabulary.IND_MAIN_IMAGE)) {
             addUrl = getImageUploadUrl(subjectUri, "add");
         } else if (isFileStoreProperty(property)) {
-          addUrl = getFileUploadUrl(subjectUri,property.getURI());
+            addUrl = getFileUploadUrl(subjectUri, property.getURI());
         } else {
             ParamMap params = new ParamMap(
-                    "subjectUri", subjectUri,
-                    "predicateUri", propertyUri);
+                "subjectUri", subjectUri,
+                "predicateUri", propertyUri);
 
             if (domainUri != null) {
                 params.put("domainUri", domainUri);
@@ -152,7 +178,7 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
         }
     }
 
-		/**
+    /**
      * Pull this into a protected method so we can stub it out in the unit tests.
      * Other options:
      * 1) receive a TemplateLoader into the constructor of ObjectPropertyTemplateModel,
@@ -160,20 +186,23 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
      * 3) skip the test for valid template name until we try to use the thing.
      * This will do for now.
      */
-	protected TemplateLoader getFreemarkerTemplateLoader() {
-		return FreemarkerConfiguration.getConfig(vreq).getTemplateLoader();
-	}
+    protected TemplateLoader getFreemarkerTemplateLoader() {
+        return FreemarkerConfiguration.getConfig(vreq).getTemplateLoader();
+    }
 
     protected List<Map<String, String>> getStatementData() {
-        ObjectPropertyStatementDao opDao = vreq.getWebappDaoFactory().getObjectPropertyStatementDao();
-        return opDao.getObjectPropertyStatementsForIndividualByProperty(subjectUri, propertyUri, objectKey, domainUri, rangeUri, getSelectQuery(), getConstructQueries(), sortDirection);
+        ObjectPropertyStatementDao opDao =
+            vreq.getWebappDaoFactory().getObjectPropertyStatementDao();
+        return opDao
+            .getObjectPropertyStatementsForIndividualByProperty(subjectUri, propertyUri, objectKey,
+                domainUri, rangeUri, getSelectQuery(), getConstructQueries(), sortDirection);
     }
 
     protected abstract boolean isEmpty();
 
     @Override
     protected int getPropertyDisplayTier(Property p) {
-    	Integer displayTier = ((ObjectProperty)p).getDomainDisplayTier();
+        Integer displayTier = ((ObjectProperty) p).getDomainDisplayTier();
         return (displayTier != null) ? displayTier : -1;
     }
 
@@ -182,14 +211,14 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
         return Route.OBJECT_PROPERTY_EDIT;
     }
 
-	@Override
-	public int getDisplayLimit() {
-			return displayLimit;
-	}
+    @Override
+    public int getDisplayLimit() {
+        return displayLimit;
+    }
 
-	public String getPublicDescription() {
-			return publicDescription;
-	}
+    public String getPublicDescription() {
+        return publicDescription;
+    }
 
     public ConfigError checkQuery(String queryString) {
         if (StringUtils.isBlank(queryString)) {
@@ -214,14 +243,8 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
         return config.isDefaultListView();
     }
 
-    protected static String getImageUploadUrl(String subjectUri, String action) {
-        ParamMap params = new ParamMap(
-                "entityUri", subjectUri,
-                "action", action);
-        return UrlBuilder.getUrl(IMAGE_UPLOAD_PATH, params);
-    }
-
-    /** Return the name of the primary object variable of the query by inspecting the query string.
+    /**
+     * Return the name of the primary object variable of the query by inspecting the query string.
      * The primary object is the X in the assertion "?subject ?property ?X".
      */
     private String getQueryObjectVariableName() {
@@ -231,7 +254,7 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
         if (hasDefaultListView()) {
             object = DEFAULT_LIST_VIEW_QUERY_OBJECT_VARIABLE_NAME;
             log.debug("Using default list view for property " + propertyUri +
-                      ", so query object = '" + object + "'");
+                ", so query object = '" + object + "'");
         } else {
             String queryString = getSelectQuery();
             Matcher m = SUBJECT_PROPERTY_OBJECT_PATTERN.matcher(queryString);
@@ -244,26 +267,9 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
         return object;
     }
 
-    public static ObjectPropertyTemplateModel getObjectPropertyTemplateModel(ObjectProperty op,
-            Individual subject, VitroRequest vreq, boolean editing,
-            List<ObjectProperty> populatedObjectPropertyList) {
-        if (op.getCollateBySubclass()) {
-            try {
-                return new CollatedObjectPropertyTemplateModel(op, subject, vreq, editing, populatedObjectPropertyList);
-            } catch (InvalidConfigurationException e) {
-                log.warn(e.getMessage());
-                // If the collated config is invalid, instantiate an UncollatedObjectPropertyTemplateModel instead.
-            }
-        }
-        try {
-            return new UncollatedObjectPropertyTemplateModel(op, subject, vreq, editing, populatedObjectPropertyList);
-        } catch (InvalidConfigurationException e) {
-            log.error(e.getMessage());
-            return null;
-        }
-    }
-
-    /** Apply post-processing to query results to prepare for template */
+    /**
+     * Apply post-processing to query results to prepare for template
+     */
     protected void postprocess(List<Map<String, String>> data) {
 
         if (log.isDebugEnabled()) {
@@ -272,7 +278,8 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
         }
 
         ObjectPropertyDataPostProcessor postprocessor = config.getPostprocessor();
-        log.debug("Using postprocessor " + postprocessor.getClass().getName() + " for property " + getUri());
+        log.debug("Using postprocessor " + postprocessor.getClass().getName() + " for property " +
+            getUri());
         postprocessor.process(data);
 
         if (log.isDebugEnabled()) {
@@ -289,20 +296,23 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
                 log.debug("List item " + count);
                 count++;
                 for (String key : map.keySet()) {
-                   log.debug(key + ": " + map.get(key));
-               }
+                    log.debug(key + ": " + map.get(key));
+                }
             }
         }
     }
 
-    /** The SPARQL query results may contain duplicate rows for a single object, if there are multiple solutions
+    /**
+     * The SPARQL query results may contain duplicate rows for a single object, if there are multiple solutions
      * to the entire query. Remove duplicates here by arbitrarily selecting only the first row returned.
+     *
      * @param data The data to deduplicate
      */
     protected void removeDuplicates(List<Map<String, String>> data) {
         String objectVariableName = getObjectKey();
         if (objectVariableName == null) {
-            log.error("Cannot remove duplicate statements for property " + getUri() + " because no object found to dedupe.");
+            log.error("Cannot remove duplicate statements for property " + getUri() +
+                " because no object found to dedupe.");
             return;
         }
         List<String> foundObjects = new ArrayList<String>();
@@ -328,6 +338,8 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
         moveNullEndDateTimesToTop(statements);
     }
 
+    /* Template properties */
+
     /* SPARQL ORDER BY gives null values the lowest value, so null datetimes occur at the end
      * of a list in descending sort order. Generally we assume that a null end datetime means the
      * activity is  ongoing in the present, so we want to display those at the top of the list.
@@ -336,19 +348,22 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
      * name is hard-coded here. (Note, therefore, that using a different variable name
      * effectively turns off this post-processing.)
      */
-    protected void moveNullEndDateTimesToTop(List<ObjectPropertyStatementTemplateModel> statements) {
+    protected void moveNullEndDateTimesToTop(
+        List<ObjectPropertyStatementTemplateModel> statements) {
         String queryString = getSelectQuery();
         Matcher m = ORDER_BY_END_DATE_TIME_PATTERN.matcher(queryString);
-        if ( ! m.find() ) {
+        if (!m.find()) {
             return;
         }
 
         // Store the statements with null end datetimes in a temporary list, remove them from the original list,
         // and move them back to the top of the original list.
-        List<ObjectPropertyStatementTemplateModel> tempList = new ArrayList<ObjectPropertyStatementTemplateModel>();
+        List<ObjectPropertyStatementTemplateModel> tempList =
+            new ArrayList<ObjectPropertyStatementTemplateModel>();
         Iterator<ObjectPropertyStatementTemplateModel> iterator = statements.iterator();
         while (iterator.hasNext()) {
-            ObjectPropertyStatementTemplateModel stmt = (ObjectPropertyStatementTemplateModel)iterator.next();
+            ObjectPropertyStatementTemplateModel stmt =
+                (ObjectPropertyStatementTemplateModel) iterator.next();
             String dateTimeEnd = (String) stmt.get(END_DATE_TIME_VARIABLE);
             if (dateTimeEnd == null) {
                 // If the first statement has a null end datetime, all subsequent statements in the list also do,
@@ -369,8 +384,6 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
         return objectKey;
     }
 
-    /* Template properties */
-
     public String getType() {
         return TYPE;
     }
@@ -381,20 +394,26 @@ public abstract class ObjectPropertyTemplateModel extends PropertyTemplateModel 
 
     public abstract boolean isCollatedBySubclass();
 
+    public static enum ConfigError {
+        NO_SELECT_QUERY("Missing select query specification"),
+        NO_SUBCLASS_SELECT("Query does not select a subclass variable"),
+        NO_SUBCLASS_ORDER_BY("Query does not sort first by subclass variable"),
+        NO_TEMPLATE("Missing template specification"),
+        TEMPLATE_NOT_FOUND("Specified template does not exist");
 
-		protected static boolean isFileStoreProperty(Property property) {
-			return property.getRangeVClassURI() != null && property.getRangeVClassURI().equals(VitroVocabulary.FS_FILE_CLASS);
-		}
+        String message;
 
-		public static String getDeleteFileUrl(String subjectUri, String predicateUri, String objectUri) {
-			ParamMap params = new ParamMap("subjectUri", subjectUri, "predicateUri", predicateUri, "fileUri", objectUri,
-					"action", "delete");
-			return UrlBuilder.getUrl(FILE_UPLOAD_PATH, params);
-		}
+        ConfigError(String message) {
+            this.message = message;
+        }
 
-		private static String getFileUploadUrl(String subjectUri, String predicateUri) {
-			ParamMap params = new ParamMap("subjectUri", subjectUri, "predicateUri", predicateUri, "action", "upload");
-			return UrlBuilder.getUrl(FILE_UPLOAD_PATH, params);
-		}
+        public String getMessage() {
+            return message;
+        }
+
+        public String toString() {
+            return getMessage();
+        }
+    }
 
 }

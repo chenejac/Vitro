@@ -2,12 +2,8 @@
 
 package edu.cornell.mannlib.vitro.webapp.filestorage.model;
 
-import java.util.List;
-
 import javax.servlet.ServletContext;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.util.List;
 
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.beans.ObjectPropertyStatement;
@@ -17,274 +13,275 @@ import edu.cornell.mannlib.vitro.webapp.dao.ObjectPropertyStatementDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 import edu.cornell.mannlib.vitro.webapp.filestorage.FileServingHelper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * An immutable packet of information about an uploaded file, with a builder
  * class to permit incremental construction.
  */
 public class FileInfo {
-	private static final Log log = LogFactory.getLog(FileInfo.class);
+    private static final Log log = LogFactory.getLog(FileInfo.class);
 
-	// ----------------------------------------------------------------------
-	// static Factory methods.
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // static Factory methods.
+    // ----------------------------------------------------------------------
+    private final String uri;
+    private final String filename;
+    private final String mimeType;
+    private final String bytestreamUri;
+    private final String bytestreamAliasUrl;
 
-	/**
-	 * If this request URL represents a BytestreamAliasURL, find the bytestream
-	 * URI, find the surrogate, and get the info. Otherwise, return null.
-	 */
-	public static FileInfo instanceFromAliasUrl(
-			WebappDaoFactory webappDaoFactory, String path, ServletContext ctx) {
-		String bytestreamUri = FileServingHelper.getBytestreamUri(path, ctx);
-		if (bytestreamUri == null) {
-			return null;
-		}
-		return instanceFromBytestreamUri(webappDaoFactory, bytestreamUri);
-	}
+    private FileInfo(Builder builder) {
+        this.uri = builder.uri;
+        this.filename = builder.filename;
+        this.mimeType = builder.mimeType;
+        this.bytestreamUri = builder.bytestreamUri;
+        this.bytestreamAliasUrl = builder.bytestreamAliasUrl;
+    }
 
-	/**
-	 * If this URI represents a file bytestream, find its surrogate and get its
-	 * info. Otherwise, return null.
-	 */
-	public static FileInfo instanceFromBytestreamUri(
-			WebappDaoFactory webappDaoFactory, String bytestreamUri) {
-		IndividualDao individualDao = webappDaoFactory.getIndividualDao();
-		Individual entity = individualDao.getIndividualByURI(bytestreamUri);
-		if (!isFileBytestream(entity)) {
-			return null;
-		}
+    /**
+     * If this request URL represents a BytestreamAliasURL, find the bytestream
+     * URI, find the surrogate, and get the info. Otherwise, return null.
+     */
+    public static FileInfo instanceFromAliasUrl(
+        WebappDaoFactory webappDaoFactory, String path, ServletContext ctx) {
+        String bytestreamUri = FileServingHelper.getBytestreamUri(path, ctx);
+        if (bytestreamUri == null) {
+            return null;
+        }
+        return instanceFromBytestreamUri(webappDaoFactory, bytestreamUri);
+    }
 
-		ObjectPropertyStatementDao objectPropertyStatementDao = webappDaoFactory
-				.getObjectPropertyStatementDao();
-		ObjectPropertyStatement opStmt = new ObjectPropertyStatementImpl(null,
-				VitroVocabulary.FS_DOWNLOAD_LOCATION, entity.getURI());
-		List<ObjectPropertyStatement> stmts = objectPropertyStatementDao
-				.getObjectPropertyStatements(opStmt);
+    // ----------------------------------------------------------------------
+    // The instance variables and methods.
+    // ----------------------------------------------------------------------
 
-		if (stmts.size() > 1) {
-			StringBuilder uris = new StringBuilder();
-			for (ObjectPropertyStatement stmt : stmts) {
-				uris.append("'").append(stmt.getSubjectURI()).append("' ");
-			}
-			log.warn("Found " + stmts.size() + " Individuals that claim '"
-					+ entity.getURI() + "' as its bytestream:" + uris);
-		}
-		if (stmts.isEmpty()) {
-			log.warn("No individual claims '" + entity.getURI()
-					+ "' as its bytestream.");
-			return null;
-		}
+    /**
+     * If this URI represents a file bytestream, find its surrogate and get its
+     * info. Otherwise, return null.
+     */
+    public static FileInfo instanceFromBytestreamUri(
+        WebappDaoFactory webappDaoFactory, String bytestreamUri) {
+        IndividualDao individualDao = webappDaoFactory.getIndividualDao();
+        Individual entity = individualDao.getIndividualByURI(bytestreamUri);
+        if (!isFileBytestream(entity)) {
+            return null;
+        }
 
-		String surrogateUri = stmts.get(0).getSubjectURI();
-		return instanceFromSurrogateUri(webappDaoFactory, surrogateUri);
-	}
+        ObjectPropertyStatementDao objectPropertyStatementDao = webappDaoFactory
+            .getObjectPropertyStatementDao();
+        ObjectPropertyStatement opStmt = new ObjectPropertyStatementImpl(null,
+            VitroVocabulary.FS_DOWNLOAD_LOCATION, entity.getURI());
+        List<ObjectPropertyStatement> stmts = objectPropertyStatementDao
+            .getObjectPropertyStatements(opStmt);
 
-	/**
-	 * If this URI represents a file surrogate, get its info. Otherwise, return
-	 * null.
-	 */
-	public static FileInfo instanceFromSurrogateUri(
-			WebappDaoFactory webappDaoFactory, String uri) {
-		IndividualDao individualDao = webappDaoFactory.getIndividualDao();
-		Individual surrogate = individualDao.getIndividualByURI(uri);
-		if (!isFileSurrogate(surrogate)) {
-			return null;
-		}
+        if (stmts.size() > 1) {
+            StringBuilder uris = new StringBuilder();
+            for (ObjectPropertyStatement stmt : stmts) {
+                uris.append("'").append(stmt.getSubjectURI()).append("' ");
+            }
+            log.warn("Found " + stmts.size() + " Individuals that claim '"
+                + entity.getURI() + "' as its bytestream:" + uris);
+        }
+        if (stmts.isEmpty()) {
+            log.warn("No individual claims '" + entity.getURI()
+                + "' as its bytestream.");
+            return null;
+        }
 
-		String filename = surrogate.getDataValue(VitroVocabulary.FS_FILENAME);
-		if (filename == null) {
-			log.error("File had no filename: '" + uri + "'");
-			return null;
-		} else {
-			log.debug("Filename for '" + uri + "' was '" + filename + "'");
-		}
+        String surrogateUri = stmts.get(0).getSubjectURI();
+        return instanceFromSurrogateUri(webappDaoFactory, surrogateUri);
+    }
 
-		String mimeType = surrogate.getDataValue(VitroVocabulary.FS_MIME_TYPE);
-		if (mimeType == null) {
-			log.error("File had no mimeType: '" + uri + "'");
-			return null;
-		} else {
-			log.debug("mimeType for '" + uri + "' was '" + mimeType + "'");
-		}
+    /**
+     * If this URI represents a file surrogate, get its info. Otherwise, return
+     * null.
+     */
+    public static FileInfo instanceFromSurrogateUri(
+        WebappDaoFactory webappDaoFactory, String uri) {
+        IndividualDao individualDao = webappDaoFactory.getIndividualDao();
+        Individual surrogate = individualDao.getIndividualByURI(uri);
+        if (!isFileSurrogate(surrogate)) {
+            return null;
+        }
 
-		Individual byteStream = surrogate
-				.getRelatedIndividual(VitroVocabulary.FS_DOWNLOAD_LOCATION);
-		if (byteStream == null) {
-			log.error("File surrogate '" + uri
-					+ "' had no associated bytestream.");
-			return null;
-		}
+        String filename = surrogate.getDataValue(VitroVocabulary.FS_FILENAME);
+        if (filename == null) {
+            log.error("File had no filename: '" + uri + "'");
+            return null;
+        } else {
+            log.debug("Filename for '" + uri + "' was '" + filename + "'");
+        }
 
-		String bytestreamUri = findBytestreamUri(byteStream, uri);
-		if (bytestreamUri == null) {
-			log.error("Bytestream of file surrogate '" + uri + "' had no URI: "
-					+ byteStream);
-			return null;
-		}
+        String mimeType = surrogate.getDataValue(VitroVocabulary.FS_MIME_TYPE);
+        if (mimeType == null) {
+            log.error("File had no mimeType: '" + uri + "'");
+            return null;
+        } else {
+            log.debug("mimeType for '" + uri + "' was '" + mimeType + "'");
+        }
 
-		String bytestreamAliasUrl = findBytestreamAliasUrl(byteStream, uri);
-		if (bytestreamAliasUrl == null) {
-			log.error("Bytestream  '" + bytestreamUri + "' had no alias URL.");
-			return null;
-		}
+        Individual byteStream = surrogate
+            .getRelatedIndividual(VitroVocabulary.FS_DOWNLOAD_LOCATION);
+        if (byteStream == null) {
+            log.error("File surrogate '" + uri
+                + "' had no associated bytestream.");
+            return null;
+        }
 
-		return new FileInfo.Builder().setUri(uri).setFilename(filename)
-				.setMimeType(mimeType).setBytestreamUri(bytestreamUri)
-				.setBytestreamAliasUrl(bytestreamAliasUrl).build();
-	}
+        String bytestreamUri = findBytestreamUri(byteStream, uri);
+        if (bytestreamUri == null) {
+            log.error("Bytestream of file surrogate '" + uri + "' had no URI: "
+                + byteStream);
+            return null;
+        }
 
-	/**
-	 * Is this a FileByteStream individual?
-	 */
-	private static boolean isFileBytestream(Individual entity) {
-		if (entity == null) {
-			return false;
-		}
-		if (entity.isVClass(VitroVocabulary.FS_BYTESTREAM_CLASS)) {
-			log.debug("Entity '" + entity.getURI() + "' is a bytestream");
-			return true;
-		}
-		log.debug("Entity '" + entity.getURI() + "' is not a bytestream");
-		return false;
-	}
+        String bytestreamAliasUrl = findBytestreamAliasUrl(byteStream, uri);
+        if (bytestreamAliasUrl == null) {
+            log.error("Bytestream  '" + bytestreamUri + "' had no alias URL.");
+            return null;
+        }
 
-	/**
-	 * Is this a File individual?
-	 */
-	private static boolean isFileSurrogate(Individual entity) {
-		if (entity == null) {
-			return false;
-		}
-		if (entity.isVClass(VitroVocabulary.FS_FILE_CLASS)) {
-			log.debug("Entity '" + entity.getURI() + "' is a file surrogate");
-			return true;
-		}
-		log.debug("Entity '" + entity.getURI() + "' is not a file surrogate");
-		return false;
-	}
+        return new FileInfo.Builder().setUri(uri).setFilename(filename)
+            .setMimeType(mimeType).setBytestreamUri(bytestreamUri)
+            .setBytestreamAliasUrl(bytestreamAliasUrl).build();
+    }
 
-	/**
-	 * Get the URI of the bytestream, or null if there is none.
-	 */
-	private static String findBytestreamUri(Individual byteStream,
-			String surrogateUri) {
-		if (byteStream == null) {
-			return null;
-		}
+    /**
+     * Is this a FileByteStream individual?
+     */
+    private static boolean isFileBytestream(Individual entity) {
+        if (entity == null) {
+            return false;
+        }
+        if (entity.isVClass(VitroVocabulary.FS_BYTESTREAM_CLASS)) {
+            log.debug("Entity '" + entity.getURI() + "' is a bytestream");
+            return true;
+        }
+        log.debug("Entity '" + entity.getURI() + "' is not a bytestream");
+        return false;
+    }
 
-		String bytestreamUri = byteStream.getURI();
-		log.debug("File surrogate'" + surrogateUri
-				+ "' had associated bytestream: '" + byteStream.getURI() + "'");
-		return bytestreamUri;
-	}
+    /**
+     * Is this a File individual?
+     */
+    private static boolean isFileSurrogate(Individual entity) {
+        if (entity == null) {
+            return false;
+        }
+        if (entity.isVClass(VitroVocabulary.FS_FILE_CLASS)) {
+            log.debug("Entity '" + entity.getURI() + "' is a file surrogate");
+            return true;
+        }
+        log.debug("Entity '" + entity.getURI() + "' is not a file surrogate");
+        return false;
+    }
 
-	/**
-	 * Get the alias URL from the bytestream, or null if there is none.
-	 */
-	private static String findBytestreamAliasUrl(Individual byteStream,
-			String surrogateUri) {
-		if (byteStream == null) {
-			return null;
-		}
+    /**
+     * Get the URI of the bytestream, or null if there is none.
+     */
+    private static String findBytestreamUri(Individual byteStream,
+                                            String surrogateUri) {
+        if (byteStream == null) {
+            return null;
+        }
 
-		String aliasUrl = byteStream.getDataValue(VitroVocabulary.FS_ALIAS_URL);
-		if (aliasUrl == null) {
-			log.error("File had no aliasUrl: '" + surrogateUri + "'");
-		} else {
-			log.debug("aliasUrl for '" + surrogateUri + "' was '" + aliasUrl
-					+ "'");
-		}
-		return aliasUrl;
-	}
+        String bytestreamUri = byteStream.getURI();
+        log.debug("File surrogate'" + surrogateUri
+            + "' had associated bytestream: '" + byteStream.getURI() + "'");
+        return bytestreamUri;
+    }
 
-	// ----------------------------------------------------------------------
-	// The instance variables and methods.
-	// ----------------------------------------------------------------------
+    /**
+     * Get the alias URL from the bytestream, or null if there is none.
+     */
+    private static String findBytestreamAliasUrl(Individual byteStream,
+                                                 String surrogateUri) {
+        if (byteStream == null) {
+            return null;
+        }
 
-	private final String uri;
-	private final String filename;
-	private final String mimeType;
-	private final String bytestreamUri;
-	private final String bytestreamAliasUrl;
+        String aliasUrl = byteStream.getDataValue(VitroVocabulary.FS_ALIAS_URL);
+        if (aliasUrl == null) {
+            log.error("File had no aliasUrl: '" + surrogateUri + "'");
+        } else {
+            log.debug("aliasUrl for '" + surrogateUri + "' was '" + aliasUrl
+                + "'");
+        }
+        return aliasUrl;
+    }
 
-	private FileInfo(Builder builder) {
-		this.uri = builder.uri;
-		this.filename = builder.filename;
-		this.mimeType = builder.mimeType;
-		this.bytestreamUri = builder.bytestreamUri;
-		this.bytestreamAliasUrl = builder.bytestreamAliasUrl;
-	}
+    public String getUri() {
+        return uri;
+    }
 
-	public String getUri() {
-		return uri;
-	}
+    public String getFilename() {
+        return filename;
+    }
 
-	public String getFilename() {
-		return filename;
-	}
+    public String getMimeType() {
+        return mimeType;
+    }
 
-	public String getMimeType() {
-		return mimeType;
-	}
+    public String getBytestreamUri() {
+        return bytestreamUri;
+    }
 
-	public String getBytestreamUri() {
-		return bytestreamUri;
-	}
+    public String getBytestreamAliasUrl() {
+        return bytestreamAliasUrl;
+    }
 
-	public String getBytestreamAliasUrl() {
-		return bytestreamAliasUrl;
-	}
+    @Override
+    public String toString() {
+        return "FileInfo[uri=" + uri + ", filename=" + filename + ", mimeType="
+            + mimeType + ", bytestreamUri=" + bytestreamUri + ", aliasUrl="
+            + bytestreamAliasUrl + "]";
+    }
 
-	@Override
-	public String toString() {
-		return "FileInfo[uri=" + uri + ", filename=" + filename + ", mimeType="
-				+ mimeType + ", bytestreamUri=" + bytestreamUri + ", aliasUrl="
-				+ bytestreamAliasUrl + "]";
-	}
+    // ----------------------------------------------------------------------
+    // The builder.
+    // ----------------------------------------------------------------------
 
-	// ----------------------------------------------------------------------
-	// The builder.
-	// ----------------------------------------------------------------------
+    /**
+     * A builder class allows us to supply the values one at a time, and then
+     * freeze them into an immutable object.
+     */
+    public static class Builder {
+        private String uri;
+        private String filename;
+        private String mimeType;
+        private String bytestreamUri;
+        private String bytestreamAliasUrl;
 
-	/**
-	 * A builder class allows us to supply the values one at a time, and then
-	 * freeze them into an immutable object.
-	 */
-	public static class Builder {
-		private String uri;
-		private String filename;
-		private String mimeType;
-		private String bytestreamUri;
-		private String bytestreamAliasUrl;
+        public Builder setUri(String uri) {
+            this.uri = uri;
+            return this;
+        }
 
-		public Builder setUri(String uri) {
-			this.uri = uri;
-			return this;
-		}
+        public Builder setFilename(String filename) {
+            this.filename = filename;
+            return this;
+        }
 
-		public Builder setFilename(String filename) {
-			this.filename = filename;
-			return this;
-		}
+        public Builder setMimeType(String mimeType) {
+            this.mimeType = mimeType;
+            return this;
+        }
 
-		public Builder setMimeType(String mimeType) {
-			this.mimeType = mimeType;
-			return this;
-		}
+        public Builder setBytestreamUri(String bytestreamUri) {
+            this.bytestreamUri = bytestreamUri;
+            return this;
+        }
 
-		public Builder setBytestreamUri(String bytestreamUri) {
-			this.bytestreamUri = bytestreamUri;
-			return this;
-		}
+        public Builder setBytestreamAliasUrl(String bytestreamAliasUrl) {
+            this.bytestreamAliasUrl = bytestreamAliasUrl;
+            return this;
+        }
 
-		public Builder setBytestreamAliasUrl(String bytestreamAliasUrl) {
-			this.bytestreamAliasUrl = bytestreamAliasUrl;
-			return this;
-		}
-
-		public FileInfo build() {
-			return new FileInfo(this);
-		}
-	}
+        public FileInfo build() {
+            return new FileInfo(this);
+        }
+    }
 
 }

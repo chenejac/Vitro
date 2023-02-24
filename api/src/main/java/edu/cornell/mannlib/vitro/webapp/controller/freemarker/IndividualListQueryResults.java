@@ -5,9 +5,6 @@ package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
@@ -18,78 +15,78 @@ import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchResponse;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchResultDocument;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchResultDocumentList;
 import edu.cornell.mannlib.vitro.webapp.search.VitroSearchTermNames;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Holds the Individuals that were found in a search query.
- *
+ * <p>
  * Provides a convenience method to run the query and to find the Individuals.
  */
 public class IndividualListQueryResults {
-	private static final Log log = LogFactory
-			.getLog(IndividualListQueryResults.class);
+    private static final Log log = LogFactory
+        .getLog(IndividualListQueryResults.class);
 
-	private static final IndividualListQueryResults EMPTY_RESULT = new IndividualListQueryResults(
-			0, new ArrayList<Individual>());
+    private static final IndividualListQueryResults EMPTY_RESULT = new IndividualListQueryResults(
+        0, new ArrayList<Individual>());
 
-	// ----------------------------------------------------------------------
-	// Convenience method
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // Convenience method
+    // ----------------------------------------------------------------------
+    private final int hitCount;
 
-	public static IndividualListQueryResults runQuery(SearchQuery query,
-			IndividualDao indDao)
-			throws SearchEngineException {
+    // ----------------------------------------------------------------------
+    // The instance
+    // ----------------------------------------------------------------------
+    private final List<Individual> individuals;
+    public IndividualListQueryResults(int hitCount, List<Individual> individuals) {
+        this.hitCount = hitCount;
+        this.individuals = individuals;
+    }
 
-		SearchEngine search = ApplicationUtils.instance().getSearchEngine();
-		SearchResponse response = search.query(query);
+    public static IndividualListQueryResults runQuery(SearchQuery query,
+                                                      IndividualDao indDao)
+        throws SearchEngineException {
 
-		if (response == null) {
-			log.debug("response from search query was null");
-			return EMPTY_RESULT;
-		}
+        SearchEngine search = ApplicationUtils.instance().getSearchEngine();
+        SearchResponse response = search.query(query);
 
-		SearchResultDocumentList docs = response.getResults();
-		if (docs == null) {
-			log.debug("results from search query response was null");
-			return EMPTY_RESULT;
-		}
+        if (response == null) {
+            log.debug("response from search query was null");
+            return EMPTY_RESULT;
+        }
 
-		// get list of individuals for the search results
-		long hitCount = docs.getNumFound();
-		log.debug("Number of search results: " + hitCount);
+        SearchResultDocumentList docs = response.getResults();
+        if (docs == null) {
+            log.debug("results from search query response was null");
+            return EMPTY_RESULT;
+        }
 
-		List<Individual> individuals = new ArrayList<Individual>(docs.size());
-		for (SearchResultDocument doc : docs) {
-			String uri = doc.getStringValue(VitroSearchTermNames.URI);
-			Individual individual = indDao.getIndividualByURI(uri);
-			if (individual == null) {
-				log.debug("No individual for search document with uri = " + uri);
-			} else {
-				individuals.add(individual);
-				log.debug("Adding individual " + uri + " to individual list");
-			}
-		}
+        // get list of individuals for the search results
+        long hitCount = docs.getNumFound();
+        log.debug("Number of search results: " + hitCount);
 
-		return new IndividualListQueryResults((int) hitCount, individuals);
-	}
+        List<Individual> individuals = new ArrayList<Individual>(docs.size());
+        for (SearchResultDocument doc : docs) {
+            String uri = doc.getStringValue(VitroSearchTermNames.URI);
+            Individual individual = indDao.getIndividualByURI(uri);
+            if (individual == null) {
+                log.debug("No individual for search document with uri = " + uri);
+            } else {
+                individuals.add(individual);
+                log.debug("Adding individual " + uri + " to individual list");
+            }
+        }
 
-	// ----------------------------------------------------------------------
-	// The instance
-	// ----------------------------------------------------------------------
+        return new IndividualListQueryResults((int) hitCount, individuals);
+    }
 
-	private final int hitCount;
-	private final List<Individual> individuals;
+    public int getHitCount() {
+        return hitCount;
+    }
 
-	public IndividualListQueryResults(int hitCount, List<Individual> individuals) {
-		this.hitCount = hitCount;
-		this.individuals = individuals;
-	}
-
-	public int getHitCount() {
-		return hitCount;
-	}
-
-	public List<Individual> getIndividuals() {
-		return individuals;
-	}
+    public List<Individual> getIndividuals() {
+        return individuals;
+    }
 
 }

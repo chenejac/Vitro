@@ -2,11 +2,10 @@
 
 package edu.cornell.mannlib.vitro.webapp.web.widgets;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
 
 import edu.cornell.mannlib.vedit.beans.LoginStatusBean;
 import freemarker.core.Environment;
@@ -15,7 +14,7 @@ public class TestWidget extends Widget {
 
     @Override
     protected WidgetTemplateValues process(Environment env, Map params,
-            HttpServletRequest request, ServletContext context) {
+                                           HttpServletRequest request, ServletContext context) {
         Map<String, Object> map = new HashMap<String, Object>();
         String macroName;
         if (LoginStatusBean.getBean(request).isLoggedIn()) {
@@ -25,7 +24,7 @@ public class TestWidget extends Widget {
             map.put("status", "not logged in");
             macroName = "notLoggedIn";
         }
-        return new WidgetTemplateValues (macroName, map);
+        return new WidgetTemplateValues(macroName, map);
     }
 
 }

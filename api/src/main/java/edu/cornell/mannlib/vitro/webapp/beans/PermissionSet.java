@@ -12,59 +12,65 @@ import java.util.Set;
  * Similar to the concept of a Role.
  */
 public class PermissionSet {
-	/** This may be empty, but it should never be null. */
-	private String uri = "";
+    /**
+     * This may be empty, but it should never be null.
+     */
+    private String uri = "";
 
-	/** This may be empty, but it should never be null. */
-	private String label = "";
+    /**
+     * This may be empty, but it should never be null.
+     */
+    private String label = "";
 
-	private boolean forNewUsers;
-	private boolean forPublic;
+    private boolean forNewUsers;
+    private boolean forPublic;
 
-	/** This may be empty, but it should never be null. */
-	private Set<String> permissionUris = Collections.emptySet();
+    /**
+     * This may be empty, but it should never be null.
+     */
+    private Set<String> permissionUris = Collections.emptySet();
 
-	public String getUri() {
-		return uri;
-	}
+    public String getUri() {
+        return uri;
+    }
 
-	public void setUri(String uri) {
-		this.uri = (uri == null) ? "" : uri;
-	}
+    public void setUri(String uri) {
+        this.uri = (uri == null) ? "" : uri;
+    }
 
-	public String getLabel() {
-		return label;
-	}
+    public String getLabel() {
+        return label;
+    }
 
-	public void setLabel(String label) {
-		this.label = (label == null) ? "" : label;
-	}
+    public void setLabel(String label) {
+        this.label = (label == null) ? "" : label;
+    }
 
-	public boolean isForNewUsers() {
-		return forNewUsers;
-	}
+    public boolean isForNewUsers() {
+        return forNewUsers;
+    }
 
-	public void setForNewUsers(Boolean forNewUsers) {
-		this.forNewUsers = (forNewUsers != null) && forNewUsers.booleanValue();
-	}
+    public void setForNewUsers(Boolean forNewUsers) {
+        this.forNewUsers = (forNewUsers != null) && forNewUsers.booleanValue();
+    }
 
-	public boolean isForPublic() {
-		return forPublic;
-	}
+    public boolean isForPublic() {
+        return forPublic;
+    }
 
-	public void setForPublic(Boolean forPublic) {
-		this.forPublic = (forPublic != null) && forPublic.booleanValue();
-	}
+    public void setForPublic(Boolean forPublic) {
+        this.forPublic = (forPublic != null) && forPublic.booleanValue();
+    }
 
-	public Set<String> getPermissionUris() {
-		return permissionUris;
-	}
+    public Set<String> getPermissionUris() {
+        return permissionUris;
+    }
 
-	public void setPermissionUris(Collection<String> permissionUris) {
-		if (permissionUris == null) {
-			throw new NullPointerException("permissionUris may not be null.");
-		}
-		this.permissionUris = new HashSet<String>(permissionUris);
-	}
+    public void setPermissionUris(Collection<String> permissionUris) {
+        if (permissionUris == null) {
+            throw new NullPointerException("permissionUris may not be null.");
+        }
+        this.permissionUris = new HashSet<String>(permissionUris);
+    }
 
 }

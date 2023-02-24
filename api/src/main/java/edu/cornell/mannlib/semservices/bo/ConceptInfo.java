@@ -9,6 +9,7 @@ import java.util.List;
 public class ConceptInfo extends SemanticServicesInfoBase {
 
     private List<?> conceptList;
+
     /**
      *
      */

@@ -2,209 +2,212 @@
 
 package edu.cornell.mannlib.vitro.webapp.config;
 
-import java.util.Date;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpSession;
-
+import com.ibm.icu.text.SimpleDateFormat;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.ibm.icu.text.SimpleDateFormat;
 
 /**
  * Information about the provenance of this application: release, revision
  * level, build date, etc.
- *
+ * <p>
  * Except for the build date, the information is stored for all levels of the
  * application. So an instance of NIHVIVO might read:
- *
+ * <p>
  * date: 2010-11-09 12:15:44
- *
+ * <p>
  * level: vitro-core, trunk, 1234:1236M
- *
+ * <p>
  * level: vivo, branch rel_1.1_maint, 798
- *
+ * <p>
  * Note that the levels should be listed from inner to outer.
- *
+ * <p>
  * Instances of this class are immutable.
  */
 public class RevisionInfoBean {
-	private static final Log log = LogFactory.getLog(RevisionInfoBean.class);
+    /**
+     * The bean is attached to the session by this name.
+     */
+    public static final String ATTRIBUTE_NAME = RevisionInfoBean.class.getName();
+    /**
+     * A dummy bean to use if there is no real one.
+     */
+    static final RevisionInfoBean DUMMY_BEAN = new RevisionInfoBean(
+        new Date(0), Collections.singleton(LevelRevisionInfo.DUMMY_LEVEL));
+    private static final Log log = LogFactory.getLog(RevisionInfoBean.class);
 
-	/** A dummy bean to use if there is no real one. */
-	static final RevisionInfoBean DUMMY_BEAN = new RevisionInfoBean(
-			new Date(0), Collections.singleton(LevelRevisionInfo.DUMMY_LEVEL));
+    // ----------------------------------------------------------------------
+    // static methods
+    // ----------------------------------------------------------------------
+    private final long buildDate;
+    private final List<LevelRevisionInfo> levelInfos;
 
-	/** The bean is attached to the session by this name. */
-	public static final String ATTRIBUTE_NAME = RevisionInfoBean.class.getName();
+    RevisionInfoBean(Date buildDate, Collection<LevelRevisionInfo> levelInfos) {
+        this.buildDate = buildDate.getTime();
+        this.levelInfos = Collections
+            .unmodifiableList(new ArrayList<LevelRevisionInfo>(levelInfos));
+    }
 
-	// ----------------------------------------------------------------------
-	// static methods
-	// ----------------------------------------------------------------------
+    /**
+     * Package access: should only be used during setup.
+     */
+    static void setBean(ServletContext context, RevisionInfoBean bean) {
+        if (bean == null) {
+            bean = DUMMY_BEAN;
+        }
+        context.setAttribute(ATTRIBUTE_NAME, bean);
+        log.info(bean);
+    }
 
-	/** Package access: should only be used during setup. */
-	static void setBean(ServletContext context, RevisionInfoBean bean) {
-		if (bean == null) {
-			bean = DUMMY_BEAN;
-		}
-		context.setAttribute(ATTRIBUTE_NAME, bean);
-		log.info(bean);
-	}
+    // ----------------------------------------------------------------------
+    // the bean
+    // ----------------------------------------------------------------------
 
-	public static RevisionInfoBean getBean(HttpSession session) {
-		if (session == null) {
-			log.warn("Tried to get revision info bean with a null session!");
-			return DUMMY_BEAN;
-		}
+    public static RevisionInfoBean getBean(HttpSession session) {
+        if (session == null) {
+            log.warn("Tried to get revision info bean with a null session!");
+            return DUMMY_BEAN;
+        }
 
-		return getBean(session.getServletContext());
-	}
+        return getBean(session.getServletContext());
+    }
 
-	public static RevisionInfoBean getBean(ServletContext context) {
-		if (context == null) {
-			log.warn("Tried to get revision info bean from a null context");
-			return DUMMY_BEAN;
-		}
+    public static RevisionInfoBean getBean(ServletContext context) {
+        if (context == null) {
+            log.warn("Tried to get revision info bean from a null context");
+            return DUMMY_BEAN;
+        }
 
-		Object o = context.getAttribute(ATTRIBUTE_NAME);
-		if (o == null) {
-			log.warn("Tried to get revision info bean, but didn't find any.");
-			return DUMMY_BEAN;
-		}
+        Object o = context.getAttribute(ATTRIBUTE_NAME);
+        if (o == null) {
+            log.warn("Tried to get revision info bean, but didn't find any.");
+            return DUMMY_BEAN;
+        }
 
-		if (!(o instanceof RevisionInfoBean)) {
-			log.error("Tried to get revision info bean, but found an instance of "
-					+ o.getClass().getName() + ": " + o);
-			return DUMMY_BEAN;
-		}
+        if (!(o instanceof RevisionInfoBean)) {
+            log.error("Tried to get revision info bean, but found an instance of "
+                + o.getClass().getName() + ": " + o);
+            return DUMMY_BEAN;
+        }
 
-		return (RevisionInfoBean) o;
-	}
+        return (RevisionInfoBean) o;
+    }
 
-	public static void removeBean(ServletContext context) {
-		context.removeAttribute(ATTRIBUTE_NAME);
-	}
+    public static void removeBean(ServletContext context) {
+        context.removeAttribute(ATTRIBUTE_NAME);
+    }
 
-	// ----------------------------------------------------------------------
-	// the bean
-	// ----------------------------------------------------------------------
+    public Date getBuildDate() {
+        return new Date(buildDate);
+    }
 
-	private final long buildDate;
-	private final List<LevelRevisionInfo> levelInfos;
+    public List<LevelRevisionInfo> getLevelInfos() {
+        return levelInfos;
+    }
 
-	RevisionInfoBean(Date buildDate, Collection<LevelRevisionInfo> levelInfos) {
-		this.buildDate = buildDate.getTime();
-		this.levelInfos = Collections
-				.unmodifiableList(new ArrayList<LevelRevisionInfo>(levelInfos));
-	}
+    public String getReleaseLabel() {
+        if (levelInfos.isEmpty()) {
+            return LevelRevisionInfo.DUMMY_LEVEL.getRelease();
+        }
 
-	public Date getBuildDate() {
-		return new Date(buildDate);
-	}
+        int lastIndex = levelInfos.size() - 1;
+        LevelRevisionInfo outerLevel = levelInfos.get(lastIndex);
+        return outerLevel.getRelease();
+    }
 
-	public List<LevelRevisionInfo> getLevelInfos() {
-		return levelInfos;
-	}
+    @Override
+    public String toString() {
+        return "Revision info [build date: "
+            + new SimpleDateFormat().format(new Date(buildDate))
+            + ", level info: " + levelInfos + "]";
+    }
 
-	public String getReleaseLabel() {
-		if (levelInfos.isEmpty()) {
-			return LevelRevisionInfo.DUMMY_LEVEL.getRelease();
-		}
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof RevisionInfoBean)) {
+            return false;
+        }
+        RevisionInfoBean that = (RevisionInfoBean) obj;
+        return (this.buildDate == that.buildDate)
+            && this.levelInfos.equals(that.levelInfos);
+    }
 
-		int lastIndex = levelInfos.size() - 1;
-		LevelRevisionInfo outerLevel = levelInfos.get(lastIndex);
-		return outerLevel.getRelease();
-	}
+    @Override
+    public int hashCode() {
+        return new Long(buildDate).hashCode() ^ levelInfos.hashCode();
+    }
 
-	@Override
-	public String toString() {
-		return "Revision info [build date: "
-				+ new SimpleDateFormat().format(new Date(buildDate))
-				+ ", level info: " + levelInfos + "]";
-	}
+    // ----------------------------------------------------------------------
+    // helper class
+    // ----------------------------------------------------------------------
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this) {
-			return true;
-		}
-		if (!(obj instanceof RevisionInfoBean)) {
-			return false;
-		}
-		RevisionInfoBean that = (RevisionInfoBean) obj;
-		return (this.buildDate == that.buildDate)
-				&& this.levelInfos.equals(that.levelInfos);
-	}
+    /**
+     * Revision info about one level of the application -- e.g. vitro, vivo,
+     * vivoCornell, etc.
+     */
+    public static class LevelRevisionInfo {
+        /**
+         * A level to use when no actual level can be found.
+         */
+        static final LevelRevisionInfo DUMMY_LEVEL = new LevelRevisionInfo(
+            "no name", "unknown", "unknown");
 
-	@Override
-	public int hashCode() {
-		return new Long(buildDate).hashCode() ^ levelInfos.hashCode();
-	}
+        private final String name;
+        private final String release;
+        private final String revision;
 
-	// ----------------------------------------------------------------------
-	// helper class
-	// ----------------------------------------------------------------------
+        LevelRevisionInfo(String name, String release, String revision) {
+            this.name = name;
+            this.release = release;
+            this.revision = revision;
+        }
 
-	/**
-	 * Revision info about one level of the application -- e.g. vitro, vivo,
-	 * vivoCornell, etc.
-	 */
-	public static class LevelRevisionInfo {
-		/** A level to use when no actual level can be found. */
-		static final LevelRevisionInfo DUMMY_LEVEL = new LevelRevisionInfo(
-				"no name", "unknown", "unknown");
+        public String getName() {
+            return name;
+        }
 
-		private final String name;
-		private final String release;
-		private final String revision;
+        public String getRelease() {
+            return release;
+        }
 
-		LevelRevisionInfo(String name, String release, String revision) {
-			this.name = name;
-			this.release = release;
-			this.revision = revision;
-		}
+        public String getRevision() {
+            return revision;
+        }
 
-		public String getName() {
-			return name;
-		}
+        @Override
+        public String toString() {
+            return "[" + name + ", " + release + ", " + revision + "]";
+        }
 
-		public String getRelease() {
-			return release;
-		}
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof LevelRevisionInfo)) {
+                return false;
+            }
+            LevelRevisionInfo that = (LevelRevisionInfo) obj;
+            return this.name.equals(that.name)
+                && this.release.equals(that.release)
+                && this.revision.equals(that.revision);
+        }
 
-		public String getRevision() {
-			return revision;
-		}
+        @Override
+        public int hashCode() {
+            return name.hashCode() ^ release.hashCode() ^ revision.hashCode();
+        }
 
-		@Override
-		public String toString() {
-			return "[" + name + ", " + release + ", " + revision + "]";
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (obj == this) {
-				return true;
-			}
-			if (!(obj instanceof LevelRevisionInfo)) {
-				return false;
-			}
-			LevelRevisionInfo that = (LevelRevisionInfo) obj;
-			return this.name.equals(that.name)
-					&& this.release.equals(that.release)
-					&& this.revision.equals(that.revision);
-		}
-
-		@Override
-		public int hashCode() {
-			return name.hashCode() ^ release.hashCode() ^ revision.hashCode();
-		}
-
-	}
+    }
 
 }

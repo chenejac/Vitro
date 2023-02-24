@@ -8,135 +8,135 @@ import java.util.Set;
 
 /**
  * A collection of search terms that will be used to query the search index.
- *
+ * <p>
  * Each of the "set" and "add" methods will return the searchQuery itself, so
  * calls can easily be chained together.
  */
 public interface SearchQuery {
-	public enum Order {
-		ASC, DESC
-	}
+    /**
+     * Which fields should be returned from the query?
+     *
+     * @return this query
+     */
+    SearchQuery addFields(String... names);
 
-	/**
-	 * Set the text of the query. This will be parsed using Lucene query syntax.
-	 *
-	 * @return this query
-	 */
-	SearchQuery setQuery(String query);
+    /**
+     * Which fields should be returned from the query?
+     *
+     * @return this query
+     */
+    SearchQuery addFields(Collection<String> names);
 
-	/**
-	 * Where in the ordered list of result documents should the response begin?
-	 * That is, how many of the results should be skipped? (allows paging of
-	 * results). The default is 0.
-	 *
-	 * @return this query
-	 */
-	SearchQuery setStart(int start);
+    /**
+     * What field should be used to sort the results, and in what order?
+     *
+     * @return this query
+     */
+    SearchQuery addSortField(String name, Order order);
 
-	/**
-	 * What is the maximum number of documents that will be returned from the
-	 * query? A negative value means no limit. The default is -1.
-	 *
-	 * @return this query
-	 */
-	SearchQuery setRows(int rows);
+    /**
+     * Restrict the results by this query.
+     *
+     * @return this query
+     */
+    SearchQuery addFilterQuery(String filterQuery);
 
-	/**
-	 * Which fields should be returned from the query?
-	 *
-	 * @return this query
-	 */
-	SearchQuery addFields(String... names);
+    /**
+     * Restrict the results by these queries.
+     *
+     * @return this query
+     */
+    SearchQuery addFilterQueries(String... filterQueries);
 
-	/**
-	 * Which fields should be returned from the query?
-	 *
-	 * @return this query
-	 */
-	SearchQuery addFields(Collection<String> names);
+    /**
+     * What fields should be used to facet the results?
+     *
+     * @return this query
+     */
+    SearchQuery addFacetFields(String... fields);
 
-	/**
-	 * What field should be used to sort the results, and in what order?
-	 *
-	 * @return this query
-	 */
-	SearchQuery addSortField(String name, Order order);
+    /**
+     * @return The text of the query. May be empty, but never null.
+     */
+    String getQuery();
 
-	/**
-	 * Restrict the results by this query.
-	 *
-	 * @return this query
-	 */
-	SearchQuery addFilterQuery(String filterQuery);
+    /**
+     * Set the text of the query. This will be parsed using Lucene query syntax.
+     *
+     * @return this query
+     */
+    SearchQuery setQuery(String query);
 
-	/**
-	 * Restrict the results by these queries.
-	 *
-	 * @return this query
-	 */
-	SearchQuery addFilterQueries(String... filterQueries);
+    int getStart();
 
-	/**
-	 * What fields should be used to facet the results?
-	 *
-	 * @return this query
-	 */
-	SearchQuery addFacetFields(String... fields);
+    /**
+     * Where in the ordered list of result documents should the response begin?
+     * That is, how many of the results should be skipped? (allows paging of
+     * results). The default is 0.
+     *
+     * @return this query
+     */
+    SearchQuery setStart(int start);
 
-	/**
-	 * The maximum number of facet counts that will be returned from the query.
-	 * The default is 100. A negative value means no limit.
-	 *
-	 * @return this query
-	 */
-	SearchQuery setFacetLimit(int cnt);
+    /**
+     * @return A negative value means that no limit has been specified.
+     */
+    int getRows();
 
-	/**
-	 * Facet having fewer hits will be excluded from the list. The default is 0.
-	 *
-	 * @return this query
-	 */
-	SearchQuery setFacetMinCount(int cnt);
+    /**
+     * What is the maximum number of documents that will be returned from the
+     * query? A negative value means no limit. The default is -1.
+     *
+     * @return this query
+     */
+    SearchQuery setRows(int rows);
 
-	/**
-	 * @return The text of the query. May be empty, but never null.
-	 */
-	String getQuery();
+    /**
+     * @return May return an empty set, but never null.
+     */
+    Set<String> getFieldsToReturn();
 
-	int getStart();
+    /**
+     * @return May return an empty map, but never null.
+     */
+    Map<String, SearchQuery.Order> getSortFields();
 
-	/**
-	 * @return A negative value means that no limit has been specified.
-	 */
-	int getRows();
+    /**
+     * @return May return an empty set, but never null.
+     */
+    Set<String> getFilters();
 
-	/**
-	 * @return May return an empty set, but never null.
-	 */
-	Set<String> getFieldsToReturn();
+    /**
+     * @return May return an empty set, but never null.
+     */
+    Set<String> getFacetFields();
 
-	/**
-	 * @return May return an empty map, but never null.
-	 */
-	Map<String, SearchQuery.Order> getSortFields();
+    /**
+     * @return A negative value means that no limit has been specified.
+     */
+    int getFacetLimit();
 
-	/**
-	 * @return May return an empty set, but never null.
-	 */
-	Set<String> getFilters();
+    /**
+     * The maximum number of facet counts that will be returned from the query.
+     * The default is 100. A negative value means no limit.
+     *
+     * @return this query
+     */
+    SearchQuery setFacetLimit(int cnt);
 
-	/**
-	 * @return May return an empty set, but never null.
-	 */
-	Set<String> getFacetFields();
+    /**
+     * @return A negative value means that no limit has been specified.
+     */
+    int getFacetMinCount();
 
-	/**
-	 * @return A negative value means that no limit has been specified.
-	 */
-	int getFacetLimit();
+    /**
+     * Facet having fewer hits will be excluded from the list. The default is 0.
+     *
+     * @return this query
+     */
+    SearchQuery setFacetMinCount(int cnt);
 
-	/**
-	 * @return A negative value means that no limit has been specified.
-	 */
-	int getFacetMinCount();
+    public enum Order {
+        ASC, DESC
+    }
 }

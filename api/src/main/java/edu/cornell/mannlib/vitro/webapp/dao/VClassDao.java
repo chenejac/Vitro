@@ -44,17 +44,17 @@ public interface VClassDao {
 
     void removeEquivalentClass(String classURI, String equivalentClassURI);
 
-    List <String> getSubClassURIs(String classURI);
+    List<String> getSubClassURIs(String classURI);
 
-    List <String> getAllSubClassURIs(String classURI);
+    List<String> getAllSubClassURIs(String classURI);
 
-    List <String> getSuperClassURIs(String classURI, boolean direct);
+    List<String> getSuperClassURIs(String classURI, boolean direct);
 
-    List <String> getAllSuperClassURIs(String classURI);
+    List<String> getAllSuperClassURIs(String classURI);
 
     VClass getVClassByURI(String URI);
 
-    void insertNewVClass(VClass cls ) throws InsertException;
+    void insertNewVClass(VClass cls) throws InsertException;
 
     void updateVClass(VClass cls);
 
@@ -62,9 +62,9 @@ public interface VClassDao {
 
     void deleteVClass(VClass cls);
 
-    List <VClass> getVClassesForProperty(String propertyURI, boolean domainSide);
+    List<VClass> getVClassesForProperty(String propertyURI, boolean domainSide);
 
-    List <VClass> getVClassesForProperty(String vclassURI, String propertyURI);
+    List<VClass> getVClassesForProperty(String vclassURI, String propertyURI);
 
     void addVClassesToGroup(VClassGroup group);
 
@@ -73,20 +73,22 @@ public interface VClassDao {
     void deleteClasses2Classes(Classes2Classes c2c);
 
     @SuppressWarnings("unchecked")
-    void addVClassesToGroup(VClassGroup group, boolean includeUninstantiatedClasses);/* (non-Javadoc)
-    * @see edu.cornell.mannlib.vitro.webapp.dao.db.VClassDao#addVClassesToGroups(java.util.List)
-    */
+    void addVClassesToGroup(VClassGroup group,
+                            boolean includeUninstantiatedClasses);/* (non-Javadoc)
+     * @see edu.cornell.mannlib.vitro.webapp.dao.db.VClassDao#addVClassesToGroups(java.util.List)
+     */
 
-    void addVClassesToGroup(VClassGroup group, boolean includeUninstantiatedClasses, boolean getIndividualCount); /*
-    * @see edu.cornell.mannlib.vitro.webapp.dao.db.VClassDao#addVClassesToGroups(java.util.List)
-    */
+    void addVClassesToGroup(VClassGroup group, boolean includeUninstantiatedClasses,
+                            boolean getIndividualCount); /*
+     * @see edu.cornell.mannlib.vitro.webapp.dao.db.VClassDao#addVClassesToGroups(java.util.List)
+     */
 
     /*
     void addVClassesToGroup(VClassGroup group, boolean includeUninstantiatedClasses, boolean getIndividualCount, RoleLevel userVisibilityRoleLevel, RoleLevel userUpdateRoleLevel ); /*
     * @see edu.cornell.mannlib.vitro.webapp.dao.db.VClassDao#addVClassesToGroups(java.util.List)
     */
 
-    void addVClassesToGroups(List <VClassGroup> groups );
+    void addVClassesToGroups(List<VClassGroup> groups);
 
     /**
      * @param vc1 VCLass

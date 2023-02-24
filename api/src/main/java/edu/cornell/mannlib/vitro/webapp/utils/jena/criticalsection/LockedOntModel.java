@@ -2,9 +2,8 @@
 
 package edu.cornell.mannlib.vitro.webapp.utils.jena.criticalsection;
 
-import org.apache.jena.ontology.OntModel;
-
 import edu.cornell.mannlib.vitro.webapp.rdfservice.adapters.AbstractOntModelDecorator;
+import org.apache.jena.ontology.OntModel;
 
 /**
  * A simple OntModel, except that it can only be created by locking a
@@ -12,21 +11,21 @@ import edu.cornell.mannlib.vitro.webapp.rdfservice.adapters.AbstractOntModelDeco
  * to simply release the lock, and not to actually close the wrapped model.
  */
 public class LockedOntModel extends AbstractOntModelDecorator implements
-		AutoCloseable {
+    AutoCloseable {
 
-	/**
-	 * Can only be created by LockableOntModel.
-	 */
-	LockedOntModel(OntModel m) {
-		super(m);
-	}
+    /**
+     * Can only be created by LockableOntModel.
+     */
+    LockedOntModel(OntModel m) {
+        super(m);
+    }
 
-	/**
-	 * Just unlocks the model. Doesn't actually close it, because we may want to
-	 * use it again.
-	 */
-	@Override
-	public void close() {
-		super.leaveCriticalSection();
-	}
+    /**
+     * Just unlocks the model. Doesn't actually close it, because we may want to
+     * use it again.
+     */
+    @Override
+    public void close() {
+        super.leaveCriticalSection();
+    }
 }

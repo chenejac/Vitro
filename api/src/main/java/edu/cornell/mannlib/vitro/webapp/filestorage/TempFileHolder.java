@@ -2,18 +2,16 @@
 
 package edu.cornell.mannlib.vitro.webapp.filestorage;
 
-import java.io.IOException;
-
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.io.IOException;
 
 import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
 import edu.cornell.mannlib.vitro.webapp.filestorage.model.FileInfo;
 import edu.cornell.mannlib.vitro.webapp.modules.fileStorage.FileStorage;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Attaches an uploaded file to the session with a listener, so the file will be
@@ -28,111 +26,108 @@ import edu.cornell.mannlib.vitro.webapp.modules.fileStorage.FileStorage;
  * {@link TempFileHolder#remove(HttpSession, String) remove}.
  */
 public class TempFileHolder implements HttpSessionBindingListener {
-	private static final Log log = LogFactory.getLog(TempFileHolder.class);
+    private static final Log log = LogFactory.getLog(TempFileHolder.class);
+    private FileInfo fileInfo;
 
-	/**
-	 * Create a  holding the given {@link FileInfo}, and
-	 * attach it to the session with the given attribute name.
-	 *
-	 * If an attribute with this name already exists, it is replaced.
-	 */
-	public static void attach(HttpSession session, String attributeName,
-			FileInfo fileInfo) {
-		if (session == null) {
-			throw new NullPointerException("session may not be null.");
-		}
-		if (attributeName == null) {
-			throw new NullPointerException("attributeName may not be null.");
-		}
-		if (fileInfo == null) {
-			throw new NullPointerException("fileInfo may not be null.");
-		}
-		log.debug("attach this file: " + fileInfo);
-		session.setAttribute(attributeName, new TempFileHolder(fileInfo));
-	}
+    private TempFileHolder(FileInfo fileInfo) {
+        if (fileInfo == null) {
+            throw new NullPointerException("fileInfo may not be null.");
+        }
+        this.fileInfo = fileInfo;
+    }
 
-	/**
-	 * Get the  which is stored as an attribute on this
-	 * session, extract the {@link FileInfo} from it, and remove it from the
-	 * session.
-	 *
-	 * If there is no such attribute, of if it is not a ,
-	 * return null.
-	 */
-	public static FileInfo remove(HttpSession session, String attributeName) {
-		if (session == null) {
-			throw new NullPointerException("session may not be null.");
-		}
-		if (attributeName == null) {
-			throw new NullPointerException("attributeName may not be null.");
-		}
-		Object attribute = session.getAttribute(attributeName);
-		if (attribute instanceof TempFileHolder) {
-			FileInfo fileInfo = ((TempFileHolder) attribute).extractFileInfo();
-			session.removeAttribute(attributeName);
-			log.debug("remove this file: " + fileInfo);
-			return fileInfo;
-		} else if (attribute == null) {
-			return null;
-		} else {
-			session.removeAttribute(attributeName);
-			return null;
-		}
-	}
+    /**
+     * Create a  holding the given {@link FileInfo}, and
+     * attach it to the session with the given attribute name.
+     * <p>
+     * If an attribute with this name already exists, it is replaced.
+     */
+    public static void attach(HttpSession session, String attributeName,
+                              FileInfo fileInfo) {
+        if (session == null) {
+            throw new NullPointerException("session may not be null.");
+        }
+        if (attributeName == null) {
+            throw new NullPointerException("attributeName may not be null.");
+        }
+        if (fileInfo == null) {
+            throw new NullPointerException("fileInfo may not be null.");
+        }
+        log.debug("attach this file: " + fileInfo);
+        session.setAttribute(attributeName, new TempFileHolder(fileInfo));
+    }
 
-	private FileInfo fileInfo;
+    /**
+     * Get the  which is stored as an attribute on this
+     * session, extract the {@link FileInfo} from it, and remove it from the
+     * session.
+     * <p>
+     * If there is no such attribute, of if it is not a ,
+     * return null.
+     */
+    public static FileInfo remove(HttpSession session, String attributeName) {
+        if (session == null) {
+            throw new NullPointerException("session may not be null.");
+        }
+        if (attributeName == null) {
+            throw new NullPointerException("attributeName may not be null.");
+        }
+        Object attribute = session.getAttribute(attributeName);
+        if (attribute instanceof TempFileHolder) {
+            FileInfo fileInfo = ((TempFileHolder) attribute).extractFileInfo();
+            session.removeAttribute(attributeName);
+            log.debug("remove this file: " + fileInfo);
+            return fileInfo;
+        } else if (attribute == null) {
+            return null;
+        } else {
+            session.removeAttribute(attributeName);
+            return null;
+        }
+    }
 
-	private TempFileHolder(FileInfo fileInfo) {
-		if (fileInfo == null) {
-			throw new NullPointerException("fileInfo may not be null.");
-		}
-		this.fileInfo = fileInfo;
-	}
+    /**
+     * Gets the {@link FileInfo} payload, and removes it so the file won't be
+     * deleted when the value is unbound.
+     */
+    private FileInfo extractFileInfo() {
+        FileInfo result = this.fileInfo;
+        this.fileInfo = null;
+        return result;
+    }
 
-	/**
-	 * Gets the {@link FileInfo} payload, and removes it so the file won't be
-	 * deleted when the value is unbound.
-	 */
-	private FileInfo extractFileInfo() {
-		FileInfo result = this.fileInfo;
-		this.fileInfo = null;
-		return result;
-	}
+    /**
+     * When attached to the session, do nothing.
+     */
+    @Override
+    public void valueBound(HttpSessionBindingEvent event) {
+        // Nothing to do.
+    }
 
-	/**
-	 * When attached to the session, do nothing.
-	 *
-	 */
-	@Override
-	public void valueBound(HttpSessionBindingEvent event) {
-		// Nothing to do.
-	}
+    /**
+     * When removed from the session, if the {@link #fileInfo} is not empty,
+     * delete the file. If you had wanted this file, you should have called
+     * {@link #remove(HttpSession, String) remove}.
+     */
+    @Override
+    public void valueUnbound(HttpSessionBindingEvent event) {
+        if (fileInfo == null) {
+            log.trace("No file info.");
+            return;
+        }
 
-	/**
-	 * When removed from the session, if the {@link #fileInfo} is not empty,
-	 * delete the file. If you had wanted this file, you should have called
-	 * {@link #remove(HttpSession, String) remove}.
-	 *
-	 */
-	@Override
-	public void valueUnbound(HttpSessionBindingEvent event) {
-		if (fileInfo == null) {
-			log.trace("No file info.");
-			return;
-		}
+        if (fileInfo.getBytestreamUri() == null) {
+            log.warn("File info has no URI?");
+            return;
+        }
 
-		if (fileInfo.getBytestreamUri() == null) {
-			log.warn("File info has no URI?");
-			return;
-		}
-
-		FileStorage fs = ApplicationUtils.instance().getFileStorage();
-		try {
-			fs.deleteFile(fileInfo.getBytestreamUri());
-			log.debug("Deleted file " + fileInfo);
-		} catch (IOException e) {
-			log.error("Failed to delete temp file from session: " + event, e);
-		}
-	}
+        FileStorage fs = ApplicationUtils.instance().getFileStorage();
+        try {
+            fs.deleteFile(fileInfo.getBytestreamUri());
+            log.debug("Deleted file " + fileInfo);
+        } catch (IOException e) {
+            log.error("Failed to delete temp file from session: " + event, e);
+        }
+    }
 
 }

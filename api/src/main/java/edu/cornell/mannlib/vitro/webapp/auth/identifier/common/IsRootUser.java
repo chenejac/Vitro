@@ -9,20 +9,22 @@ import edu.cornell.mannlib.vitro.webapp.auth.identifier.IdentifierBundle;
  * The current user is a root user.
  */
 public class IsRootUser extends AbstractCommonIdentifier implements Identifier {
-	public static final IsRootUser INSTANCE = new IsRootUser();
+    public static final IsRootUser INSTANCE = new IsRootUser();
 
-	public static boolean isRootUser(IdentifierBundle ids) {
-		return !getIdentifiersForClass(ids, IsRootUser.class).isEmpty();
-	}
+    /**
+     * Enforce the singleton pattern.
+     */
+    private IsRootUser() {
+        // Nothing to initialize.
+    }
 
-	/** Enforce the singleton pattern. */
-	private IsRootUser() {
-		// Nothing to initialize.
-	}
+    public static boolean isRootUser(IdentifierBundle ids) {
+        return !getIdentifiersForClass(ids, IsRootUser.class).isEmpty();
+    }
 
-	@Override
-	public String toString() {
-		return "IsRootUser";
-	}
+    @Override
+    public String toString() {
+        return "IsRootUser";
+    }
 
 }

@@ -2,32 +2,30 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 
+import javax.servlet.annotation.WebServlet;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.ResponseValues;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.TemplateResponseValues;
 import edu.cornell.mannlib.vitro.webapp.i18n.I18n;
-
-import javax.servlet.annotation.WebServlet;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /*
  * Servlet that only specifies a template, without putting any data
  * into the template model. Page content is fully specified in the template.
  */
-@WebServlet(name = "StaticPageController", urlPatterns = {"/login"} )
+@WebServlet(name = "StaticPageController", urlPatterns = {"/login"})
 public class StaticPageController extends FreemarkerHttpServlet {
 
     private static final long serialVersionUID = 1L;
     private static final Log log = LogFactory.getLog(StaticPageController.class);
 
     @SuppressWarnings("serial")
-    private static final Map<String, String> urlsToTemplates = new HashMap<String, String>(){
+    private static final Map<String, String> urlsToTemplates = new HashMap<String, String>() {
         {
             put("/login", "login.ftl");
         }
@@ -47,8 +45,8 @@ public class StaticPageController extends FreemarkerHttpServlet {
         String requestedUrl = vreq.getServletPath();
         String templateName = urlsToTemplates.get(requestedUrl);
 
-		log.debug("requestedUrl='" + requestedUrl + "', templateName='"
-				+ templateName + "'");
+        log.debug("requestedUrl='" + requestedUrl + "', templateName='"
+            + templateName + "'");
 
         return new TemplateResponseValues(templateName);
     }

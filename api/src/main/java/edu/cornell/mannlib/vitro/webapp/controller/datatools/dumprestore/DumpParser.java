@@ -8,17 +8,17 @@ import java.io.IOException;
  * The interface for parsers that process dump/restore files.
  */
 public interface DumpParser extends AutoCloseable, Iterable<DumpQuad> {
-	@Override
-	public void close() throws IOException;
+    @Override
+    public void close() throws IOException;
 
-	public static class BadInputException extends RuntimeException {
-		public BadInputException(String message) {
-			super(message);
-		}
+    public static class BadInputException extends RuntimeException {
+        public BadInputException(String message) {
+            super(message);
+        }
 
-		public BadInputException(String message, Throwable cause) {
-			super(message, cause);
-		}
+        public BadInputException(String message, Throwable cause) {
+            super(message, cause);
+        }
 
-	}
+    }
 }

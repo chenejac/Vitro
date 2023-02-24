@@ -2,8 +2,8 @@
 
 package edu.cornell.mannlib.vedit.beans;
 
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 
 public class DynamicField {
 
@@ -42,11 +42,11 @@ public class DynamicField {
         return maxCardinality;
     }
 
-    public void setMaxCardinality (int maxCardinality) {
+    public void setMaxCardinality(int maxCardinality) {
         this.maxCardinality = maxCardinality;
     }
 
-    public int getMinCardinality () {
+    public int getMinCardinality() {
         return minCardinality;
     }
 
@@ -82,7 +82,7 @@ public class DynamicField {
         return rowList;
     }
 
-    public void setRowList (List<DynamicFieldRow> rowList) {
+    public void setRowList(List<DynamicFieldRow> rowList) {
         this.rowList = rowList;
     }
 

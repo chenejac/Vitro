@@ -4,10 +4,6 @@ package edu.cornell.mannlib.vitro.webapp.triplesource.impl.tdb;
 
 import java.io.IOException;
 
-import org.apache.jena.query.Dataset;
-import org.apache.jena.rdf.model.ModelMaker;
-import org.apache.jena.tdb.TDB;
-
 import edu.cornell.mannlib.vitro.webapp.dao.jena.RDFServiceDataset;
 import edu.cornell.mannlib.vitro.webapp.dao.jena.RDFServiceModelMaker;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames;
@@ -25,117 +21,120 @@ import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.logging.LoggingRDFServic
 import edu.cornell.mannlib.vitro.webapp.servlet.setup.JenaDataSourceSetupBase;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.Property;
 import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.rdf.model.ModelMaker;
+import org.apache.jena.tdb.TDB;
 
 /**
  * A TDB triple-store has no concept of connections, so we need not manage them
  * here.
- *
+ * <p>
  * As a result, we have a single RDFService, a RDFServiceFactory that always
  * returns that single RDFService, a single instance of the Dataset and the
  * ModelMaker.
- *
+ * <p>
  * We keep a copy of the RDFService wrapped in an Unclosable shell, and hand
  * that out when requested. The inner RDFService is only closed on shutdown().
- *
+ * <p>
  * Memory-map the small content models, and add the standard decorators.
  */
 public class ContentTripleSourceTDB extends ContentTripleSource {
-	private String tdbPath;
+    private String tdbPath;
 
-	private volatile RDFService rdfService;
-	private RDFServiceFactory rdfServiceFactory;
-	private RDFService unclosableRdfService;
-	private Dataset dataset;
-	private ModelMaker modelMaker;
+    private volatile RDFService rdfService;
+    private RDFServiceFactory rdfServiceFactory;
+    private RDFService unclosableRdfService;
+    private Dataset dataset;
+    private ModelMaker modelMaker;
 
-	@Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#hasTdbDirectory", minOccurs = 1, maxOccurs = 1)
-	public void setTdbPath(String path) {
-		tdbPath = path;
-	}
+    @Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#hasTdbDirectory", minOccurs = 1, maxOccurs = 1)
+    public void setTdbPath(String path) {
+        tdbPath = path;
+    }
 
-	@Override
-	public void startup(Application application, ComponentStartupStatus ss) {
-		configureTDB();
-		try {
-			this.rdfService = new RDFServiceTDB(resolveTdbPath(application));
-			this.rdfServiceFactory = createRDFServiceFactory();
-			this.unclosableRdfService = this.rdfServiceFactory.getRDFService();
-			this.dataset = new RDFServiceDataset(this.unclosableRdfService);
-			this.modelMaker = createModelMaker();
-			checkForFirstTimeStartup();
-			ss.info("Initialized the RDF source for TDB");
-		} catch (IOException e) {
-			throw new RuntimeException(
-					"Failed to set up the RDF source for TDB", e);
-		}
-	}
+    @Override
+    public void startup(Application application, ComponentStartupStatus ss) {
+        configureTDB();
+        try {
+            this.rdfService = new RDFServiceTDB(resolveTdbPath(application));
+            this.rdfServiceFactory = createRDFServiceFactory();
+            this.unclosableRdfService = this.rdfServiceFactory.getRDFService();
+            this.dataset = new RDFServiceDataset(this.unclosableRdfService);
+            this.modelMaker = createModelMaker();
+            checkForFirstTimeStartup();
+            ss.info("Initialized the RDF source for TDB");
+        } catch (IOException e) {
+            throw new RuntimeException(
+                "Failed to set up the RDF source for TDB", e);
+        }
+    }
 
-	private String resolveTdbPath(Application application) {
-		return application.getHomeDirectory().getPath().resolve(tdbPath)
-				.toString();
-	}
+    private String resolveTdbPath(Application application) {
+        return application.getHomeDirectory().getPath().resolve(tdbPath)
+            .toString();
+    }
 
-	private void configureTDB() {
-		TDB.getContext().setTrue(TDB.symUnionDefaultGraph);
-	}
+    private void configureTDB() {
+        TDB.getContext().setTrue(TDB.symUnionDefaultGraph);
+    }
 
-	private RDFServiceFactory createRDFServiceFactory() {
-		return new LoggingRDFServiceFactory(new RDFServiceFactorySingle(
-				this.rdfService));
-	}
+    private RDFServiceFactory createRDFServiceFactory() {
+        return new LoggingRDFServiceFactory(new RDFServiceFactorySingle(
+            this.rdfService));
+    }
 
-	private ModelMaker createModelMaker() {
-		return addContentDecorators(new ModelMakerWithPersistentEmptyModels(
-				new MemoryMappingModelMaker(new RDFServiceModelMaker(
-						this.unclosableRdfService), SMALL_CONTENT_MODELS)));
-	}
+    private ModelMaker createModelMaker() {
+        return addContentDecorators(new ModelMakerWithPersistentEmptyModels(
+            new MemoryMappingModelMaker(new RDFServiceModelMaker(
+                this.unclosableRdfService), SMALL_CONTENT_MODELS)));
+    }
 
-	private void checkForFirstTimeStartup() {
-		if (this.dataset.getNamedModel(ModelNames.TBOX_ASSERTIONS).getGraph()
-				.isEmpty()) {
-			JenaDataSourceSetupBase.thisIsFirstStartup();
-		}
-	}
+    private void checkForFirstTimeStartup() {
+        if (this.dataset.getNamedModel(ModelNames.TBOX_ASSERTIONS).getGraph()
+            .isEmpty()) {
+            JenaDataSourceSetupBase.thisIsFirstStartup();
+        }
+    }
 
-	@Override
-	public RDFServiceFactory getRDFServiceFactory() {
-		return this.rdfServiceFactory;
-	}
+    @Override
+    public RDFServiceFactory getRDFServiceFactory() {
+        return this.rdfServiceFactory;
+    }
 
-	@Override
-	public RDFService getRDFService() {
-		return this.unclosableRdfService;
-	}
+    @Override
+    public RDFService getRDFService() {
+        return this.unclosableRdfService;
+    }
 
-	@Override
-	public Dataset getDataset() {
-		return this.dataset;
-	}
+    @Override
+    public Dataset getDataset() {
+        return this.dataset;
+    }
 
-	@Override
-	public ModelMaker getModelMaker() {
-		return this.modelMaker;
-	}
+    @Override
+    public ModelMaker getModelMaker() {
+        return this.modelMaker;
+    }
 
-	@Override
-	public OntModelCache getShortTermOntModels(RDFService shortTermRdfService,
-			OntModelCache longTermOntModelCache) {
-		// No need to use short-term models.
-		return longTermOntModelCache;
-	}
+    @Override
+    public OntModelCache getShortTermOntModels(RDFService shortTermRdfService,
+                                               OntModelCache longTermOntModelCache) {
+        // No need to use short-term models.
+        return longTermOntModelCache;
+    }
 
-	@Override
-	public String toString() {
-		return "ContentTripleSourceTDB[" + ToString.hashHex(this) + "]";
-	}
+    @Override
+    public String toString() {
+        return "ContentTripleSourceTDB[" + ToString.hashHex(this) + "]";
+    }
 
-	@Override
-	public void shutdown(Application application) {
-		synchronized (this) {
-			if (this.rdfService != null) {
-				this.rdfService.close();
-				this.rdfService = null;
-			}
-		}
-	}
+    @Override
+    public void shutdown(Application application) {
+        synchronized (this) {
+            if (this.rdfService != null) {
+                this.rdfService.close();
+                this.rdfService = null;
+            }
+        }
+    }
 }

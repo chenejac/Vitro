@@ -6,7 +6,6 @@ import java.util.Comparator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.vocabulary.XSD;
 
 /* This class is used to order authorships on the add author form. It should be removed in favor of using whatever
@@ -52,8 +51,7 @@ public class DataPropertyComparator implements Comparator<Individual> {
                 int i1 = Integer.valueOf(dps1.getData());
                 int i2 = Integer.valueOf(dps2.getData());
                 result = Integer.compare(i1, i2);
-            }
-            else if (XSD.xstring.toString().equals(datatype)) {
+            } else if (XSD.xstring.toString().equals(datatype)) {
                 result = dps1.getData().compareTo(dps2.getData());
             }
             // Fill in other types here
@@ -65,7 +63,6 @@ public class DataPropertyComparator implements Comparator<Individual> {
         }
         return result;
     }
-
 
 
 }

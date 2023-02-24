@@ -9,13 +9,17 @@ import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.APPLICATIO
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.TBOX_ASSERTIONS;
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.TBOX_ASSERTIONS_FIRSTTIME_BACKUP;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-
+import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
+import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
+import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.adapters.VitroModelFactory;
+import edu.cornell.mannlib.vitro.webapp.startup.StartupStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.jena.ontology.OntModel;
@@ -28,22 +32,16 @@ import org.apache.jena.util.ResourceUtils;
 import org.apache.jena.util.iterator.ClosableIterator;
 import org.apache.jena.vocabulary.RDF;
 
-import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.adapters.VitroModelFactory;
-import edu.cornell.mannlib.vitro.webapp.startup.StartupStatus;
-
 /**
  * Sets up the content models, OntModelSelectors and webapp DAO factories.
- *
+ * <p>
  * Why the firstTimeStartup flag? Because you can't ask a large SDB model
  * whether it is empty. SDB translates  this into a call to size(), which
  * in turn becomes find(null, null, null) and a count, and this gives an
  * OutOfMemoryError because it tries to read the entire model into memory.
  */
 public class ContentModelSetup extends JenaDataSourceSetupBase
-        implements javax.servlet.ServletContextListener {
+    implements javax.servlet.ServletContextListener {
 
     private static final Log log = LogFactory.getLog(ContentModelSetup.class);
 
@@ -61,22 +59,23 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
         ContextModelAccess models = ModelAccess.on(ctx);
         boolean firstTimeStartup = false;
 
-    	Model applicationMetadataModel = models.getOntModel(APPLICATION_METADATA);
-		if (applicationMetadataModel.isEmpty()) {
-			firstTimeStartup = true;
-			initializeApplicationMetadata(ctx, applicationMetadataModel);
+        Model applicationMetadataModel = models.getOntModel(APPLICATION_METADATA);
+        if (applicationMetadataModel.isEmpty()) {
+            firstTimeStartup = true;
+            initializeApplicationMetadata(ctx, applicationMetadataModel);
 
-			// backup copy from firsttime files
-			OntModel applicationMetadataModelFirsttime = models.getOntModel(APPLICATION_METADATA_FIRSTTIME_BACKUP);
-			applicationMetadataModelFirsttime.add(applicationMetadataModel);
-            
-		} else {
-			// check if some of the firsttime files have changed since the first start up and
-			// if they changed, apply these changes to the user models
-			applyFirstTimeChanges(ctx);
+            // backup copy from firsttime files
+            OntModel applicationMetadataModelFirsttime =
+                models.getOntModel(APPLICATION_METADATA_FIRSTTIME_BACKUP);
+            applicationMetadataModelFirsttime.add(applicationMetadataModel);
 
-        	checkForNamespaceMismatch( applicationMetadataModel, ctx );
-		}
+        } else {
+            // check if some of the firsttime files have changed since the first start up and
+            // if they changed, apply these changes to the user models
+            applyFirstTimeChanges(ctx);
+
+            checkForNamespaceMismatch(applicationMetadataModel, ctx);
+        }
 
         OntModel baseABoxModel = models.getOntModel(ABOX_ASSERTIONS);
         if (firstTimeStartup) {
@@ -99,53 +98,53 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
         RDFFilesLoader.loadEveryTimeFiles(ctx, "tbox", baseTBoxModel);
     }
 
-	private long secondsSince(long startTime) {
-		return (System.currentTimeMillis() - startTime) / 1000;
-	}
+    private long secondsSince(long startTime) {
+        return (System.currentTimeMillis() - startTime) / 1000;
+    }
 
     /* ===================================================================== */
 
-	/**
-	 * We need to read the RDF files and change the Portal from a blank node to
-	 * one with a URI in the default namespace.
-	 *
-	 * Do this before adding the data to the RDFService-backed model, to avoid
-	 * warnings about editing a blank node.
-	 */
-	private void initializeApplicationMetadata(ServletContext ctx,
-			Model applicationMetadataModel) {
-		OntModel temporaryAMModel = VitroModelFactory.createOntologyModel();
+    /**
+     * We need to read the RDF files and change the Portal from a blank node to
+     * one with a URI in the default namespace.
+     * <p>
+     * Do this before adding the data to the RDFService-backed model, to avoid
+     * warnings about editing a blank node.
+     */
+    private void initializeApplicationMetadata(ServletContext ctx,
+                                               Model applicationMetadataModel) {
+        OntModel temporaryAMModel = VitroModelFactory.createOntologyModel();
         RDFFilesLoader.loadFirstTimeFiles(ctx, "applicationMetadata", temporaryAMModel, true);
-    	setPortalUriOnFirstTime(temporaryAMModel, ctx);
-    	applicationMetadataModel.add(temporaryAMModel);
-	}
+        setPortalUriOnFirstTime(temporaryAMModel, ctx);
+        applicationMetadataModel.add(temporaryAMModel);
+    }
 
-	/**
-	 * If we are loading the application metadata for the first time, set the
-	 * URI of the Portal based on the default namespace.
-	 */
-	private void setPortalUriOnFirstTime(Model model, ServletContext ctx) {
-		// Only a single portal is permitted in the initialization data.
-	    // Treat all blank nodes with type Portal as describing the same
-	    // portal, and give them the same URI.
-		List<Resource> toRename = new ArrayList<Resource>();
-		ClosableIterator<Resource> portalResIt = model
-				.listSubjectsWithProperty(RDF.type,
-						model.getResource(VitroVocabulary.PORTAL));
-		try {
-			while (portalResIt.hasNext()) {
-				Resource portalRes = portalResIt.next();
-				if (portalRes.isAnon()) {
-					toRename.add(portalRes);
-				}
-			}
-		} finally {
-			portalResIt.close();
-		}
-		for (Resource portalResource : toRename) {
-			ResourceUtils.renameResource(portalResource, getDefaultNamespace(ctx) + "portal1");
-		}
-	}
+    /**
+     * If we are loading the application metadata for the first time, set the
+     * URI of the Portal based on the default namespace.
+     */
+    private void setPortalUriOnFirstTime(Model model, ServletContext ctx) {
+        // Only a single portal is permitted in the initialization data.
+        // Treat all blank nodes with type Portal as describing the same
+        // portal, and give them the same URI.
+        List<Resource> toRename = new ArrayList<Resource>();
+        ClosableIterator<Resource> portalResIt = model
+            .listSubjectsWithProperty(RDF.type,
+                model.getResource(VitroVocabulary.PORTAL));
+        try {
+            while (portalResIt.hasNext()) {
+                Resource portalRes = portalResIt.next();
+                if (portalRes.isAnon()) {
+                    toRename.add(portalRes);
+                }
+            }
+        } finally {
+            portalResIt.close();
+        }
+        for (Resource portalResource : toRename) {
+            ResourceUtils.renameResource(portalResource, getDefaultNamespace(ctx) + "portal1");
+        }
+    }
 
 
     /**
@@ -157,8 +156,8 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
 
         List<Resource> portals = getPortal1s(model);
 
-        if(!portals.isEmpty() && noPortalForNamespace(
-                portals, expectedNamespace)) {
+        if (!portals.isEmpty() && noPortalForNamespace(
+            portals, expectedNamespace)) {
             // There really should be only one portal 1, but if there happen to
             // be multiple, just arbitrarily pick the first in the list.
             Resource portal = portals.get(0);
@@ -166,14 +165,14 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
             renamePortal(portal, expectedNamespace, model);
             StartupStatus ss = StartupStatus.getBean(ctx);
             ss.warning(this, "\nThe default namespace has been changed \n" +
-                             "from " + oldNamespace +
-                             "\nto " + expectedNamespace + ".\n" +
-                             "The application will function normally, but " +
-                             "any individuals in the \n" + oldNamespace + " " +
-                             "namespace will need to have their URIs \n" +
-                             "changed in order to be served as linked data. " +
-                             "You can use the Ingest Tools \nto change the " +
-                             "URIs for a batch of resources.");
+                "from " + oldNamespace +
+                "\nto " + expectedNamespace + ".\n" +
+                "The application will function normally, but " +
+                "any individuals in the \n" + oldNamespace + " " +
+                "namespace will need to have their URIs \n" +
+                "changed in order to be served as linked data. " +
+                "You can use the Ingest Tools \nto change the " +
+                "URIs for a batch of resources.");
         }
     }
 
@@ -182,7 +181,7 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
         try {
             model.enterCriticalSection(Lock.READ);
             ResIterator portalIt = model.listResourcesWithProperty(
-                    RDF.type, PORTAL);
+                RDF.type, PORTAL);
             while (portalIt.hasNext()) {
                 Resource portal = portalIt.nextResource();
                 if ("portal1".equals(portal.getLocalName())) {
@@ -197,7 +196,7 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
 
     private boolean noPortalForNamespace(List<Resource> portals, String expectedNamespace) {
         for (Resource portal : portals) {
-            if(expectedNamespace.equals(portal.getNameSpace())) {
+            if (expectedNamespace.equals(portal.getNameSpace())) {
                 return false;
             }
         }
@@ -219,7 +218,8 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
      */
     private void applyFirstTimeChanges(ServletContext ctx) {
 
-        applyFirstTimeChanges(ctx, "applicationMetadata", APPLICATION_METADATA_FIRSTTIME_BACKUP, APPLICATION_METADATA);
+        applyFirstTimeChanges(ctx, "applicationMetadata", APPLICATION_METADATA_FIRSTTIME_BACKUP,
+            APPLICATION_METADATA);
 
         applyFirstTimeChanges(ctx, "abox", ABOX_ASSERTIONS_FIRSTTIME_BACKUP, ABOX_ASSERTIONS);
 
@@ -231,13 +231,17 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
      * Check if the firsttime files have changed since the firsttime startup for one ContentModel,
      * if so, then apply the changes but not overwrite the whole user model
      */
-    private void applyFirstTimeChanges(ServletContext ctx, String modelPath, String firsttimeBackupModelUri, String userModelUri) {
-        log.info("Reload firsttime files on start-up if changed: '" + modelPath +"', URI: '" +userModelUri+ "'");
+    private void applyFirstTimeChanges(ServletContext ctx, String modelPath,
+                                       String firsttimeBackupModelUri, String userModelUri) {
+        log.info("Reload firsttime files on start-up if changed: '" + modelPath + "', URI: '" +
+            userModelUri + "'");
         ContextModelAccess models = ModelAccess.on(ctx);
         OntModel firsttimeBackupModel = models.getOntModel(firsttimeBackupModelUri);
 
         // compare firsttime files with configuration models
-        log.debug("compare firsttime files with configuration models (backup from first start) for " + modelPath);
+        log.debug(
+            "compare firsttime files with configuration models (backup from first start) for " +
+                modelPath);
         OntModel firsttimeFilesModel = VitroModelFactory.createOntologyModel();
         RDFFilesLoader.loadFirstTimeFiles(ctx, modelPath, firsttimeFilesModel, true);
 
@@ -246,32 +250,37 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
             setPortalUriOnFirstTime(firsttimeFilesModel, ctx);
         }
 
-        if ( RDFFilesLoader.areIsomporphic(firsttimeBackupModel, firsttimeFilesModel) ) {
+        if (RDFFilesLoader.areIsomporphic(firsttimeBackupModel, firsttimeFilesModel)) {
             log.debug("They are the same, so do nothing: '" + modelPath + "'");
         } else {
-            log.debug("They differ: '" + modelPath + "', compare values in configuration models with user's triplestore");     
+            log.debug("They differ: '" + modelPath +
+                "', compare values in configuration models with user's triplestore");
             OntModel userModel = models.getOntModel(userModelUri);
 
             // double check the statements (blank notes, etc.) and apply the changes
-            boolean updatedFiles = applyChanges(firsttimeBackupModel, firsttimeFilesModel, userModel, modelPath);
-            if (updatedFiles) log.info("The model was updated, " + modelPath);
+            boolean updatedFiles =
+                applyChanges(firsttimeBackupModel, firsttimeFilesModel, userModel, modelPath);
+            if (updatedFiles) {
+                log.info("The model was updated, " + modelPath);
+            }
         }
     }
 
     /*
-	 * This method is designed to compare configuration models (baseModel) with firsttime files (newModel):
-	 * if they are the same, stopFirstTime
-	 * else, if they differ, compare values in configuration models (baseModel) with user's triplestore
-	 *     if they are the same, update user's triplestore with value in new firsttime files
-	 *     else, if they differ, leave user's triplestore statement alone
-	 * finally, overwrite the configuration models with content of the updated firstime files
-     * 
+     * This method is designed to compare configuration models (baseModel) with firsttime files (newModel):
+     * if they are the same, stopFirstTime
+     * else, if they differ, compare values in configuration models (baseModel) with user's triplestore
+     *     if they are the same, update user's triplestore with value in new firsttime files
+     *     else, if they differ, leave user's triplestore statement alone
+     * finally, overwrite the configuration models with content of the updated firstime files
+     *
      * @param baseModel The backup firsttime model (from the first startup)
      * @param newModel The current state of the firsttime files in the directory
      * @param userModel The current state of the user model
      * @param modelIdString Just an string for the output for better debugging (tbox, abox, applicationMetadata)
      */
-    private boolean applyChanges(Model baseModel, Model newModel, Model userModel, String modelIdString) {
+    private boolean applyChanges(Model baseModel, Model newModel, Model userModel,
+                                 String modelIdString) {
         boolean updatedFiles = false;
         StringWriter out = new StringWriter();
         StringWriter out2 = new StringWriter();
@@ -279,31 +288,36 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
         Model difNewOld = newModel.difference(baseModel);
 
         // special case for "rootTab" triple, do not need an update (is it still used in general? if not remove this case)
-        if(modelIdString.equals("applicationMetadata")) {
-            
-            Property p = userModel.createProperty("http://vitro.mannlib.cornell.edu/ns/vitro/0.7#", "rootTab");
+        if (modelIdString.equals("applicationMetadata")) {
+
+            Property p = userModel
+                .createProperty("http://vitro.mannlib.cornell.edu/ns/vitro/0.7#", "rootTab");
             difOldNew.removeAll(null, p, null);
             difNewOld.removeAll(null, p, null);
         }
 
         if (difOldNew.isEmpty() && difNewOld.isEmpty()) {
             // if there is no difference, nothing needs to be done
-            log.debug("For the " + modelIdString + " model, there is no difference in both directions. So do nothing.");
+            log.debug("For the " + modelIdString +
+                " model, there is no difference in both directions. So do nothing.");
         } else {
             // if there is a difference, we need to remove the triples in difOldNew and 
             // add the triples in difNewOld to the back up firsttime model
 
             if (!difOldNew.isEmpty()) {
-                difOldNew.write(out, "TTL"); 
-                log.debug("Difference for " + modelIdString + " (old -> new), these triples should be removed: " + out);
+                difOldNew.write(out, "TTL");
+                log.debug("Difference for " + modelIdString +
+                    " (old -> new), these triples should be removed: " + out);
 
                 // Check if the UI-changes Overlap with the changes made in the fristtime-files 
-                RDFFilesLoader.removeChangesThatConflictWithUIEdits(baseModel, userModel, difOldNew);
+                RDFFilesLoader
+                    .removeChangesThatConflictWithUIEdits(baseModel, userModel, difOldNew);
 
                 // before we remove the triples, we need to compare values in back up firsttime with user's triplestore
                 // if the triples which should be removed are still in user´s triplestore, remove them
                 if (userModel.containsAny(difOldNew)) {
-                    log.debug("Some of these triples are in the user triples store, so they will be removed now");
+                    log.debug(
+                        "Some of these triples are in the user triples store, so they will be removed now");
                     userModel.remove(difOldNew);
                     updatedFiles = true;
                 }
@@ -313,16 +327,19 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
 
             }
             if (!difNewOld.isEmpty()) {
-                difNewOld.write(out2, "TTL"); 
-                log.debug("Difference for " + modelIdString + " (new -> old), these triples should be added: " + out2);
+                difNewOld.write(out2, "TTL");
+                log.debug("Difference for " + modelIdString +
+                    " (new -> old), these triples should be added: " + out2);
 
                 // Check if the UI-changes Overlap with the changes made in the fristtime-files 
-                RDFFilesLoader.removeChangesThatConflictWithUIEdits(baseModel, userModel, difNewOld);
+                RDFFilesLoader
+                    .removeChangesThatConflictWithUIEdits(baseModel, userModel, difNewOld);
 
                 // before we add the triples, we need to compare values in back up firsttime with user's triplestore
                 // if the triples which should be added are not already in user´s triplestore, add them
                 if (!userModel.containsAll(difNewOld)) {
-                    log.debug("Some of these triples are not in the user triples store, so they will be added now");
+                    log.debug(
+                        "Some of these triples are not in the user triples store, so they will be added now");
                     // but only the triples that are no already there
                     Model tmp = difNewOld.difference(userModel);
                     userModel.add(tmp);
@@ -341,5 +358,5 @@ public class ContentModelSetup extends JenaDataSourceSetupBase
         // Nothing to do.
     }
 
- }
+}
 

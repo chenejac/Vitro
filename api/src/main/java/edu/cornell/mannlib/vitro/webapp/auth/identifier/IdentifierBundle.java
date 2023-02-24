@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * A group of Identifiers, very commonly used in method signatures
  * since a session will usually have more than one associated identifier.
-*/
-public interface IdentifierBundle extends List <Identifier>{
+ */
+public interface IdentifierBundle extends List<Identifier> {
     /* this is just typed List, and just barely. */
 }

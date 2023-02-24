@@ -15,12 +15,13 @@ public class RdfTypeOptions implements FieldOptions {
 
     String[] typeURIs;
 
-    public RdfTypeOptions(String ... superClassURIs)
-    throws Exception {
+    public RdfTypeOptions(String... superClassURIs)
+        throws Exception {
         super();
-        if( superClassURIs == null )
-            throw new Exception("superClassURIs must be supplied "+
-            		"to constructor.");
+        if (superClassURIs == null) {
+            throw new Exception("superClassURIs must be supplied " +
+                "to constructor.");
+        }
 
         this.typeURIs = superClassURIs;
     }
@@ -28,11 +29,11 @@ public class RdfTypeOptions implements FieldOptions {
 
     @Override
     public Map<String, String> getOptions(
-            EditConfigurationVTwo editConfig,
-            String fieldName,
-            WebappDaoFactory wdf,
-            I18nBundle i18n) {
-        Map<String,String> uriToLabel = new HashMap<String,String>();
+        EditConfigurationVTwo editConfig,
+        String fieldName,
+        WebappDaoFactory wdf,
+        I18nBundle i18n) {
+        Map<String, String> uriToLabel = new HashMap<String, String>();
 
         for (String uri : typeURIs) {
             VClass vc = wdf.getVClassDao().getVClassByURI(uri);
@@ -43,8 +44,9 @@ public class RdfTypeOptions implements FieldOptions {
 
             uriToLabel.put(uri, vc.getPickListName());
             List<String> subclassUris = wdf.getVClassDao().getAllSubClassURIs(uri);
-            if (subclassUris == null)
+            if (subclassUris == null) {
                 continue;
+            }
 
             for (String subUri : subclassUris) {
                 VClass subVc = wdf.getVClassDao().getVClassByURI(subUri);
@@ -60,7 +62,7 @@ public class RdfTypeOptions implements FieldOptions {
     }
 
     public Comparator<String[]> getCustomComparator() {
-    	return null;
+        return null;
     }
 
 }

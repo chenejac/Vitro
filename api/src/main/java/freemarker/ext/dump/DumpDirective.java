@@ -9,15 +9,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import freemarker.core.Environment;
 import freemarker.template.SimpleScalar;
 import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class DumpDirective extends BaseDumpDirective {
 
@@ -27,7 +26,7 @@ public class DumpDirective extends BaseDumpDirective {
     @SuppressWarnings("rawtypes")
     @Override
     public void execute(Environment env, Map params, TemplateModel[] loopVars,
-            TemplateDirectiveBody body) throws TemplateException, IOException {
+                        TemplateDirectiveBody body) throws TemplateException, IOException {
 
         if (loopVars.length != 0) {
             throw new TemplateModelException(
@@ -40,14 +39,14 @@ public class DumpDirective extends BaseDumpDirective {
 
         Object o = params.get("var");
 
-        if ( o == null) {
+        if (o == null) {
             throw new TemplateModelException(
                 "Must specify 'var' argument.");
         }
 
-        if ( !(o instanceof SimpleScalar)) {
+        if (!(o instanceof SimpleScalar)) {
             throw new TemplateModelException(
-               "Value of parameter 'var' must be a string.");
+                "Value of parameter 'var' must be a string.");
         }
 
         String varName = o.toString(); //((SimpleScalar)o).getAsString();

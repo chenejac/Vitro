@@ -2,20 +2,18 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 
+import javax.servlet.annotation.WebServlet;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vitro.webapp.beans.ApplicationBean;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.ResponseValues;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.TemplateResponseValues;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import javax.servlet.annotation.WebServlet;
-
-@WebServlet(name = "AboutController", urlPatterns = {"/about"} )
+@WebServlet(name = "AboutController", urlPatterns = {"/about"})
 public class AboutController extends FreemarkerHttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -35,7 +33,7 @@ public class AboutController extends FreemarkerHttpServlet {
 
     @Override
     protected String getTitle(String siteName, VitroRequest vreq) {
-    	return "About " + siteName;
+        return "About " + siteName;
     }
 
 }

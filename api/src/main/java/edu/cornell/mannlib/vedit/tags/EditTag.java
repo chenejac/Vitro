@@ -2,10 +2,9 @@
 
 package edu.cornell.mannlib.vedit.tags;
 
-import java.util.HashMap;
-
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
+import java.util.HashMap;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.beans.FormObject;
@@ -13,7 +12,7 @@ import edu.cornell.mannlib.vedit.beans.FormObject;
 public class EditTag extends TagSupport {
     private String name = null;
 
-    public void setName( String name ) {
+    public void setName(String name) {
         this.name = name;
     }
 
@@ -27,8 +26,7 @@ public class EditTag extends TagSupport {
         String epoKeyAttr = (String) pageContext.getRequest().getAttribute("epoKey");
         if (epoKeyAttr != null) {
             epoKey = epoKeyAttr;
-        }
-        else {
+        } else {
             String epoKeyParam = (String) pageContext.getRequest().getParameter("epoKey");
             if (epoKeyParam != null) {
                 epoKey = epoKeyParam;
@@ -38,17 +36,19 @@ public class EditTag extends TagSupport {
         try {
             epo = (EditProcessObject) epoHash.get(epoKey);
         } catch (NullPointerException npe) {
-            System.out.println("Null epoHash in edu.cornell.mannlib.vitro.edu.tags.utils.TagUtils.getEpo()");
+            System.out.println(
+                "Null epoHash in edu.cornell.mannlib.vitro.edu.tags.utils.TagUtils.getEpo()");
         }
         return epo;
     }
 
     public FormObject getFormObject() {
-        FormObject foo=null;
+        FormObject foo = null;
         try {
-            foo=getEpo().getFormObject();
+            foo = getEpo().getFormObject();
         } catch (NullPointerException npe) {
-            System.out.println("Null epo in edu.cornell.mannlib.vitro.edit.tags.utils.TagUtils.getFormObject()");
+            System.out.println(
+                "Null epo in edu.cornell.mannlib.vitro.edit.tags.utils.TagUtils.getFormObject()");
         }
         return foo;
     }

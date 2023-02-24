@@ -16,21 +16,21 @@ import edu.cornell.mannlib.vitro.webapp.auth.identifier.IdentifierBundle;
  */
 public abstract class AbstractCommonIdentifier {
 
-	/**
-	 * Get all of the instances of this class of Identifier from this bundle.
-	 */
-	protected static <T extends Identifier> Collection<T> getIdentifiersForClass(
-			IdentifierBundle ids, Class<T> clazz) {
-		if ((ids == null) || (clazz == null)) {
-			return Collections.emptySet();
-		}
+    /**
+     * Get all of the instances of this class of Identifier from this bundle.
+     */
+    protected static <T extends Identifier> Collection<T> getIdentifiersForClass(
+        IdentifierBundle ids, Class<T> clazz) {
+        if ((ids == null) || (clazz == null)) {
+            return Collections.emptySet();
+        }
 
-		Set<T> set = new HashSet<T>();
-		for (Identifier id : ids) {
-			if (clazz.isAssignableFrom(id.getClass())) {
-				set.add(clazz.cast(id));
-			}
-		}
-		return set;
-	}
+        Set<T> set = new HashSet<T>();
+        for (Identifier id : ids) {
+            if (clazz.isAssignableFrom(id.getClass())) {
+                set.add(clazz.cast(id));
+            }
+        }
+        return set;
+    }
 }

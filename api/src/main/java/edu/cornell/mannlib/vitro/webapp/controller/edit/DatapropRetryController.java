@@ -2,19 +2,14 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.beans.FormObject;
@@ -36,16 +31,19 @@ import edu.cornell.mannlib.vitro.webapp.dao.DatatypeDao;
 import edu.cornell.mannlib.vitro.webapp.dao.OntologyDao;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 
 public class DatapropRetryController extends BaseEditController {
 
-	private static final Log log = LogFactory.getLog(DatapropRetryController.class.getName());
+    private static final Log log = LogFactory.getLog(DatapropRetryController.class.getName());
 
     @Override
-	public void doPost (HttpServletRequest request, HttpServletResponse response) {
+    public void doPost(HttpServletRequest request, HttpServletResponse response) {
         if (!isAuthorizedToDisplayPage(request, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-        	return;
+            return;
         }
 
         //create an EditProcessObject for this and put it in the session
@@ -94,27 +92,28 @@ public class DatapropRetryController extends BaseEditController {
         //put this in the parent class?
         //make a simple mask for the class's id
         Object[] simpleMaskPair = new Object[2];
-        simpleMaskPair[0]="URI";
-        simpleMaskPair[1]=objectForEditing.getURI();
+        simpleMaskPair[0] = "URI";
+        simpleMaskPair[1] = objectForEditing.getURI();
         epo.getSimpleMask().add(simpleMaskPair);
 
         //set any validators
 
         LinkedList lnList = new LinkedList();
         lnList.add(new XMLNameValidator());
-        epo.getValidatorMap().put("LocalName",lnList);
+        epo.getValidatorMap().put("LocalName", lnList);
 
         LinkedList vlist = new LinkedList();
-        vlist.add(new IntValidator(0,99));
-        epo.getValidatorMap().put("StatusId",vlist);
+        vlist.add(new IntValidator(0, 99));
+        epo.getValidatorMap().put("StatusId", vlist);
 
         //set the getMethod so we can retrieve a new bean after we've inserted it
         try {
             Class[] args = new Class[1];
             args[0] = String.class;
-            epo.setGetMethod(dpDao.getClass().getDeclaredMethod("getDataPropertyByURI",args));
+            epo.setGetMethod(dpDao.getClass().getDeclaredMethod("getDataPropertyByURI", args));
         } catch (NoSuchMethodException e) {
-            log.error("DatapropRetryController could not find the getDataPropertyByURI method in the facade");
+            log.error(
+                "DatapropRetryController could not find the getDataPropertyByURI method in the facade");
         }
 
         //make a postinsert pageforwarder that will send us to a new class's fetch screen
@@ -129,54 +128,72 @@ public class DatapropRetryController extends BaseEditController {
 
 
         FormObject foo = new FormObject();
-        foo.setErrorMap(epo.getErrMsgMap()); // retain error messages from previous time through the form
+        foo.setErrorMap(
+            epo.getErrMsgMap()); // retain error messages from previous time through the form
 
         epo.setFormObject(foo);
-        FormUtils.populateFormFromBean(objectForEditing,action,foo);
+        FormUtils.populateFormFromBean(objectForEditing, action, foo);
         //for now, this is also making the value hash - need to separate this out
 
         HashMap optionMap = new HashMap();
-        List namespaceList = FormUtils.makeOptionListFromBeans(ontDao.getAllOntologies(),"URI","Name", ((objectForEditing.getNamespace()==null) ? "" : objectForEditing.getNamespace()), null, (objectForEditing.getNamespace()!=null));
-	    namespaceList.add(0, new Option(vreq.getUnfilteredWebappDaoFactory().getDefaultNamespace(),"default"));
+        List namespaceList = FormUtils
+            .makeOptionListFromBeans(ontDao.getAllOntologies(), "URI", "Name",
+                ((objectForEditing.getNamespace() == null) ? "" : objectForEditing.getNamespace()),
+                null, (objectForEditing.getNamespace() != null));
+        namespaceList.add(0,
+            new Option(vreq.getUnfilteredWebappDaoFactory().getDefaultNamespace(), "default"));
         optionMap.put("Namespace", namespaceList);
 
-        List<Option> domainOptionList = FormUtils.makeVClassOptionList(vreq.getUnfilteredWebappDaoFactory(), objectForEditing.getDomainClassURI());
+        List<Option> domainOptionList = FormUtils
+            .makeVClassOptionList(vreq.getUnfilteredWebappDaoFactory(),
+                objectForEditing.getDomainClassURI());
         if (objectForEditing.getDomainClassURI() != null) {
-        	VClass domain = vreq.getWebappDaoFactory().getVClassDao()
-        	        .getVClassByURI(objectForEditing.getDomainClassURI());
-        	if (domain != null && domain.isAnonymous()) {
-        		domainOptionList.add(0, new Option(
-        			    domain.getURI(),
-        			    domain.getName(),
-        			    true));
-        	}
+            VClass domain = vreq.getWebappDaoFactory().getVClassDao()
+                .getVClassByURI(objectForEditing.getDomainClassURI());
+            if (domain != null && domain.isAnonymous()) {
+                domainOptionList.add(0, new Option(
+                    domain.getURI(),
+                    domain.getName(),
+                    true));
+            }
         }
-        domainOptionList.add(0, new Option("","(none specified)"));
+        domainOptionList.add(0, new Option("", "(none specified)"));
         optionMap.put("DomainClassURI", domainOptionList);
 
-        List datatypeOptionList = FormUtils.makeOptionListFromBeans(dDao.getAllDatatypes(),"Uri","Name",objectForEditing.getRangeDatatypeURI(),null);
-        datatypeOptionList.add(0,new Option("http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral","XML literal (allows XHTML markup)"));
-        datatypeOptionList.add(0,new Option(null,"untyped (use if language tags desired)"));
+        List datatypeOptionList = FormUtils
+            .makeOptionListFromBeans(dDao.getAllDatatypes(), "Uri", "Name",
+                objectForEditing.getRangeDatatypeURI(), null);
+        datatypeOptionList.add(0,
+            new Option("http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral",
+                "XML literal (allows XHTML markup)"));
+        datatypeOptionList.add(0, new Option(null, "untyped (use if language tags desired)"));
         optionMap.put("RangeDatatypeURI", datatypeOptionList);
 
-        List groupOptList = FormUtils.makeOptionListFromBeans(vreq.getUnfilteredWebappDaoFactory().getPropertyGroupDao().getPublicGroups(true),"URI","Name", ((objectForEditing.getGroupURI()==null) ? "" : objectForEditing.getGroupURI()), null, (objectForEditing.getGroupURI()!=null));
-        HashMap<String,Option> hashMap = new HashMap<String,Option>();
-        groupOptList = getSortedList(hashMap,groupOptList,vreq);
-        groupOptList.add(0,new Option("","none"));
+        List groupOptList = FormUtils.makeOptionListFromBeans(
+            vreq.getUnfilteredWebappDaoFactory().getPropertyGroupDao().getPublicGroups(true), "URI",
+            "Name",
+            ((objectForEditing.getGroupURI() == null) ? "" : objectForEditing.getGroupURI()), null,
+            (objectForEditing.getGroupURI() != null));
+        HashMap<String, Option> hashMap = new HashMap<String, Option>();
+        groupOptList = getSortedList(hashMap, groupOptList, vreq);
+        groupOptList.add(0, new Option("", "none"));
         optionMap.put("GroupURI", groupOptList);
 
-        optionMap.put("HiddenFromDisplayBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getDisplayOptionsList(objectForEditing));
-        optionMap.put("ProhibitedFromUpdateBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getUpdateOptionsList(objectForEditing));
-        optionMap.put("HiddenFromPublishBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getPublishOptionsList(objectForEditing));
+        optionMap.put("HiddenFromDisplayBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getDisplayOptionsList(objectForEditing));
+        optionMap.put("ProhibitedFromUpdateBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getUpdateOptionsList(objectForEditing));
+        optionMap.put("HiddenFromPublishBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getPublishOptionsList(objectForEditing));
 
         // Set the value of the editing parameter (as defined in VitroVocabulary.java). 
         // Use value to control form types as in defaultDataPropertyForm.ftl
         String editingVal = objectForEditing.getEditing();
         List<Option> editingOptList = new ArrayList<Option>();
-        editingOptList.add(0,new Option("","plaintext"));
-        editingOptList.add(1,new Option("HTML","rich text"));
+        editingOptList.add(0, new Option("", "plaintext"));
+        editingOptList.add(1, new Option("HTML", "rich text"));
         for (Option val : editingOptList) {
-            if(editingVal != null && editingVal.equals(val.getValue())) {
+            if (editingVal != null && editingVal.equals(val.getValue())) {
                 val.setSelected(true);
             }
         }
@@ -184,22 +201,22 @@ public class DatapropRetryController extends BaseEditController {
 
         foo.setOptionLists(optionMap);
 
-        request.setAttribute("functional",objectForEditing.getFunctional());
+        request.setAttribute("functional", objectForEditing.getFunctional());
 
         //checkboxes are pretty annoying : we don't know if someone *unchecked* a box, so we have to default to false on updates.
         if (objectForEditing.getURI() != null) {
-              objectForEditing.setFunctional(false);
+            objectForEditing.setFunctional(false);
         }
 
         foo.setErrorMap(epo.getErrMsgMap());
 
-        request.setAttribute("colspan","4");
-        request.setAttribute("scripts","/templates/edit/formBasic.js");
-        request.setAttribute("formJsp","/templates/edit/specific/dataprop_retry.jsp");
-        request.setAttribute("title","Data Property Editing Form");
-        request.setAttribute("_action",action);
-        request.setAttribute("unqualifiedClassName","DatatypeProperty");
-        setRequestAttributes(request,epo);
+        request.setAttribute("colspan", "4");
+        request.setAttribute("scripts", "/templates/edit/formBasic.js");
+        request.setAttribute("formJsp", "/templates/edit/specific/dataprop_retry.jsp");
+        request.setAttribute("title", "Data Property Editing Form");
+        request.setAttribute("_action", action);
+        request.setAttribute("unqualifiedClassName", "DatatypeProperty");
+        setRequestAttributes(request, epo);
 
         try {
             JSPPageHandler.renderBasicPage(request, response, "/templates/edit/formBasic.jsp");
@@ -211,19 +228,21 @@ public class DatapropRetryController extends BaseEditController {
 
     }
 
-    public void doGet (HttpServletRequest request, HttpServletResponse response) {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
         doPost(request, response);
     }
 
     class DataPropertyInsertPageForwarder implements PageForwarder {
 
-        public void doForward(HttpServletRequest request, HttpServletResponse response, EditProcessObject epo){
+        public void doForward(HttpServletRequest request, HttpServletResponse response,
+                              EditProcessObject epo) {
             String newPropertyUrl = "datapropEdit?uri=";
             DataProperty p = (DataProperty) epo.getNewBean();
             try {
-                newPropertyUrl += URLEncoder.encode(p.getURI(),"UTF-8");
+                newPropertyUrl += URLEncoder.encode(p.getURI(), "UTF-8");
             } catch (Exception e) {
-                log.error(this.getClass().getName()+" could not use UTF-8 encoding to encode new URL");
+                log.error(
+                    this.getClass().getName() + " could not use UTF-8 encoding to encode new URL");
             }
             try {
                 response.sendRedirect(newPropertyUrl);

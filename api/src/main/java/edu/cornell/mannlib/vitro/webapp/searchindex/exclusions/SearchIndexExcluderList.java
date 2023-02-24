@@ -6,10 +6,10 @@ import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 
 /**
  * An ordered list of SearxchIndexExcluder objects, in a handy package.
- *
+ * <p>
  * Implementations should make a protective copy of the list of
  * SearxchIndexExcluders. Implementations must be thread-safe.
- *
+ * <p>
  * The life-cycle is:
  *
  * <pre>
@@ -20,22 +20,22 @@ import edu.cornell.mannlib.vitro.webapp.beans.Individual;
  */
 public interface SearchIndexExcluderList {
 
-	/**
-	 * Do any required setup on the individual Excluders.
-	 */
-	void startIndexing();
+    /**
+     * Do any required setup on the individual Excluders.
+     */
+    void startIndexing();
 
-	/**
-	 * Do any required teardown on the individual Excluders.
-	 */
-	void stopIndexing();
+    /**
+     * Do any required teardown on the individual Excluders.
+     */
+    void stopIndexing();
 
-	/**
-	 * Poll the list of excluders regarding this individual.
-	 *
-	 * If any returns non-null, the individual is excluded. If all return null,
-	 * the individual is not excluded.
-	 */
-	boolean isExcluded(Individual ind);
+    /**
+     * Poll the list of excluders regarding this individual.
+     * <p>
+     * If any returns non-null, the individual is excluded. If all return null,
+     * the individual is not excluded.
+     */
+    boolean isExcluded(Individual ind);
 
 }

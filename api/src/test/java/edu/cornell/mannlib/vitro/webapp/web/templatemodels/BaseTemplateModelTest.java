@@ -9,14 +9,15 @@ public class BaseTemplateModelTest {
     private static String value;
 
     @Test
-    public void testCleanURIofNull(){
+    public void testCleanURIofNull() {
 
-        BaseTemplateModel btm = new BaseTemplateModel(){};
+        BaseTemplateModel btm = new BaseTemplateModel() {
+        };
         //should not throw NPE
-        value = btm.cleanURIForDisplay( null );
+        value = btm.cleanURIForDisplay(null);
 
         //should not throw NPE
-        value = btm.cleanTextForDisplay( null );
+        value = btm.cleanTextForDisplay(null);
     }
 
 }

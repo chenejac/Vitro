@@ -5,9 +5,6 @@ package edu.cornell.mannlib.vitro.webapp.web.templatemodels.individual;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.auth.policy.PolicyHelper;
 import edu.cornell.mannlib.vitro.webapp.beans.BaseResourceBean.RoleLevel;
@@ -19,6 +16,8 @@ import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder.Route;
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.BaseTemplateModel;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Represents the property statement list for a single property of an individual.
@@ -31,10 +30,9 @@ public abstract class PropertyTemplateModel extends BaseTemplateModel {
     protected final String subjectUri;
     protected final Property property;
     protected final String propertyUri;
+    private final String localName;
     protected String domainUri;
     protected String rangeUri;
-    private final String localName;
-
     protected Map<String, Object> verboseDisplay;
     protected String addUrl;
 
@@ -78,12 +76,12 @@ public abstract class PropertyTemplateModel extends BaseTemplateModel {
         Boolean verboseDisplayValue =
             (Boolean) vreq.getSession().getAttribute("verbosePropertyDisplay");
 
-        if ( ! Boolean.TRUE.equals(verboseDisplayValue))  {
+        if (!Boolean.TRUE.equals(verboseDisplayValue)) {
             return;
         }
 
-		if (!PolicyHelper.isAuthorizedForActions(vreq,
-				SimplePermission.SEE_VERBOSE_PROPERTY_INFORMATION.ACTION)) {
+        if (!PolicyHelper.isAuthorizedForActions(vreq,
+            SimplePermission.SEE_VERBOSE_PROPERTY_INFORMATION.ACTION)) {
             return;
         }
 
@@ -108,7 +106,8 @@ public abstract class PropertyTemplateModel extends BaseTemplateModel {
         verboseDisplay.put("propertyEditUrl", editUrl);
 
         if (isFauxProperty(property)) {
-            verboseDisplay.put("fauxProperty", assembleFauxPropertyValues(getFauxProperty(property)));
+            verboseDisplay
+                .put("fauxProperty", assembleFauxPropertyValues(getFauxProperty(property)));
         }
     }
 
@@ -119,25 +118,26 @@ public abstract class PropertyTemplateModel extends BaseTemplateModel {
         return false;
     }
 
-	private Map<String, Object> assembleFauxPropertyValues(FauxProperty fp) {
-		Map<String, Object> map = new HashMap<>();
-		String editUrl = UrlBuilder.getUrl("/editForm",
-				"controller", "FauxProperty",
-				"baseUri", fp.getBaseURI(),
-				"domainUri", fp.getDomainURI(),
-				"rangeUri", fp.getRangeURI());
-		map.put("propertyEditUrl", editUrl);
-		map.put("displayName", fp.getDisplayName());
-		return map;
-	}
+    private Map<String, Object> assembleFauxPropertyValues(FauxProperty fp) {
+        Map<String, Object> map = new HashMap<>();
+        String editUrl = UrlBuilder.getUrl("/editForm",
+            "controller", "FauxProperty",
+            "baseUri", fp.getBaseURI(),
+            "domainUri", fp.getDomainURI(),
+            "rangeUri", fp.getRangeURI());
+        map.put("propertyEditUrl", editUrl);
+        map.put("displayName", fp.getDisplayName());
+        return map;
+    }
 
-	protected abstract int getPropertyDisplayTier(Property p);
+    protected abstract int getPropertyDisplayTier(Property p);
+
     protected abstract Route getPropertyEditRoute();
 
     public String toString() {
         return String.format("%s on %s",
-                             propertyUri != null ? propertyUri : "null Prop URI",
-                             subjectUri != null ? subjectUri : "null Sub URI" );
+            propertyUri != null ? propertyUri : "null Prop URI",
+            subjectUri != null ? subjectUri : "null Sub URI");
     }
 
     /* Template properties */

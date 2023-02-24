@@ -1,5 +1,14 @@
 package org.vivoweb.linkeddatafragments.views;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -21,15 +30,6 @@ import org.linkeddatafragments.fragments.tpf.ITriplePatternFragmentRequest;
 import org.linkeddatafragments.views.ILinkedDataFragmentWriter;
 import org.linkeddatafragments.views.TriplePatternFragmentWriterBase;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 //TODO: Refactor to a composable & flexible architecture using DataSource types, fragments types and request types
 
 /**
@@ -37,32 +37,24 @@ import java.util.Map;
  *
  * @author Miel Vander Sande
  */
-public class HtmlTriplePatternFragmentWriterImpl extends TriplePatternFragmentWriterBase implements ILinkedDataFragmentWriter {
+public class HtmlTriplePatternFragmentWriterImpl extends TriplePatternFragmentWriterBase
+    implements ILinkedDataFragmentWriter {
+    private static String contextPath;
     private final Configuration cfg;
-
     private final Template indexTemplate;
     private final Template datasourceTemplate;
     private final Template notfoundTemplate;
     private final Template errorTemplate;
-
     private final String HYDRA = "http://www.w3.org/ns/hydra/core#";
 
-    private static String contextPath;
-
-    public static void setContextPath(String path) {
-        contextPath = path;
-        if (!contextPath.endsWith("/")) {
-            contextPath += "/";
-        }
-    }
-
     /**
-     *
      * @param prefixes
      * @param datasources
      * @throws IOException
      */
-    public HtmlTriplePatternFragmentWriterImpl(Map<String, String> prefixes, HashMap<String, IDataSource> datasources) throws IOException {
+    public HtmlTriplePatternFragmentWriterImpl(Map<String, String> prefixes,
+                                               HashMap<String, IDataSource> datasources)
+        throws IOException {
         super(prefixes, datasources);
 
         cfg = new Configuration(Configuration.VERSION_2_3_23);
@@ -76,8 +68,14 @@ public class HtmlTriplePatternFragmentWriterImpl extends TriplePatternFragmentWr
         errorTemplate = cfg.getTemplate("error.ftl.html");
     }
 
+    public static void setContextPath(String path) {
+        contextPath = path;
+        if (!contextPath.endsWith("/")) {
+            contextPath += "/";
+        }
+    }
+
     /**
-     *
      * @param outputStream
      * @param datasource
      * @param fragment
@@ -86,7 +84,10 @@ public class HtmlTriplePatternFragmentWriterImpl extends TriplePatternFragmentWr
      * @throws TemplateException
      */
     @Override
-    public void writeFragment(ServletOutputStream outputStream, IDataSource datasource, ITriplePatternFragment fragment, ITriplePatternFragmentRequest tpfRequest) throws IOException, TemplateException{
+    public void writeFragment(ServletOutputStream outputStream, IDataSource datasource,
+                              ITriplePatternFragment fragment,
+                              ITriplePatternFragmentRequest tpfRequest)
+        throws IOException, TemplateException {
         Map data = new HashMap();
 
         // base.ftl.html
@@ -107,7 +108,8 @@ public class HtmlTriplePatternFragmentWriterImpl extends TriplePatternFragmentWr
             String predicate = control.getPredicate().getURI();
             RDFNode object = control.getObject();
             if (!object.isAnon()) {
-                String value = object.isURIResource() ? object.asResource().getURI() : object.asLiteral().getLexicalForm();
+                String value = object.isURIResource() ? object.asResource().getURI() :
+                    object.asLiteral().getLexicalForm();
                 data.put(predicate.replaceFirst(HYDRA, ""), value);
             }
         }
@@ -124,13 +126,17 @@ public class HtmlTriplePatternFragmentWriterImpl extends TriplePatternFragmentWr
         // Calculate start and end triple number
         Long start = ((tpfRequest.getPageNumber() - 1) * fragment.getMaxPageSize()) + 1;
         data.put("start", start);
-        data.put("end", (start - 1) + (triples.size() < fragment.getMaxPageSize() ? triples.size() : fragment.getMaxPageSize()));
+        data.put("end", (start - 1) + (triples.size() < fragment.getMaxPageSize() ? triples.size() :
+            fragment.getMaxPageSize()));
 
         // Compose query object
         Map query = new HashMap();
-        query.put("subject", !tpfRequest.getSubject().isVariable() ? handleCT(tpfRequest.getSubject().asConstantTerm()) : "");
-        query.put("predicate", !tpfRequest.getPredicate().isVariable() ? handleCT(tpfRequest.getPredicate().asConstantTerm()) : "");
-        query.put("object", !tpfRequest.getObject().isVariable() ? handleCT(tpfRequest.getObject().asConstantTerm()) : "");
+        query.put("subject", !tpfRequest.getSubject().isVariable() ?
+            handleCT(tpfRequest.getSubject().asConstantTerm()) : "");
+        query.put("predicate", !tpfRequest.getPredicate().isVariable() ?
+            handleCT(tpfRequest.getPredicate().asConstantTerm()) : "");
+        query.put("object", !tpfRequest.getObject().isVariable() ?
+            handleCT(tpfRequest.getObject().asConstantTerm()) : "");
         query.put("pattern", makeQueryPattern(tpfRequest));
         data.put("query", query);
 
@@ -144,26 +150,26 @@ public class HtmlTriplePatternFragmentWriterImpl extends TriplePatternFragmentWr
     private String makeQueryPattern(ITriplePatternFragmentRequest tpfRequest) {
         StringBuilder pattern = new StringBuilder();
 
-        ITriplePatternElement<RDFNode,String,String> subject   = tpfRequest.getSubject();
-        ITriplePatternElement<RDFNode,String,String> predicate = tpfRequest.getPredicate();
-        ITriplePatternElement<RDFNode,String,String> object    = tpfRequest.getObject();
+        ITriplePatternElement<RDFNode, String, String> subject = tpfRequest.getSubject();
+        ITriplePatternElement<RDFNode, String, String> predicate = tpfRequest.getPredicate();
+        ITriplePatternElement<RDFNode, String, String> object = tpfRequest.getObject();
 
         pattern.append("{");
 
-        if ( ! subject.isVariable() ) {
+        if (!subject.isVariable()) {
             appendNode(pattern.append(' '), subject.asConstantTerm());
         } else {
             pattern.append(" ?s");
         }
 
 
-        if ( ! predicate.isVariable() ) {
+        if (!predicate.isVariable()) {
             appendNode(pattern.append(' '), predicate.asConstantTerm());
         } else {
             pattern.append(" ?p");
         }
 
-        if ( ! object.isVariable() ) {
+        if (!object.isVariable()) {
             appendNode(pattern.append(' '), object.asConstantTerm());
         } else {
             pattern.append(" ?o");
@@ -190,14 +196,15 @@ public class HtmlTriplePatternFragmentWriterImpl extends TriplePatternFragmentWr
 
     private Object handleCT(Object obj) {
         if (obj instanceof LiteralImpl) {
-            return ((LiteralImpl)obj).asNode().toString();
+            return ((LiteralImpl) obj).asNode().toString();
         }
 
         return obj;
     }
 
     @Override
-    public void writeNotFound(ServletOutputStream outputStream, HttpServletRequest request) throws Exception {
+    public void writeNotFound(ServletOutputStream outputStream, HttpServletRequest request)
+        throws Exception {
         Map data = new HashMap();
         data.put("homePath", (contextPath != null ? contextPath : "") + "tpf");
         data.put("assetsPath", (contextPath != null ? contextPath : "") + "tpf/assets/");
@@ -209,7 +216,7 @@ public class HtmlTriplePatternFragmentWriterImpl extends TriplePatternFragmentWr
     }
 
     @Override
-    public void writeError(ServletOutputStream outputStream, Exception ex)  throws Exception {
+    public void writeError(ServletOutputStream outputStream, Exception ex) throws Exception {
         Map data = new HashMap();
         data.put("homePath", (contextPath != null ? contextPath : "") + "tpf");
         data.put("assetsPath", (contextPath != null ? contextPath : "") + "tpf/assets/");

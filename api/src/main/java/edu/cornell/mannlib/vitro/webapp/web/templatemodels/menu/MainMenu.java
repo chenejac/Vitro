@@ -2,15 +2,14 @@
 
 package edu.cornell.mannlib.vitro.webapp.web.templatemodels.menu;
 
+import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
-
-/** A menu that can indicate the active item.
+/**
+ * A menu that can indicate the active item.
  *
  * @author rjy7
- *
  */
 public class MainMenu extends Menu {
 
@@ -19,7 +18,8 @@ public class MainMenu extends Menu {
 
     protected VitroRequest vreq;
 
-    public MainMenu() { }
+    public MainMenu() {
+    }
 
     public MainMenu(VitroRequest vreq) {
         this.vreq = vreq;
@@ -36,6 +36,6 @@ public class MainMenu extends Menu {
     }
 
     protected boolean isActiveItem(String path) {
-        return  vreq != null && vreq.getServletPath().equals(path);
+        return vreq != null && vreq.getServletPath().equals(path);
     }
 }

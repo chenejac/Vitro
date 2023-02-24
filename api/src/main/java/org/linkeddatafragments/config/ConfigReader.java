@@ -1,16 +1,15 @@
 package org.linkeddatafragments.config;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.linkeddatafragments.datasource.IDataSourceType;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.linkeddatafragments.datasource.IDataSourceType;
 
 /**
  * Reads the configuration of a Linked Data Fragments server.
@@ -42,7 +41,7 @@ public class ConfigReader {
             while (iterator.hasNext()) {
                 Entry<String, JsonNode> entry = iterator.next();
                 final String className = entry.getValue().asText();
-                dataSourceTypes.put(entry.getKey(), initDataSouceType(className) );
+                dataSourceTypes.put(entry.getKey(), initDataSouceType(className));
             }
 
             iterator = root.get("datasources").fields();
@@ -103,32 +102,30 @@ public class ConfigReader {
      * @param className IDataSourceType class
      * @return the created IDataSourceType object
      */
-    protected IDataSourceType initDataSouceType(final String className )
-    {
+    protected IDataSourceType initDataSouceType(final String className) {
         final Class<?> c;
         try {
-            c = Class.forName( className );
-        }
-        catch ( ClassNotFoundException e ) {
-            throw new IllegalArgumentException( "Class not found: " + className,
-                                                e );
+            c = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("Class not found: " + className,
+                e);
         }
 
         final Object o;
         try {
             o = c.newInstance();
-        }
-        catch ( Exception e ) {
+        } catch (Exception e) {
             throw new IllegalArgumentException(
-                        "Creating an instance of class '" + className + "' " +
-                        "caused a " + e.getClass().getSimpleName() + ": " +
-                        e.getMessage(), e );
+                "Creating an instance of class '" + className + "' " +
+                    "caused a " + e.getClass().getSimpleName() + ": " +
+                    e.getMessage(), e);
         }
 
-        if ( ! (o instanceof IDataSourceType) )
+        if (!(o instanceof IDataSourceType)) {
             throw new IllegalArgumentException(
-                        "Class '" + className + "' is not an implementation " +
-                        "of IDataSourceType." );
+                "Class '" + className + "' is not an implementation " +
+                    "of IDataSourceType.");
+        }
 
         return (IDataSourceType) o;
     }

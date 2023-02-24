@@ -2,6 +2,7 @@
 
 package edu.cornell.mannlib.vitro.webapp.utils.dataGetter;
 
+import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,16 +10,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletContext;
-
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import edu.cornell.mannlib.vitro.webapp.web.templatemodels.individuallist.ListedIndividualBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.jena.rdf.model.Model;
-
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.beans.VClass;
 import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
@@ -32,8 +25,13 @@ import edu.cornell.mannlib.vitro.webapp.utils.JsonToFmModel;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.VClassGroupTemplateModel;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.VClassTemplateModel;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.individuallist.ListedIndividual;
+import edu.cornell.mannlib.vitro.webapp.web.templatemodels.individuallist.ListedIndividualBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.jena.rdf.model.Model;
 
 public class BrowseDataGetter extends DataGetterBase implements DataGetter {
+    protected final static Mode DEFAULT_MODE = Mode.ALL_CLASS_GROUPS;
     final static Log log = LogFactory.getLog(BrowseDataGetter.class);
     String dataGetterURI;
     VitroRequest vreq;
@@ -42,67 +40,84 @@ public class BrowseDataGetter extends DataGetterBase implements DataGetter {
     /**
      * Constructor with display model and data getter URI that will be called by reflection.
      */
-    public BrowseDataGetter(VitroRequest vreq, Model displayModel, String dataGetterURI){
-        this.configure(vreq, displayModel,dataGetterURI);
+    public BrowseDataGetter(VitroRequest vreq, Model displayModel, String dataGetterURI) {
+        this.configure(vreq, displayModel, dataGetterURI);
+    }
+
+    public static String getParam(Mode mode, VitroRequest request, Map params) {
+        if (request.getParameter(mode.param) != null) {
+            return request.getParameter(mode.param);
+        }
+        if (params.get(mode.param) != null) {
+            return params.get(mode.param).toString();
+        } else {
+            return null;
+        }
     }
 
     /**
      * Configure this instance based on the URI and display model.
      */
     protected void configure(VitroRequest vreq, Model displayModel, String dataGetterURI) {
-    	if( vreq == null )
-    		throw new IllegalArgumentException("VitroRequest  may not be null.");
-	   if( displayModel == null )
-           throw new IllegalArgumentException("Display Model may not be null.");
-       if( dataGetterURI == null )
-           throw new IllegalArgumentException("PageUri may not be null.");
+        if (vreq == null) {
+            throw new IllegalArgumentException("VitroRequest  may not be null.");
+        }
+        if (displayModel == null) {
+            throw new IllegalArgumentException("Display Model may not be null.");
+        }
+        if (dataGetterURI == null) {
+            throw new IllegalArgumentException("PageUri may not be null.");
+        }
 
-       this.vreq = vreq;
-       this.context = vreq.getSession().getServletContext();
-       this.dataGetterURI = dataGetterURI;
+        this.vreq = vreq;
+        this.context = vreq.getSession().getServletContext();
+        this.dataGetterURI = dataGetterURI;
     }
 
     @Override
     public Map<String, Object> getData(Map<String, Object> pageData) {
-        try{
+        try {
             Map params = vreq.getParameterMap();
 
-            Mode mode = getMode( vreq, params );
-            switch( mode ){
+            Mode mode = getMode(vreq, params);
+            switch (mode) {
                 case VCLASS_ALPHA:
-                    return doClassAlphaDisplay(params,vreq,context);
+                    return doClassAlphaDisplay(params, vreq, context);
                 case CLASS_GROUP:
                     return doClassGroupDisplay(params, vreq, context);
                 case VCLASS:
                     return doClassDisplay(params, vreq, context);
                 case ALL_CLASS_GROUPS:
-                    return doAllClassGroupsDisplay( params, vreq, context);
+                    return doAllClassGroupsDisplay(params, vreq, context);
                 default:
-                    return doAllClassGroupsDisplay( params, vreq, context);
+                    return doAllClassGroupsDisplay(params, vreq, context);
             }
-            }catch(Throwable th){
-                log.error(th,th);
-                return Collections.emptyMap();
-            }
+        } catch (Throwable th) {
+            log.error(th, th);
+            return Collections.emptyMap();
+        }
     }
 
     public String getType() {
         return DisplayVocabulary.HOME_PAGE_TYPE;
     }
 
-  //Get data servuice
+    //Get data servuice
     public String getDataServiceUrl() {
-    	return UrlBuilder.getUrl("/dataservice?getSearchIndividualsByVClass=1&vclassId=");
+        return UrlBuilder.getUrl("/dataservice?getSearchIndividualsByVClass=1&vclassId=");
     }
-    private Map<String, Object> doClassAlphaDisplay( Map params, VitroRequest request, ServletContext context) throws Exception {
-        Map<String,Object> body = new HashMap<String,Object>();
+
+    private Map<String, Object> doClassAlphaDisplay(Map params, VitroRequest request,
+                                                    ServletContext context) throws Exception {
+        Map<String, Object> body = new HashMap<String, Object>();
         body.putAll(getCommonValues(context, request));
-        body.putAll(getClassAlphaValues(params,request,context));
+        body.putAll(getClassAlphaValues(params, request, context));
         return body;
     }
 
-    private Map<String,Object> getClassAlphaValues( Map params, VitroRequest request, ServletContext context) throws Exception{
-        Map<String,Object> map= new HashMap<String,Object>();
+    private Map<String, Object> getClassAlphaValues(Map params, VitroRequest request,
+                                                    ServletContext context) throws Exception {
+        Map<String, Object> map = new HashMap<String, Object>();
 
         String classUri = getParam(Mode.VCLASS, request, params);
         VitroRequest vreq = new VitroRequest(request);
@@ -110,32 +125,36 @@ public class BrowseDataGetter extends DataGetterBase implements DataGetter {
         map.put("class", new VClassTemplateModel(vclass));
 
         ObjectNode vclassRes = JsonServlet.getSearchIndividualsByVClass(vclass.getURI(), request);
-        map.put("totalCount", JsonToFmModel.convertJSONObjectToMap( (ObjectNode) vclassRes.get("totalCount") ));
-        map.put("alpha", JsonToFmModel.convertJSONObjectToMap( (ObjectNode) vclassRes.get("alpha") ));
-        map.put("individuals", JsonToFmModel.convertJSONArrayToList( (ArrayNode) vclassRes.get("individuals") ));
-        map.put("pages", JsonToFmModel.convertJSONArrayToList( (ArrayNode) vclassRes.get("pages") ));
-        map.put("letters", JsonToFmModel.convertJSONArrayToList( (ArrayNode) vclassRes.get("letters") ));
+        map.put("totalCount",
+            JsonToFmModel.convertJSONObjectToMap((ObjectNode) vclassRes.get("totalCount")));
+        map.put("alpha", JsonToFmModel.convertJSONObjectToMap((ObjectNode) vclassRes.get("alpha")));
+        map.put("individuals",
+            JsonToFmModel.convertJSONArrayToList((ArrayNode) vclassRes.get("individuals")));
+        map.put("pages", JsonToFmModel.convertJSONArrayToList((ArrayNode) vclassRes.get("pages")));
+        map.put("letters",
+            JsonToFmModel.convertJSONArrayToList((ArrayNode) vclassRes.get("letters")));
 
         return map;
     }
 
-    private Map<String,Object> getCommonValues( ServletContext context, VitroRequest vreq){
-        Map<String,Object> values = new HashMap<String,Object>();
+    private Map<String, Object> getCommonValues(ServletContext context, VitroRequest vreq) {
+        Map<String, Object> values = new HashMap<String, Object>();
 
         VClassGroupsForRequest vcgc = VClassGroupCache.getVClassGroups(vreq);
         List<VClassGroup> cgList = vcgc.getGroups();
         LinkedList<VClassGroupTemplateModel> cgtmList = new LinkedList<VClassGroupTemplateModel>();
-        for( VClassGroup classGroup : cgList){
-            cgtmList.add( new VClassGroupTemplateModel( classGroup ));
+        for (VClassGroup classGroup : cgList) {
+            cgtmList.add(new VClassGroupTemplateModel(classGroup));
         }
-        values.put("vClassGroups",cgtmList);
+        values.put("vClassGroups", cgtmList);
 
         return values;
     }
 
-    protected Map<String, Object> doAllClassGroupsDisplay( Map params, VitroRequest request, ServletContext context) {
-        Map<String,Object> body = new HashMap<String,Object>();
-        body.putAll(getCommonValues(context,request));
+    protected Map<String, Object> doAllClassGroupsDisplay(Map params, VitroRequest request,
+                                                          ServletContext context) {
+        Map<String, Object> body = new HashMap<String, Object>();
+        body.putAll(getCommonValues(context, request));
         body.putAll(getAllClassGroupData(request, params, context));
 
         return body;
@@ -143,29 +162,32 @@ public class BrowseDataGetter extends DataGetterBase implements DataGetter {
 
     /**
      * Gets a list of all VClassGroups with vclasses with individual counts.
+     *
      * @param request current VitroRequest
-     * @param params a parameter map
+     * @param params  a parameter map
      * @param context current servlet context
      */
-    protected Map<String,Object> getAllClassGroupData(VitroRequest request, Map params, ServletContext context){
-        Map<String,Object> map = new HashMap<String,Object>();
+    protected Map<String, Object> getAllClassGroupData(VitroRequest request, Map params,
+                                                       ServletContext context) {
+        Map<String, Object> map = new HashMap<String, Object>();
         return map;
     }
 
-    protected Map<String, Object> doClassDisplay( Map params,
-            VitroRequest request, ServletContext context) {
-        Map<String,Object> body = new HashMap<String,Object>();
+    protected Map<String, Object> doClassDisplay(Map params,
+                                                 VitroRequest request, ServletContext context) {
+        Map<String, Object> body = new HashMap<String, Object>();
 
-        body.putAll(getCommonValues(context,request));
-        body.putAll(getClassData(request,params,context));
+        body.putAll(getCommonValues(context, request));
+        body.putAll(getClassData(request, params, context));
 
         return body;
     }
 
-    private Map<String, Object> getClassData(VitroRequest request, Map params, ServletContext context) {
-        Map<String,Object> map = new HashMap<String,Object>();
+    private Map<String, Object> getClassData(VitroRequest request, Map params,
+                                             ServletContext context) {
+        Map<String, Object> map = new HashMap<String, Object>();
 
-        map.putAll(getClassGroupData(request, params,context));
+        map.putAll(getClassGroupData(request, params, context));
 
         String classUri = getParam(Mode.VCLASS, request, params);
         VitroRequest vreq = new VitroRequest(request);
@@ -176,7 +198,7 @@ public class BrowseDataGetter extends DataGetterBase implements DataGetter {
             .getIndividualsByVClass(vclass);
 
         List<ListedIndividual> tInds = new ArrayList<ListedIndividual>(inds.size());
-        for( Individual ind : inds){
+        for (Individual ind : inds) {
             tInds.add(ListedIndividualBuilder.build(ind, vreq));
         }
         map.put("individualsInClass", tInds);
@@ -184,16 +206,18 @@ public class BrowseDataGetter extends DataGetterBase implements DataGetter {
         return map;
     }
 
-    protected Map<String, Object> doClassGroupDisplay(Map params, VitroRequest request, ServletContext context) {
-        Map<String,Object> body = new HashMap<String,Object>();
-        body.putAll(getCommonValues(context,request));
-        body.putAll( getClassGroupData(request,params, context));
+    protected Map<String, Object> doClassGroupDisplay(Map params, VitroRequest request,
+                                                      ServletContext context) {
+        Map<String, Object> body = new HashMap<String, Object>();
+        body.putAll(getCommonValues(context, request));
+        body.putAll(getClassGroupData(request, params, context));
 
         return body;
     }
 
-    protected Map<String, Object> getClassGroupData(VitroRequest request, Map params, ServletContext context) {
-        Map<String,Object> map = new HashMap<String,Object>();
+    protected Map<String, Object> getClassGroupData(VitroRequest request, Map params,
+                                                    ServletContext context) {
+        Map<String, Object> map = new HashMap<String, Object>();
 
         String vcgUri = getParam(Mode.CLASS_GROUP, request, params);
         VitroRequest vreq = new VitroRequest(request);
@@ -202,7 +226,7 @@ public class BrowseDataGetter extends DataGetterBase implements DataGetter {
         VClassGroup vcg = vcgc.getGroup(vcgUri);
 
         ArrayList<VClassTemplateModel> classes = new ArrayList<VClassTemplateModel>(vcg.size());
-        for( VClass vc : vcg){
+        for (VClass vc : vcg) {
             classes.add(new VClassTemplateModel(vc));
         }
         map.put("classes", classes);
@@ -212,48 +236,37 @@ public class BrowseDataGetter extends DataGetterBase implements DataGetter {
         return map;
     }
 
-
-    enum Mode{
-        VCLASS_ALPHA("vclassAlpha"),
-        VCLASS("vclassUri"),
-        CLASS_GROUP("classgroupUri"),
-        ALL_CLASS_GROUPS("all");
-        String param;
-        Mode(String param){
-            this.param = param;
-        }
-    }
-
-    protected final static Mode DEFAULT_MODE = Mode.ALL_CLASS_GROUPS;
-
-    protected Mode getMode(VitroRequest request, Map<String, Object> params){
-        for( Mode mode : Mode.values()){
-            String queryParam = request.getParameter( mode.param );
-            if( queryParam != null && !queryParam.isEmpty() ){
+    protected Mode getMode(VitroRequest request, Map<String, Object> params) {
+        for (Mode mode : Mode.values()) {
+            String queryParam = request.getParameter(mode.param);
+            if (queryParam != null && !queryParam.isEmpty()) {
                 return mode;
             }
-            Object obj = params.get( mode.param );
-            String param = obj != null ? obj.toString():null;
-            if( param != null && !param.isEmpty() ){
+            Object obj = params.get(mode.param);
+            String param = obj != null ? obj.toString() : null;
+            if (param != null && !param.isEmpty()) {
                 return mode;
             }
         }
         return DEFAULT_MODE;
     }
 
-    public static String getParam(Mode mode, VitroRequest request, Map params){
-        if( request.getParameter(mode.param) != null )
-            return request.getParameter(mode.param);
-        if( params.get(mode.param) != null )
-            return params.get(mode.param).toString();
-        else
-            return null;
-    }
-
     /**
      * For processig of JSONObject
      */
     public ObjectNode convertToJSON(Map<String, Object> dataMap, VitroRequest vreq) {
-    	return null;
+        return null;
+    }
+
+    enum Mode {
+        VCLASS_ALPHA("vclassAlpha"),
+        VCLASS("vclassUri"),
+        CLASS_GROUP("classgroupUri"),
+        ALL_CLASS_GROUPS("all");
+        String param;
+
+        Mode(String param) {
+            this.param = param;
+        }
     }
 }

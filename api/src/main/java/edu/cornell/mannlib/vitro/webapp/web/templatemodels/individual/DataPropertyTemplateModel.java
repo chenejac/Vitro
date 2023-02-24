@@ -8,12 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.jena.rdf.model.Literal;
-
 import edu.cornell.mannlib.vitro.webapp.auth.policy.PolicyHelper;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.propstmt.AddDataPropertyStatement;
@@ -29,6 +23,10 @@ import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
 import edu.cornell.mannlib.vitro.webapp.freemarker.config.FreemarkerConfiguration;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.customlistview.DataPropertyListConfig;
 import freemarker.cache.TemplateLoader;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.jena.rdf.model.Literal;
 
 public class DataPropertyTemplateModel extends PropertyTemplateModel {
 
@@ -36,31 +34,9 @@ public class DataPropertyTemplateModel extends PropertyTemplateModel {
 
     private static final String TYPE = "data";
     private static final String EDIT_PATH = "editRequestDispatch";
-
-    private final List<DataPropertyStatementTemplateModel> statements;
     private static final String KEY_SUBJECT = "subject";
     private static final String KEY_PROPERTY = "property";
-
-    public static enum ConfigError {
-        NO_SELECT_QUERY("Missing select query specification"),
-        NO_TEMPLATE("Missing template specification"),
-        TEMPLATE_NOT_FOUND("Specified template does not exist");
-
-        String message;
-
-        ConfigError(String message) {
-            this.message = message;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public String toString() {
-            return getMessage();
-        }
-    }
-
+    private final List<DataPropertyStatementTemplateModel> statements;
     private DataPropertyListConfig config;
     private String objectKey;
     private String queryString;
@@ -68,15 +44,15 @@ public class DataPropertyTemplateModel extends PropertyTemplateModel {
     private String rangeDatatypeURI;
     private Set<String> constructQueries;
     private int displayLimit;
-
     DataPropertyTemplateModel(DataProperty dp, Individual subject, VitroRequest vreq,
-            boolean editing, List<DataProperty> populatedDataPropertyList) {
+                              boolean editing, List<DataProperty> populatedDataPropertyList) {
 
         super(dp, subject, vreq, dp.getPublicName());
 
         // Get the config for this data property
         try {
-        	config = new DataPropertyListConfig(this, getFreemarkerTemplateLoader(), vreq, dp, editing);
+            config =
+                new DataPropertyListConfig(this, getFreemarkerTemplateLoader(), vreq, dp, editing);
         } catch (Exception e) {
             log.error(e, e);
         }
@@ -86,22 +62,27 @@ public class DataPropertyTemplateModel extends PropertyTemplateModel {
         publicDescription = dp.getPublicDescription();
 
         statements = new ArrayList<DataPropertyStatementTemplateModel>();
-		displayLimit = dp.getDisplayLimit();
-		rangeDatatypeURI = dp.getRangeDatatypeURI();
+        displayLimit = dp.getDisplayLimit();
+        rangeDatatypeURI = dp.getRangeDatatypeURI();
         // If the property is populated, get the data property statements via a sparql query
         if (populatedDataPropertyList.contains(dp)) {
             log.debug("Getting data for populated data property " + getUri());
-            DataPropertyStatementDao dpDao = vreq.getWebappDaoFactory().getDataPropertyStatementDao();
-            List<Literal> values = dpDao.getDataPropertyValuesForIndividualByProperty(subject, dp, queryString, constructQueries);
+            DataPropertyStatementDao dpDao =
+                vreq.getWebappDaoFactory().getDataPropertyStatementDao();
+            List<Literal> values = dpDao
+                .getDataPropertyValuesForIndividualByProperty(subject, dp, queryString,
+                    constructQueries);
             for (Literal value : values) {
-                statements.add(new DataPropertyStatementTemplateModel(subjectUri, dp, value, getTemplateName(), vreq));
+                statements.add(
+                    new DataPropertyStatementTemplateModel(subjectUri, dp, value, getTemplateName(),
+                        vreq));
             }
         } else {
             log.debug("Data property " + getUri() + " is unpopulated.");
         }
 
-        if ( editing ) {
-        	setAddUrl(dp);
+        if (editing) {
+            setAddUrl(dp);
         }
     }
 
@@ -122,37 +103,37 @@ public class DataPropertyTemplateModel extends PropertyTemplateModel {
             return;
         }
 */
-		// Rewriting the above per jc55. If the data property is functional, there should only
-		// be 1 statement. The Display Limit is for determining how many statements to display
-		// before a "more..." link is used to hide statements exceeding the display limit. tlw72
-		boolean functional = dp.getFunctional();
-		if ( functional && statements.size() >= 1 ) {
-			return;
-		}
+        // Rewriting the above per jc55. If the data property is functional, there should only
+        // be 1 statement. The Display Limit is for determining how many statements to display
+        // before a "more..." link is used to hide statements exceeding the display limit. tlw72
+        boolean functional = dp.getFunctional();
+        if (functional && statements.size() >= 1) {
+            return;
+        }
 
         // Determine whether a new statement can be added
-		RequestedAction action = new AddDataPropertyStatement(
-				vreq.getJenaOntModel(), subjectUri, propertyUri, SOME_LITERAL);
-        if ( ! PolicyHelper.isAuthorizedForActions(vreq, action) ) {
+        RequestedAction action = new AddDataPropertyStatement(
+            vreq.getJenaOntModel(), subjectUri, propertyUri, SOME_LITERAL);
+        if (!PolicyHelper.isAuthorizedForActions(vreq, action)) {
             return;
         }
 
         ParamMap params = new ParamMap(
-                "subjectUri", subjectUri,
-                "predicateUri", propertyUri);
+            "subjectUri", subjectUri,
+            "predicateUri", propertyUri);
 
         params.putAll(UrlBuilder.getModelParams(vreq));
 
         addUrl = UrlBuilder.getUrl(EDIT_PATH, params);
     }
 
-	protected TemplateLoader getFreemarkerTemplateLoader() {
-		return FreemarkerConfiguration.getConfig(vreq).getTemplateLoader();
-	}
+    protected TemplateLoader getFreemarkerTemplateLoader() {
+        return FreemarkerConfiguration.getConfig(vreq).getTemplateLoader();
+    }
 
     @Override
     protected int getPropertyDisplayTier(Property p) {
-        return ((DataProperty)p).getDisplayTier();
+        return ((DataProperty) p).getDisplayTier();
     }
 
     @Override
@@ -160,19 +141,19 @@ public class DataPropertyTemplateModel extends PropertyTemplateModel {
         return Route.DATA_PROPERTY_EDIT;
     }
 
-	public String getPublicDescription() {
-		return publicDescription;
-	}
-    
-	@Override
-	public int getDisplayLimit() {
-			return displayLimit;
-	}
+    public String getPublicDescription() {
+        return publicDescription;
+    }
 
-//	@Override
-	public String getRangeDatatypeURI() {
-			return rangeDatatypeURI;
-	}
+    @Override
+    public int getDisplayLimit() {
+        return displayLimit;
+    }
+
+    //	@Override
+    public String getRangeDatatypeURI() {
+        return rangeDatatypeURI;
+    }
 
     public ConfigError checkQuery(String queryString) {
         if (StringUtils.isBlank(queryString)) {
@@ -205,11 +186,11 @@ public class DataPropertyTemplateModel extends PropertyTemplateModel {
         return statements.isEmpty();
     }
 
-    /* Template properties */
-
     public String getType() {
         return TYPE;
     }
+
+    /* Template properties */
 
     public List<DataPropertyStatementTemplateModel> getStatements() {
         return statements;
@@ -219,16 +200,36 @@ public class DataPropertyTemplateModel extends PropertyTemplateModel {
         return getTemplateName();
     }
 
+    public DataPropertyStatementTemplateModel first() {
+        return ((statements == null || statements.isEmpty())) ? null : statements.get(0);
+    }
+
 
     /* Template methods */
-
-    public DataPropertyStatementTemplateModel first() {
-        return ( (statements == null || statements.isEmpty()) ) ? null : statements.get(0);
-    }
 
     public String firstValue() {
         DataPropertyStatementTemplateModel first = first();
         return first == null ? null : first.getValue();
+    }
+
+    public static enum ConfigError {
+        NO_SELECT_QUERY("Missing select query specification"),
+        NO_TEMPLATE("Missing template specification"),
+        TEMPLATE_NOT_FOUND("Specified template does not exist");
+
+        String message;
+
+        ConfigError(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public String toString() {
+            return getMessage();
+        }
     }
 
 }

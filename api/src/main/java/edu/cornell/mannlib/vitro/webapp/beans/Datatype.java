@@ -8,27 +8,27 @@ public class Datatype {
     private String name = null;
     private String uri = null;
 
-    public int getId(){
+    public int getId() {
         return id;
     }
 
-    public void setId(int id){
+    public void setId(int id) {
         this.id = id;
     }
 
-    public String getName(){
+    public String getName() {
         return name;
     }
 
-    public void setName(String name){
+    public void setName(String name) {
         this.name = name;
     }
 
-    public String getUri(){
+    public String getUri() {
         return uri;
     }
 
-    public void setUri(String uri){
+    public void setUri(String uri) {
         this.uri = uri;
     }
 

@@ -4,13 +4,9 @@ package edu.cornell.mannlib.vitro.webapp.dao.filtering;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.sf.jga.algorithms.Filter;
-import net.sf.jga.fn.UnaryFunctor;
-import net.sf.jga.fn.property.GetProperty;
 import edu.cornell.mannlib.vitro.webapp.beans.Classes2Classes;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.beans.VClass;
@@ -19,18 +15,20 @@ import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
 import edu.cornell.mannlib.vitro.webapp.dao.InsertException;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
 import edu.cornell.mannlib.vitro.webapp.dao.filtering.filters.VitroFilters;
+import net.sf.jga.algorithms.Filter;
+import net.sf.jga.fn.UnaryFunctor;
+import net.sf.jga.fn.property.GetProperty;
 
-public class VClassDaoFiltering extends BaseFiltering implements VClassDao{
+public class VClassDaoFiltering extends BaseFiltering implements VClassDao {
+    static UnaryFunctor<VClass, String> getURI =
+        new GetProperty<VClass, String>(VClass.class, "URI");
     final VClassDao innerVClassDao;
     final IndividualDao innerIndividualDao;
     final VitroFilters filters;
 
-    static UnaryFunctor<VClass,String> getURI =
-        new GetProperty<VClass, String>(VClass.class, "URI");
-
 
     public VClassDaoFiltering(VClassDao classDao, IndividualDao individualDao,
-            VitroFilters filters) {
+                              VitroFilters filters) {
         super();
         this.innerVClassDao = classDao;
         this.innerIndividualDao = individualDao;
@@ -46,75 +44,76 @@ public class VClassDaoFiltering extends BaseFiltering implements VClassDao{
     }
 
     public List<String> getDisjointWithClassURIs(String classURI) {
-    	return innerVClassDao.getDisjointWithClassURIs(classURI);
+        return innerVClassDao.getDisjointWithClassURIs(classURI);
     }
 
     public void addDisjointWithClass(String classURI, String disjointClassURI) {
-    	innerVClassDao.addDisjointWithClass(classURI, disjointClassURI);
+        innerVClassDao.addDisjointWithClass(classURI, disjointClassURI);
     }
 
     public void removeDisjointWithClass(String classURI, String disjointClassURI) {
-    	innerVClassDao.removeDisjointWithClass(classURI, disjointClassURI);
+        innerVClassDao.removeDisjointWithClass(classURI, disjointClassURI);
     }
 
     public List<String> getEquivalentClassURIs(String classURI) {
-    	return innerVClassDao.getEquivalentClassURIs(classURI);
+        return innerVClassDao.getEquivalentClassURIs(classURI);
     }
 
     public void addEquivalentClass(String classURI, String equivalentClassURI) {
-    	innerVClassDao.addEquivalentClass(classURI, equivalentClassURI);
+        innerVClassDao.addEquivalentClass(classURI, equivalentClassURI);
     }
 
     public void removeEquivalentClass(String classURI, String equivalentClassURI) {
-    	innerVClassDao.removeEquivalentClass(classURI, equivalentClassURI);
+        innerVClassDao.removeEquivalentClass(classURI, equivalentClassURI);
     }
 
     public void addSuperclass(VClass subclass, VClass superclass) {
-    	innerVClassDao.addSuperclass(subclass, superclass);
+        innerVClassDao.addSuperclass(subclass, superclass);
     }
 
     public void addSuperclass(String classURI, String superclassURI) {
-    	innerVClassDao.addSuperclass(classURI, superclassURI);
+        innerVClassDao.addSuperclass(classURI, superclassURI);
     }
 
     public void removeSuperclass(VClass vclass, VClass superclass) {
-    	innerVClassDao.removeSuperclass(vclass, superclass);
+        innerVClassDao.removeSuperclass(vclass, superclass);
     }
 
     public void removeSuperclass(String classURI, String superclassURI) {
-    	innerVClassDao.removeSuperclass(classURI, superclassURI);
+        innerVClassDao.removeSuperclass(classURI, superclassURI);
     }
 
     public void addSubclass(VClass vclass, VClass subclass) {
-    	innerVClassDao.addSubclass(vclass, subclass);
+        innerVClassDao.addSubclass(vclass, subclass);
     }
 
     public void addSubclass(String classURI, String subclassURI) {
-    	innerVClassDao.addSubclass(classURI, subclassURI);
+        innerVClassDao.addSubclass(classURI, subclassURI);
     }
 
     public void removeSubclass(VClass vclass, VClass subclass) {
-    	innerVClassDao.removeSubclass(vclass, subclass);
+        innerVClassDao.removeSubclass(vclass, subclass);
     }
 
     public void removeSubclass(String classURI, String subclassURI) {
-    	innerVClassDao.removeSubclass(classURI, subclassURI);
+        innerVClassDao.removeSubclass(classURI, subclassURI);
     }
 
-    public List <String>getAllSubClassURIs(String classURI) {
+    public List<String> getAllSubClassURIs(String classURI) {
         return innerVClassDao.getAllSubClassURIs(classURI);
     }
 
-    public List <String>getAllSuperClassURIs(String classURI) {
+    public List<String> getAllSuperClassURIs(String classURI) {
         return innerVClassDao.getAllSuperClassURIs(classURI);
     }
 
 
-    public List <VClass>getAllVclasses() {
+    public List<VClass> getAllVclasses() {
         List<VClass> list = innerVClassDao.getAllVclasses();
-        if(list == null )
+        if (list == null) {
             return null;
-        filter(list,filters.getClassFilter());
+        }
+        filter(list, filters.getClassFilter());
         //correctVClassCounts(list);
         return list;
     }
@@ -124,7 +123,7 @@ public class VClassDaoFiltering extends BaseFiltering implements VClassDao{
     }
 
 
-    public List <VClass>getRootClasses() {
+    public List<VClass> getRootClasses() {
         return innerVClassDao.getRootClasses();
     }
 
@@ -134,7 +133,7 @@ public class VClassDaoFiltering extends BaseFiltering implements VClassDao{
     }
 
     public List<String> getSuperClassURIs(String classURI, boolean direct) {
-        return  innerVClassDao.getSuperClassURIs(classURI, direct);
+        return innerVClassDao.getSuperClassURIs(classURI, direct);
     }
 
     public VClass getVClassByURI(String URI) {
@@ -148,8 +147,8 @@ public class VClassDaoFiltering extends BaseFiltering implements VClassDao{
     }
 
     public List<VClass> getVClassesForProperty(String vclassURI, String propertyURI) {
-    	return innerVClassDao.getVClassesForProperty(vclassURI, propertyURI);
-    	//return correctVClassCounts(filter(list,filters.getClassFilter()));
+        return innerVClassDao.getVClassesForProperty(vclassURI, propertyURI);
+        //return correctVClassCounts(filter(list,filters.getClassFilter()));
     }
 
     public void insertNewVClass(VClass cls) throws InsertException {
@@ -164,7 +163,7 @@ public class VClassDaoFiltering extends BaseFiltering implements VClassDao{
 
 
     public void addVClassesToGroup(VClassGroup group) {
-        this.addVClassesToGroup(group,true);
+        this.addVClassesToGroup(group, true);
     }
 
     public void addVClassesToGroup(VClassGroup group, boolean includeUninstantiatedClasses) {
@@ -172,26 +171,27 @@ public class VClassDaoFiltering extends BaseFiltering implements VClassDao{
     }
 
     public void addVClassesToGroup(VClassGroup group,
-            boolean includeUninstantiatedClasses, boolean setIndividualCount) {
+                                   boolean includeUninstantiatedClasses,
+                                   boolean setIndividualCount) {
         innerVClassDao.addVClassesToGroup(group, includeUninstantiatedClasses, false);
 
         List<VClass> classes = group.getVitroClassList();
         List<VClass> out = new LinkedList<VClass>();
-        Filter.filter(classes,filters.getClassFilter(), out);
+        Filter.filter(classes, filters.getClassFilter(), out);
         group.clear();
         group.addAll(out);
 
         if (setIndividualCount) {
-            for(VClass vc : group){
-                if( vc instanceof VClass ){
-                    correctVClassCount((VClass)vc);
+            for (VClass vc : group) {
+                if (vc instanceof VClass) {
+                    correctVClassCount((VClass) vc);
                 }
             }
         }
     }
 
     public void addVClassesToGroups(List<VClassGroup> groups) {
-        if ((groups != null) && (groups.size()>0)) {
+        if ((groups != null) && (groups.size() > 0)) {
             for (VClassGroup g : groups) {
                 this.addVClassesToGroup(g);
             }
@@ -201,7 +201,7 @@ public class VClassDaoFiltering extends BaseFiltering implements VClassDao{
             vcg.setNamespace("null://null#");
             vcg.setLocalName("0");
             vcg.setPublicName("Browse Categories");
-            vcg.addAll( this.getAllVclasses() );
+            vcg.addAll(this.getAllVclasses());
             vcg.getVitroClassList().sort(new Comparator() {
                 public int compare(Object o1, Object o2) {
                     return ((VClass) o1).getName().compareTo(((VClass) o2).getName());
@@ -212,30 +212,33 @@ public class VClassDaoFiltering extends BaseFiltering implements VClassDao{
     }
 
 
-    private void correctVClassCount(VClass vclass){
+    private void correctVClassCount(VClass vclass) {
         List<Individual> ents = innerIndividualDao.getIndividualsByVClass(vclass);
         long count = 0;
-        if( ents == null) return;
+        if (ents == null) {
+            return;
+        }
         List out = new ArrayList(ents.size());
-        Filter.filter(ents,filters.getIndividualFilter(),out);
-        if( out != null )
+        Filter.filter(ents, filters.getIndividualFilter(), out);
+        if (out != null) {
             vclass.setEntityCount(out.size());
+        }
         System.out.println(vclass.getURI() + " count: " + vclass.getEntityCount());
     }
 
-    private List<VClass> correctVClassCounts(List<VClass> vclasses){
-        for( VClass vclass: vclasses){
+    private List<VClass> correctVClassCounts(List<VClass> vclasses) {
+        for (VClass vclass : vclasses) {
             correctVClassCount(vclass);
         }
         return vclasses;
     }
 
     public VClass getTopConcept() {
-    	return innerVClassDao.getTopConcept();
+        return innerVClassDao.getTopConcept();
     }
 
     public VClass getBottomConcept() {
-    	return innerVClassDao.getBottomConcept();
+        return innerVClassDao.getBottomConcept();
     }
 
     public void insertNewClasses2Classes(Classes2Classes c2c) {
@@ -247,11 +250,11 @@ public class VClassDaoFiltering extends BaseFiltering implements VClassDao{
     }
 
     public boolean isSubClassOf(VClass vc1, VClass vc2) {
-		return innerVClassDao.isSubClassOf(vc1, vc2);
-	}
+        return innerVClassDao.isSubClassOf(vc1, vc2);
+    }
 
-	public boolean isSubClassOf(String vclassURI1, String vclassURI2) {
-		return innerVClassDao.isSubClassOf(vclassURI1, vclassURI2);
-	}
+    public boolean isSubClassOf(String vclassURI1, String vclassURI2) {
+        return innerVClassDao.isSubClassOf(vclassURI1, vclassURI2);
+    }
 
 }

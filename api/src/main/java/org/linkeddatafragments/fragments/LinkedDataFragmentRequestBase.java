@@ -6,8 +6,7 @@ package org.linkeddatafragments.fragments;
  * @author <a href="http://olafhartig.de">Olaf Hartig</a>
  */
 public abstract class LinkedDataFragmentRequestBase
-    implements ILinkedDataFragmentRequest
-{
+    implements ILinkedDataFragmentRequest {
 
     /**
      *
@@ -30,17 +29,15 @@ public abstract class LinkedDataFragmentRequestBase
     public final long pageNumber;
 
     /**
-     *
      * @param fragmentURL
      * @param datasetURL
      * @param pageNumberWasRequested
      * @param pageNumber
      */
-    public LinkedDataFragmentRequestBase( final String fragmentURL,
-                                          final String datasetURL,
-                                          final boolean pageNumberWasRequested,
-                                          final long pageNumber )
-    {
+    public LinkedDataFragmentRequestBase(final String fragmentURL,
+                                         final String datasetURL,
+                                         final boolean pageNumberWasRequested,
+                                         final long pageNumber) {
         this.fragmentURL = fragmentURL;
         this.datasetURL = datasetURL;
         this.pageNumberWasRequested = pageNumberWasRequested;
@@ -68,14 +65,13 @@ public abstract class LinkedDataFragmentRequestBase
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "LinkedDataFragmentRequest(" +
-               "class: " + getClass().getName() +
-               ", fragmentURL: " + fragmentURL +
-               ", isPageRequest: " + pageNumberWasRequested +
-               ", pageNumber: " + pageNumber +
-               ")";
+            "class: " + getClass().getName() +
+            ", fragmentURL: " + fragmentURL +
+            ", isPageRequest: " + pageNumberWasRequested +
+            ", pageNumber: " + pageNumber +
+            ")";
     }
 
 }

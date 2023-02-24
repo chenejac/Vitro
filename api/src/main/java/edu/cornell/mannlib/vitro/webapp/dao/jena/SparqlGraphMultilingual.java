@@ -3,15 +3,14 @@
 package edu.cornell.mannlib.vitro.webapp.dao.jena;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
+import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
@@ -19,8 +18,6 @@ import org.apache.jena.graph.impl.GraphWithPerform;
 import org.apache.jena.shared.AddDeniedException;
 import org.apache.jena.util.iterator.ExtendedIterator;
 import org.apache.jena.util.iterator.WrappedIterator;
-
-import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
 
 public class SparqlGraphMultilingual extends SparqlGraph implements GraphWithPerform {
 
@@ -49,11 +46,11 @@ public class SparqlGraphMultilingual extends SparqlGraph implements GraphWithPer
             log.info("No language configured - adding original triple " + t);
             super.performAdd(t);
         } else if (t.getObject().isLiteral()
-                && t.getObject().getLiteral().getDatatypeURI() == null) {
+            && t.getObject().getLiteral().getDatatypeURI() == null) {
             log.info("adding language tag");
             super.performAdd(Triple.create(t.getSubject(),
-                    t.getPredicate(), NodeFactory.createLiteral(
-                            t.getObject().getLiteralLexicalForm(), langs.get(0), null)));
+                t.getPredicate(), NodeFactory.createLiteral(
+                    t.getObject().getLiteralLexicalForm(), langs.get(0), null)));
         } else {
             log.info("adding original triple " + t);
             super.performAdd(t);
@@ -106,6 +103,13 @@ public class SparqlGraphMultilingual extends SparqlGraph implements GraphWithPer
         }
     }
 
+    @Override
+    public String toString() {
+        return "SparqlGraphMultilingual[" + ToString.hashHex(this)
+            + ", endpoint=" + getEndpointURI() + ", name="
+            + ToString.modelName(getGraphURI()) + "]";
+    }
+
     private class TripleSortByLang implements Comparator<Triple> {
 
         public int compare(Triple t1, Triple t2) {
@@ -118,7 +122,7 @@ public class SparqlGraphMultilingual extends SparqlGraph implements GraphWithPer
             String t1lang = t1.getObject().getLiteral().language();
             String t2lang = t2.getObject().getLiteral().language();
 
-            if ( t1lang == null && t2lang == null) {
+            if (t1lang == null && t2lang == null) {
                 return 0;
             } else if (t1lang == null) {
                 return 1;
@@ -138,12 +142,5 @@ public class SparqlGraphMultilingual extends SparqlGraph implements GraphWithPer
         }
 
     }
-
-	@Override
-	public String toString() {
-		return "SparqlGraphMultilingual[" + ToString.hashHex(this)
-				+ ", endpoint=" + getEndpointURI() + ", name="
-				+ ToString.modelName(getGraphURI()) + "]";
-	}
 
 }

@@ -2,7 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.searchengine.elasticsearch;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -18,7 +17,7 @@ class ElasticSearchResultDocumentList implements SearchResultDocumentList {
     private final long numberFound;
 
     public ElasticSearchResultDocumentList(List<SearchResultDocument> documents,
-            long numberFound) {
+                                           long numberFound) {
         this.documents = documents;
         this.numberFound = numberFound;
     }
@@ -46,8 +45,8 @@ class ElasticSearchResultDocumentList implements SearchResultDocumentList {
     @Override
     public String toString() {
         return String.format(
-                "ElasticSearchResultDocumentList[numberFound=%s, documents=%s]",
-                numberFound, documents);
+            "ElasticSearchResultDocumentList[numberFound=%s, documents=%s]",
+            numberFound, documents);
     }
 
 }

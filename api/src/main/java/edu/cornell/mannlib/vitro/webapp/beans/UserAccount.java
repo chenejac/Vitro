@@ -11,256 +11,253 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 /**
  * Information about the account of a user. URI, email, password, etc.
- *
  */
 public class UserAccount {
-	public static final int MIN_PASSWORD_LENGTH = 6;
-	public static final int MAX_PASSWORD_LENGTH = 12;
+    public static final int MIN_PASSWORD_LENGTH = 6;
+    public static final int MAX_PASSWORD_LENGTH = 12;
+    private String uri = ""; // Never null.
+    private String emailAddress = ""; // Never null.
+    private String firstName = ""; // Never null.
+    private String lastName = ""; // Never null.
+    private String argon2Password = ""; //Never null.
+    private String md5Password = ""; // Never null.
+    private String oldPassword = ""; // Never null.
+    private long passwordLinkExpires = 0L; // Never negative.
+    private String emailKey = "";
+    private boolean passwordChangeRequired = false;
+    private int loginCount = 0; // Never negative.
+    private long lastLoginTime = 0L; // Never negative.
+    private Status status = Status.INACTIVE; // Might be null.
+    private String externalAuthId = ""; // Never null.
+    /**
+     * If this is true, the User Interface will not allow setting a password.
+     */
+    private boolean externalAuthOnly = false;
+    /**
+     * This may be empty, but should never be null.
+     */
+    private Set<String> permissionSetUris = Collections.emptySet();
+    private boolean rootUser = false;
+    /**
+     * This may be empty, but should never be null.
+     */
+    private Set<String> proxiedIndividualUris = Collections.emptySet();
 
-	public enum Status {
-		ACTIVE, INACTIVE;
+    public String getUri() {
+        return uri;
+    }
 
-		public static Status fromString(String s) {
-			if (s == null) {
-				return null;
-			}
+    public void setUri(String uri) {
+        if (uri == null) {
+            throw new NullPointerException("uri may not be null.");
+        }
+        this.uri = uri;
+    }
 
-			for (Status status : Status.values()) {
-				if (status.toString().equals(s)) {
-					return status;
-				}
-			}
+    public String getEmailAddress() {
+        return emailAddress;
+    }
 
-			return null;
-		}
+    public void setEmailAddress(String emailAddress) {
+        this.emailAddress = nonNull(emailAddress, "");
+    }
 
-	}
+    public String getFirstName() {
+        return firstName;
+    }
 
-	private String uri = ""; // Never null.
+    public void setFirstName(String firstName) {
+        this.firstName = nonNull(firstName, "");
+    }
 
-	private String emailAddress = ""; // Never null.
-	private String firstName = ""; // Never null.
-	private String lastName = ""; // Never null.
+    public String getLastName() {
+        return lastName;
+    }
 
-	private String argon2Password = ""; //Never null.
-	private String md5Password = ""; // Never null.
-	private String oldPassword = ""; // Never null.
-	private long passwordLinkExpires = 0L; // Never negative.
-	private String emailKey = "";
-	private boolean passwordChangeRequired = false;
+    public void setLastName(String lastName) {
+        this.lastName = nonNull(lastName, "");
+    }
 
-	private int loginCount = 0; // Never negative.
-	private long lastLoginTime = 0L; // Never negative.
-	private Status status = Status.INACTIVE; // Might be null.
-	private String externalAuthId = ""; // Never null.
+    public String getArgon2Password() {
+        return argon2Password;
+    }
 
-	/** If this is true, the User Interface will not allow setting a password. */
-	private boolean externalAuthOnly = false;
+    public void setArgon2Password(String argo2Password) {
+        this.argon2Password = nonNull(argo2Password, "");
+    }
 
-	/** This may be empty, but should never be null. */
-	private Set<String> permissionSetUris = Collections.emptySet();
+    public String getMd5Password() {
+        return md5Password;
+    }
 
-	private boolean rootUser = false;
+    public void setMd5Password(String md5Password) {
+        this.md5Password = nonNull(md5Password, "");
+    }
 
-	/** This may be empty, but should never be null. */
-	private Set<String> proxiedIndividualUris = Collections.emptySet();
+    public String getOldPassword() {
+        return oldPassword;
+    }
 
-	public String getUri() {
-		return uri;
-	}
+    public void setOldPassword(String oldPassword) {
+        this.oldPassword = nonNull(oldPassword, "");
+    }
 
-	public void setUri(String uri) {
-		if (uri == null) {
-			throw new NullPointerException("uri may not be null.");
-		}
-		this.uri = uri;
-	}
+    public long getPasswordLinkExpires() {
+        return passwordLinkExpires;
+    }
 
-	public String getEmailAddress() {
-		return emailAddress;
-	}
+    public void setPasswordLinkExpires(long passwordLinkExpires) {
+        this.passwordLinkExpires = Math.max(0, passwordLinkExpires);
+    }
 
-	public void setEmailAddress(String emailAddress) {
-		this.emailAddress = nonNull(emailAddress, "");
-	}
+    public void generateEmailKey() {
+        boolean useLetters = true;
+        boolean useNumbers = true;
+        int length = 64;
+        emailKey = RandomStringUtils.random(length, useLetters, useNumbers);
+    }
 
-	public String getFirstName() {
-		return firstName;
-	}
+    public String getEmailKey() {
+        return emailKey;
+    }
 
-	public void setFirstName(String firstName) {
-		this.firstName = nonNull(firstName, "");
-	}
+    public void setEmailKey(String emailKey) {
+        if (emailKey != null) {
+            this.emailKey = emailKey;
+        }
+    }
 
-	public String getLastName() {
-		return lastName;
-	}
+    public boolean isPasswordChangeRequired() {
+        return passwordChangeRequired;
+    }
 
-	public void setLastName(String lastName) {
-		this.lastName = nonNull(lastName, "");
-	}
+    public void setPasswordChangeRequired(Boolean passwordChangeRequired) {
+        this.passwordChangeRequired = nonNull(passwordChangeRequired,
+            Boolean.FALSE);
+    }
 
-	public String getArgon2Password() {
-		return argon2Password;
-	}
+    public boolean isExternalAuthOnly() {
+        return externalAuthOnly;
+    }
 
-	public void setArgon2Password(String argo2Password) {
-		this.argon2Password = nonNull(argo2Password, "");
-	}
+    public void setExternalAuthOnly(Boolean externalAuthOnly) {
+        this.externalAuthOnly = nonNull(externalAuthOnly, Boolean.FALSE);
+    }
 
-	public String getMd5Password() {
-		return md5Password;
-	}
+    public int getLoginCount() {
+        return loginCount;
+    }
 
-	public void setMd5Password(String md5Password) {
-		this.md5Password = nonNull(md5Password, "");
-	}
+    public void setLoginCount(int loginCount) {
+        this.loginCount = Math.max(0, loginCount);
+    }
 
-	public String getOldPassword() {
-		return oldPassword;
-	}
+    public long getLastLoginTime() {
+        return lastLoginTime;
+    }
 
-	public void setOldPassword(String oldPassword) {
-		this.oldPassword = nonNull(oldPassword, "");
-	}
+    public void setLastLoginTime(long lastLoginTime) {
+        this.lastLoginTime = Math.max(0, lastLoginTime);
+    }
 
-	public long getPasswordLinkExpires() {
-		return passwordLinkExpires;
-	}
+    public Status getStatus() {
+        return status;
+    }
 
-	public void setPasswordLinkExpires(long passwordLinkExpires) {
-		this.passwordLinkExpires = Math.max(0, passwordLinkExpires);
-	}
+    public void setStatus(Status status) {
+        this.status = status;
+    }
 
-	public void generateEmailKey() {
-		boolean useLetters = true;
-		boolean useNumbers = true;
-		int length = 64;
-		emailKey = RandomStringUtils.random(length, useLetters, useNumbers);
-	}
-	
-	public void setEmailKey(String emailKey) {
-		if (emailKey != null) {
-			this.emailKey = emailKey;	
-		}
-	}
-	
-	public String getEmailKey() {
-		return emailKey;
-	}
+    public void setStatusFromString(String statusString) {
+        this.status = Status.fromString(statusString);
+    }
 
-	public boolean isPasswordChangeRequired() {
-		return passwordChangeRequired;
-	}
+    public String getExternalAuthId() {
+        return externalAuthId;
+    }
 
-	public void setPasswordChangeRequired(Boolean passwordChangeRequired) {
-		this.passwordChangeRequired = nonNull(passwordChangeRequired,
-				Boolean.FALSE);
-	}
+    public void setExternalAuthId(String externalAuthId) {
+        this.externalAuthId = nonNull(externalAuthId, "");
+    }
 
-	public boolean isExternalAuthOnly() {
-		return externalAuthOnly;
-	}
+    public Set<String> getPermissionSetUris() {
+        return new HashSet<String>(permissionSetUris);
+    }
 
-	public void setExternalAuthOnly(Boolean externalAuthOnly) {
-		this.externalAuthOnly = nonNull(externalAuthOnly, Boolean.FALSE);
-	}
+    public void setPermissionSetUris(Collection<String> permissionSetUris) {
+        if (permissionSetUris == null) {
+            throw new NullPointerException("permissionSetUris may not be null.");
+        }
+        this.permissionSetUris = new HashSet<String>(permissionSetUris);
+    }
 
-	public int getLoginCount() {
-		return loginCount;
-	}
+    public boolean isRootUser() {
+        return rootUser;
+    }
 
-	public void setLoginCount(int loginCount) {
-		this.loginCount = Math.max(0, loginCount);
-	}
+    public void setRootUser(boolean rootUser) {
+        this.rootUser = rootUser;
+    }
 
-	public long getLastLoginTime() {
-		return lastLoginTime;
-	}
+    public Set<String> getProxiedIndividualUris() {
+        return new HashSet<String>(proxiedIndividualUris);
+    }
 
-	public void setLastLoginTime(long lastLoginTime) {
-		this.lastLoginTime = Math.max(0, lastLoginTime);
-	}
+    public void setProxiedIndividualUris(Collection<String> proxiedIndividualUris) {
+        if (proxiedIndividualUris == null) {
+            throw new NullPointerException("proxiedIndividualUris may not be null.");
+        }
+        this.proxiedIndividualUris = new HashSet<String>(proxiedIndividualUris);
+    }
 
-	public Status getStatus() {
-		return status;
-	}
+    private <T> T nonNull(T value, T defaultValue) {
+        return (value == null) ? defaultValue : value;
+    }
 
-	public void setStatus(Status status) {
-		this.status = status;
-	}
+    private String limitStringLength(int limit, String s) {
+        if (s == null) {
+            return "";
+        } else if (s.length() <= limit) {
+            return s;
+        } else {
+            return s.substring(0, limit);
+        }
+    }
 
-	public void setStatusFromString(String statusString) {
-		this.status = Status.fromString(statusString);
-	}
+    @Override
+    public String toString() {
+        return "UserAccount[uri=" + uri + (", emailAddress=" + emailAddress)
+            + (", firstName=" + firstName) + (", lastName=" + lastName)
+            + (", md5password=" + md5Password)
+            + (", oldPassword=" + oldPassword)
+            + (", argon2password=" + argon2Password)
+            + (", passwordLinkExpires=" + passwordLinkExpires)
+            + (", emailKey =" + emailKey)
+            + (", passwordChangeRequired=" + passwordChangeRequired)
+            + (", externalAuthOnly=" + externalAuthOnly)
+            + (", loginCount=" + loginCount) + (", status=" + status)
+            + (", lastLoginTime=" + lastLoginTime)
+            + (", externalAuthId=" + externalAuthId)
+            + (", rootUser=" + rootUser)
+            + (", permissionSetUris=" + permissionSetUris) + "]";
+    }
 
-	public String getExternalAuthId() {
-		return externalAuthId;
-	}
+    public enum Status {
+        ACTIVE, INACTIVE;
 
-	public void setExternalAuthId(String externalAuthId) {
-		this.externalAuthId = nonNull(externalAuthId, "");
-	}
+        public static Status fromString(String s) {
+            if (s == null) {
+                return null;
+            }
 
-	public Set<String> getPermissionSetUris() {
-		return new HashSet<String>(permissionSetUris);
-	}
+            for (Status status : Status.values()) {
+                if (status.toString().equals(s)) {
+                    return status;
+                }
+            }
 
-	public void setPermissionSetUris(Collection<String> permissionSetUris) {
-		if (permissionSetUris == null) {
-			throw new NullPointerException("permissionSetUris may not be null.");
-		}
-		this.permissionSetUris = new HashSet<String>(permissionSetUris);
-	}
+            return null;
+        }
 
-	public boolean isRootUser() {
-		return rootUser;
-	}
-
-	public void setRootUser(boolean rootUser) {
-		this.rootUser = rootUser;
-	}
-
-	public Set<String> getProxiedIndividualUris() {
-		return new HashSet<String>(proxiedIndividualUris);
-	}
-
-	public void setProxiedIndividualUris(Collection<String> proxiedIndividualUris) {
-		if (proxiedIndividualUris == null) {
-			throw new NullPointerException("proxiedIndividualUris may not be null.");
-		}
-		this.proxiedIndividualUris = new HashSet<String>(proxiedIndividualUris);
-	}
-
-	private <T> T nonNull(T value, T defaultValue) {
-		return (value == null) ? defaultValue : value;
-	}
-
-	private String limitStringLength(int limit, String s) {
-		if (s == null) {
-			return "";
-		} else if (s.length() <= limit) {
-			return s;
-		} else {
-			return s.substring(0, limit);
-		}
-	}
-
-	@Override
-	public String toString() {
-		return "UserAccount[uri=" + uri + (", emailAddress=" + emailAddress)
-				+ (", firstName=" + firstName) + (", lastName=" + lastName)
-				+ (", md5password=" + md5Password)
-				+ (", oldPassword=" + oldPassword)
-				+ (", argon2password=" + argon2Password)
-				+ (", passwordLinkExpires=" + passwordLinkExpires)
-				+ (", emailKey =" + emailKey)
-				+ (", passwordChangeRequired=" + passwordChangeRequired)
-				+ (", externalAuthOnly=" + externalAuthOnly)
-				+ (", loginCount=" + loginCount) + (", status=" + status)
-				+ (", lastLoginTime=" + lastLoginTime)
-				+ (", externalAuthId=" + externalAuthId)
-				+ (", rootUser=" + rootUser)
-				+ (", permissionSetUris=" + permissionSetUris) + "]";
-	}
+    }
 }

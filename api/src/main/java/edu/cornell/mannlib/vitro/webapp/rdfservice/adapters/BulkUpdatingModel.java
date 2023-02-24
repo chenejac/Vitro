@@ -2,10 +2,15 @@
 
 package edu.cornell.mannlib.vitro.webapp.rdfservice.adapters;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.net.URL;
+import java.util.List;
+
 import edu.cornell.mannlib.vitro.webapp.dao.jena.RDFServiceGraph;
 import edu.cornell.mannlib.vitro.webapp.dao.jena.SparqlGraph;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.adapters.VitroModelFactory.BulkUpdatingUnion;
-
 import org.apache.jena.graph.Graph;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -16,12 +21,6 @@ import org.apache.jena.rdf.model.impl.RDFReaderFImpl;
 import org.apache.jena.shared.WrappedIOException;
 import org.apache.jena.sparql.graph.GraphFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.net.URL;
-import java.util.List;
-
 public class BulkUpdatingModel extends AbstractModelDecorator {
     private static final RDFReaderF readerFactory = new RDFReaderFImpl();
     protected AbstractBulkUpdater updater;
@@ -29,13 +28,13 @@ public class BulkUpdatingModel extends AbstractModelDecorator {
     public BulkUpdatingModel(Model m) {
         super(m);
         Graph graph = GraphUtils.unwrapUnionGraphs(m.getGraph());
-        if(graph instanceof BulkUpdatingUnion){
+        if (graph instanceof BulkUpdatingUnion) {
             updater = new RDFServiceBulkUnionUpdater((BulkUpdatingUnion) graph);
             return;
-        } 
+        }
         if (m instanceof BulkUpdatingOntModel) {
             this.updater = ((BulkUpdatingOntModel) m).updater;
-        } else  if (m instanceof BulkUpdatingModel) {
+        } else if (m instanceof BulkUpdatingModel) {
             this.updater = ((BulkUpdatingModel) m).updater;
         } else {
             if (graph instanceof RDFServiceGraph) {

@@ -5,9 +5,6 @@ package edu.cornell.mannlib.vitro.webapp.searchengine.elasticsearch;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.modules.Application;
 import edu.cornell.mannlib.vitro.webapp.modules.ComponentStartupStatus;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngine;
@@ -19,6 +16,8 @@ import edu.cornell.mannlib.vitro.webapp.searchengine.base.BaseSearchInputDocumen
 import edu.cornell.mannlib.vitro.webapp.searchengine.base.BaseSearchQuery;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.Property;
 import edu.cornell.mannlib.vitro.webapp.utils.configuration.Validation;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * A first draft of an Elasticsearch implementation.
@@ -41,8 +40,8 @@ public class ElasticSearchEngine implements SearchEngine {
             baseUrl = url;
         } else {
             throw new IllegalStateException(
-                    "Configuration includes multiple base URLs: " + url
-                            + ", and " + baseUrl);
+                "Configuration includes multiple base URLs: " + url
+                    + ", and " + baseUrl);
         }
     }
 
@@ -50,7 +49,7 @@ public class ElasticSearchEngine implements SearchEngine {
     public void validate() throws Exception {
         if (baseUrl == null) {
             throw new IllegalStateException(
-                    "Configuration did not include a base URL.");
+                "Configuration did not include a base URL.");
         }
     }
 
@@ -87,7 +86,7 @@ public class ElasticSearchEngine implements SearchEngine {
 
     @Override
     public void add(Collection<SearchInputDocument> docs)
-            throws SearchEngineException {
+        throws SearchEngineException {
         new ESAdder(baseUrl).add(docs);
     }
 
@@ -108,7 +107,7 @@ public class ElasticSearchEngine implements SearchEngine {
 
     @Override
     public void deleteById(Collection<String> ids)
-            throws SearchEngineException {
+        throws SearchEngineException {
         new ESDeleter(baseUrl).deleteByIds(ids);
     }
 
@@ -131,7 +130,7 @@ public class ElasticSearchEngine implements SearchEngine {
 
     @Override
     public SearchResponse query(SearchQuery query)
-            throws SearchEngineException {
+        throws SearchEngineException {
         return new ESQuery(baseUrl).query(query);
     }
 

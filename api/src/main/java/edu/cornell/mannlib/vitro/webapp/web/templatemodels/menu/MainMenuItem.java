@@ -5,10 +5,10 @@ package edu.cornell.mannlib.vitro.webapp.web.templatemodels.menu;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-/** A menu item that indicates whether it is the active item or not.
+/**
+ * A menu item that indicates whether it is the active item or not.
  *
  * @author rjy7
- *
  */
 public class MainMenuItem extends MenuItem {
 

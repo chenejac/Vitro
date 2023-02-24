@@ -2,13 +2,12 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit.listing;
 
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
 import edu.cornell.mannlib.vedit.controller.BaseEditController;
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
@@ -18,20 +17,20 @@ import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.OntologyDao;
 import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
 
-@WebServlet(name = "OntologiesListingController", urlPatterns = {"/listOntologies"} )
+@WebServlet(name = "OntologiesListingController", urlPatterns = {"/listOntologies"})
 public class OntologiesListingController extends BaseEditController {
 
     @Override
-	public void doGet(HttpServletRequest request, HttpServletResponse response) {
-    	if (!isAuthorizedToDisplayPage(request, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-    		return;
-    	}
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
+        if (!isAuthorizedToDisplayPage(request, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
+            return;
+        }
 
         VitroRequest vrequest = new VitroRequest(request);
 
         //need to figure out how to structure the results object to put the classes underneath
 
-	    String noResultsMsgStr = "No ontologies found";
+        String noResultsMsgStr = "No ontologies found";
 
         OntologyDao dao = vrequest.getUnfilteredWebappDaoFactory().getOntologyDao();
 
@@ -43,13 +42,17 @@ public class OntologiesListingController extends BaseEditController {
         results.add("Namespace");
         results.add("Prefix");
 
-        if (onts != null && onts.size()>0) {
-        	for (Ontology ont: onts) {
+        if (onts != null && onts.size() > 0) {
+            for (Ontology ont : onts) {
                 results.add("XX");
                 if (ont.getName() != null) {
                     try {
-                        String ontologyName = (ont.getName()==null || ont.getName().length()==0) ? ont.getURI() : ont.getName();
-                        results.add("<a href=\"./ontologyEdit?uri="+URLEncoder.encode(ont.getURI(),"UTF-8")+"\">"+ontologyName+"</a>");
+                        String ontologyName =
+                            (ont.getName() == null || ont.getName().length() == 0) ? ont.getURI() :
+                                ont.getName();
+                        results.add("<a href=\"./ontologyEdit?uri=" +
+                            URLEncoder.encode(ont.getURI(), "UTF-8") + "\">" + ontologyName +
+                            "</a>");
                     } catch (Exception e) {
                         results.add(ont.getName());
                     }
@@ -60,14 +63,14 @@ public class OntologiesListingController extends BaseEditController {
                 results.add(ont.getPrefix() == null ? "(not yet specified)" : ont.getPrefix());
             }
         } else {
-	        results.add("XX");
-	        results.add("<strong>"+noResultsMsgStr+"</strong>");
-	    }
-	    request.setAttribute("results",results);
+            results.add("XX");
+            results.add("<strong>" + noResultsMsgStr + "</strong>");
+        }
+        request.setAttribute("results", results);
 
-        request.setAttribute("columncount",new Integer(4));
-        request.setAttribute("suppressquery","true");
-        request.setAttribute("title","Ontologies");
+        request.setAttribute("columncount", new Integer(4));
+        request.setAttribute("suppressquery", "true");
+        request.setAttribute("title", "Ontologies");
         request.setAttribute("horizontalJspAddButtonUrl", Controllers.RETRY_URL);
         request.setAttribute("horizontalJspAddButtonText", "Add new ontology");
         request.setAttribute("horizontalJspAddButtonControllerParam", "Ontology");
@@ -80,8 +83,8 @@ public class OntologiesListingController extends BaseEditController {
     }
 
     @Override
-	public void doPost(HttpServletRequest request, HttpServletResponse response) {
-        doGet(request,response);
+    public void doPost(HttpServletRequest request, HttpServletResponse response) {
+        doGet(request, response);
     }
 
 }

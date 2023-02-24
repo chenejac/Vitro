@@ -16,61 +16,63 @@ import org.apache.jena.rdf.model.Statement;
  * the statement will be removed from the additions model and not added
  * to the retractions model.
  * in this object.
- * @author bjl23
  *
+ * @author bjl23
  */
 public class CumulativeDeltaModeler extends StatementListener {
 
-	private Model additionsModel;
-	private Model retractionsModel;
+    private Model additionsModel;
+    private Model retractionsModel;
 
-	public CumulativeDeltaModeler() {
-		this.additionsModel = ModelFactory.createDefaultModel();
-		this.retractionsModel = ModelFactory.createDefaultModel();
-	}
+    public CumulativeDeltaModeler() {
+        this.additionsModel = ModelFactory.createDefaultModel();
+        this.retractionsModel = ModelFactory.createDefaultModel();
+    }
 
-	public CumulativeDeltaModeler(Model model) {
-		this();
-		model.register(this);
-	}
+    public CumulativeDeltaModeler(Model model) {
+        this();
+        model.register(this);
+    }
 
-	public CumulativeDeltaModeler(OntModel ontModel) {
-		this();
-		ontModel.getBaseModel().register(this);
-	}
+    public CumulativeDeltaModeler(OntModel ontModel) {
+        this();
+        ontModel.getBaseModel().register(this);
+    }
 
-	/**
-	 * Return a model containing all statements added to the attached model
-	 * @return additionsModel
-	 */
-	public Model getAdditions() {
-		return additionsModel;
-	}
+    /**
+     * Return a model containing all statements added to the attached model
+     *
+     * @return additionsModel
+     */
+    public Model getAdditions() {
+        return additionsModel;
+    }
 
-	/**
-	 * Return a model containing all statements retracted from the attached model
-	 * @return retractionsModel
-	 */
-	public Model getRetractions() {
-		return retractionsModel;
-	}
+    /**
+     * Return a model containing all statements retracted from the attached model
+     *
+     * @return retractionsModel
+     */
+    public Model getRetractions() {
+        return retractionsModel;
+    }
 
-	@Override
-	public void addedStatement(Statement s) {
-		if (retractionsModel.contains(s)) {
-			retractionsModel.remove(s);
-		} else {
-			additionsModel.add(s);
-		}
-	}
+    @Override
+    public void addedStatement(Statement s) {
+        if (retractionsModel.contains(s)) {
+            retractionsModel.remove(s);
+        } else {
+            additionsModel.add(s);
+        }
+    }
 
-	@Override
-	public void removedStatement(Statement s) {
-		if (additionsModel.contains(s)) {
-			additionsModel.remove(s);
-		} else {
-			retractionsModel.add(s);
-		}
-	}
+    @Override
+    public void removedStatement(Statement s) {
+        if (additionsModel.contains(s)) {
+            additionsModel.remove(s);
+        } else {
+            retractionsModel.add(s);
+        }
+    }
 
 }

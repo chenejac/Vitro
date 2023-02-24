@@ -6,9 +6,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelChangedListener;
-
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeListener;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeSet;
@@ -17,12 +14,14 @@ import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceFactory;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.ResultSetConsumer;
 import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelChangedListener;
 import org.apache.jena.rdf.model.RDFNode;
 
 /**
  * An RDFServiceFactory that always returns the same RDFService object
- * @author bjl23
  *
+ * @author bjl23
  */
 public class RDFServiceFactorySingle implements RDFServiceFactory {
 
@@ -53,18 +52,26 @@ public class RDFServiceFactorySingle implements RDFServiceFactory {
     }
 
     @Override
-    public void registerJenaModelChangedListener(ModelChangedListener listener) throws RDFServiceException {
+    public void registerJenaModelChangedListener(ModelChangedListener listener)
+        throws RDFServiceException {
         this.rdfService.registerJenaModelChangedListener(listener);
     }
 
     @Override
-    public void unregisterJenaModelChangedListener(ModelChangedListener listener) throws RDFServiceException {
+    public void unregisterJenaModelChangedListener(ModelChangedListener listener)
+        throws RDFServiceException {
         this.rdfService.unregisterJenaModelChangedListener(listener);
     }
 
     public class UnclosableRDFService implements RDFService {
 
         private RDFService s;
+        /*
+         * UQAM-Linguistic-Management Useful among other things to transport the linguistic context in the service
+         * (non-Javadoc)
+         * @see edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService#setVitroRequest(edu.cornell.mannlib.vitro.webapp.controller.VitroRequest)
+         */
+        private VitroRequest vitroRequest;
 
         public UnclosableRDFService(RDFService rdfService) {
             this.s = rdfService;
@@ -72,51 +79,52 @@ public class RDFServiceFactorySingle implements RDFServiceFactory {
 
         @Override
         public boolean changeSetUpdate(ChangeSet changeSet)
-                throws RDFServiceException {
+            throws RDFServiceException {
             return s.changeSetUpdate(changeSet);
         }
 
         @Override
         public void newIndividual(String individualURI, String individualTypeURI)
-                throws RDFServiceException {
+            throws RDFServiceException {
             s.newIndividual(individualURI, individualTypeURI);
         }
 
         @Override
         public void newIndividual(String individualURI,
-                String individualTypeURI, String graphURI)
-                throws RDFServiceException {
+                                  String individualTypeURI, String graphURI)
+            throws RDFServiceException {
             s.newIndividual(individualURI, individualTypeURI, graphURI);
         }
 
         @Override
         public InputStream sparqlConstructQuery(String query,
-                ModelSerializationFormat resultFormat)
-                throws RDFServiceException {
+                                                ModelSerializationFormat resultFormat)
+            throws RDFServiceException {
             return s.sparqlConstructQuery(query, resultFormat);
         }
 
         @Override
         public void sparqlConstructQuery(String query, Model model)
-                throws RDFServiceException {
+            throws RDFServiceException {
             s.sparqlConstructQuery(query, model);
         }
 
         @Override
         public InputStream sparqlDescribeQuery(String query,
-                ModelSerializationFormat resultFormat)
-                throws RDFServiceException {
+                                               ModelSerializationFormat resultFormat)
+            throws RDFServiceException {
             return s.sparqlDescribeQuery(query, resultFormat);
         }
 
         @Override
         public InputStream sparqlSelectQuery(String query,
-                ResultFormat resultFormat) throws RDFServiceException {
+                                             ResultFormat resultFormat) throws RDFServiceException {
             return s.sparqlSelectQuery(query, resultFormat);
         }
 
         @Override
-        public void sparqlSelectQuery(String query, ResultSetConsumer consumer) throws RDFServiceException {
+        public void sparqlSelectQuery(String query, ResultSetConsumer consumer)
+            throws RDFServiceException {
             s.sparqlSelectQuery(query, consumer);
         }
 
@@ -141,23 +149,24 @@ public class RDFServiceFactorySingle implements RDFServiceFactory {
         }
 
         @Override
-    	public void serializeAll(OutputStream outputStream)
-    			throws RDFServiceException {
-        	s.serializeAll(outputStream);
-    	}
+        public void serializeAll(OutputStream outputStream)
+            throws RDFServiceException {
+            s.serializeAll(outputStream);
+        }
 
-    	@Override
-    	public void serializeGraph(String graphURI, OutputStream outputStream)
-    			throws RDFServiceException {
-    		s.serializeGraph(graphURI, outputStream);
-    	}
+        @Override
+        public void serializeGraph(String graphURI, OutputStream outputStream)
+            throws RDFServiceException {
+            s.serializeGraph(graphURI, outputStream);
+        }
 
-    	@Override
-    	public boolean isEquivalentGraph(String graphURI,
-    			InputStream serializedGraph,
-    			ModelSerializationFormat serializationFormat) throws RDFServiceException {
-    		return s.isEquivalentGraph(graphURI, serializedGraph, serializationFormat);
-    	}
+        @Override
+        public boolean isEquivalentGraph(String graphURI,
+                                         InputStream serializedGraph,
+                                         ModelSerializationFormat serializationFormat)
+            throws RDFServiceException {
+            return s.isEquivalentGraph(graphURI, serializedGraph, serializationFormat);
+        }
 
         @Override
         public boolean isEquivalentGraph(String graphURI,
@@ -167,25 +176,25 @@ public class RDFServiceFactorySingle implements RDFServiceFactory {
 
         @Override
         public void registerListener(ChangeListener changeListener)
-                throws RDFServiceException {
+            throws RDFServiceException {
             s.registerListener(changeListener);
         }
 
         @Override
         public void unregisterListener(ChangeListener changeListener)
-                throws RDFServiceException {
+            throws RDFServiceException {
             s.unregisterListener(changeListener);
         }
 
         @Override
         public void registerJenaModelChangedListener(ModelChangedListener changeListener)
-                throws RDFServiceException {
+            throws RDFServiceException {
             s.registerJenaModelChangedListener(changeListener);
         }
 
         @Override
         public void unregisterJenaModelChangedListener(ModelChangedListener changeListener)
-                throws RDFServiceException {
+            throws RDFServiceException {
             s.unregisterJenaModelChangedListener(changeListener);
         }
 
@@ -195,12 +204,14 @@ public class RDFServiceFactorySingle implements RDFServiceFactory {
         }
 
         @Override
-        public long countTriples(RDFNode subject, RDFNode predicate, RDFNode object) throws RDFServiceException {
+        public long countTriples(RDFNode subject, RDFNode predicate, RDFNode object)
+            throws RDFServiceException {
             return s.countTriples(subject, predicate, object);
         }
 
         @Override
-        public Model getTriples(RDFNode subject, RDFNode predicate, RDFNode object, long limit, long offset) throws RDFServiceException {
+        public Model getTriples(RDFNode subject, RDFNode predicate, RDFNode object, long limit,
+                                long offset) throws RDFServiceException {
             return s.getTriples(subject, predicate, object, limit, offset);
         }
 
@@ -214,24 +225,18 @@ public class RDFServiceFactorySingle implements RDFServiceFactory {
             // Don't close s.  It's being used by everybody.
         }
 
-		@Override
-		public String toString() {
-			return ToString.simpleName(this) + "[" + ToString.hashHex(this)
-					+ ", inner=" + s + "]";
-		}
-        /*
-         * UQAM-Linguistic-Management Useful among other things to transport the linguistic context in the service
-         * (non-Javadoc)
-         * @see edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService#setVitroRequest(edu.cornell.mannlib.vitro.webapp.controller.VitroRequest)
-         */
-        private VitroRequest vitroRequest;
-
-        public void setVitroRequest(VitroRequest vitroRequest) {
-            this.vitroRequest = vitroRequest;
+        @Override
+        public String toString() {
+            return ToString.simpleName(this) + "[" + ToString.hashHex(this)
+                + ", inner=" + s + "]";
         }
 
         public VitroRequest getVitroRequest() {
             return vitroRequest;
+        }
+
+        public void setVitroRequest(VitroRequest vitroRequest) {
+            this.vitroRequest = vitroRequest;
         }
     }
 

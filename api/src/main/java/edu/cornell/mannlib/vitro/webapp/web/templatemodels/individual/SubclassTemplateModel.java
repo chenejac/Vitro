@@ -7,7 +7,8 @@ import java.util.List;
 import edu.cornell.mannlib.vitro.webapp.beans.VClass;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.BaseTemplateModel;
 
-public class SubclassTemplateModel extends BaseTemplateModel implements Comparable<SubclassTemplateModel> {
+public class SubclassTemplateModel extends BaseTemplateModel
+    implements Comparable<SubclassTemplateModel> {
 
     private final VClass vclass;
     private final List<ObjectPropertyStatementTemplateModel> statements;

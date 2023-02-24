@@ -15,21 +15,8 @@ public class RDFServiceDataSource extends DataSourceBase {
 
     /**
      * The request processor
-     *
      */
     protected final RDFServiceBasedRequestProcessorForTPFs requestProcessor;
-
-    @Override
-    public IFragmentRequestParser getRequestParser()
-    {
-        return TPFRequestParserForJenaBackends.getInstance();
-    }
-
-    @Override
-    public IFragmentRequestProcessor getRequestProcessor()
-    {
-        return requestProcessor;
-    }
 
     /**
      * Constructor
@@ -40,5 +27,15 @@ public class RDFServiceDataSource extends DataSourceBase {
     public RDFServiceDataSource(String title, String description) {
         super(title, description);
         requestProcessor = new RDFServiceBasedRequestProcessorForTPFs();
+    }
+
+    @Override
+    public IFragmentRequestParser getRequestParser() {
+        return TPFRequestParserForJenaBackends.getInstance();
+    }
+
+    @Override
+    public IFragmentRequestProcessor getRequestProcessor() {
+        return requestProcessor;
     }
 }

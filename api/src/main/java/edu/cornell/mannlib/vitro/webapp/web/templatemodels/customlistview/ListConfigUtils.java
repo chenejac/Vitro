@@ -4,8 +4,6 @@ package edu.cornell.mannlib.vitro.webapp.web.templatemodels.customlistview;
 
 import edu.cornell.mannlib.vitro.webapp.config.ConfigurationProperties;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.jena.sdb.RDFServiceSDB;
 import org.apache.commons.lang3.StringUtils;
 
 public final class ListConfigUtils {
@@ -13,7 +11,8 @@ public final class ListConfigUtils {
 
     public static final boolean getUsePreciseSubquery(VitroRequest vreq) {
         if (usePrecise == null) {
-            String usePreciseProp = ConfigurationProperties.getBean(vreq).getProperty("listview.usePreciseSubquery");
+            String usePreciseProp =
+                ConfigurationProperties.getBean(vreq).getProperty("listview.usePreciseSubquery");
             if (!StringUtils.isEmpty(usePreciseProp)) {
                 usePrecise = Boolean.parseBoolean(usePreciseProp);
             } else if (vreq != null && vreq.getRDFService() != null) {

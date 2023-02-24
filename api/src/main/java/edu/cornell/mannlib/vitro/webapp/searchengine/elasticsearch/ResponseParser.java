@@ -9,11 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchFacetField;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchFacetField.Count;
@@ -23,6 +19,8 @@ import edu.cornell.mannlib.vitro.webapp.searchengine.base.BaseSearchFacetField;
 import edu.cornell.mannlib.vitro.webapp.searchengine.base.BaseSearchFacetField.BaseCount;
 import edu.cornell.mannlib.vitro.webapp.searchengine.base.BaseSearchResponse;
 import edu.cornell.mannlib.vitro.webapp.searchengine.base.BaseSearchResultDocument;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Elastic search sends a JSON response to a query. parse it to a
@@ -42,7 +40,7 @@ class ResponseParser {
     public ResponseParser(String responseString) throws SearchEngineException {
         try {
             this.responseMap = new ObjectMapper().readValue(responseString,
-                    HashMap.class);
+                HashMap.class);
         } catch (IOException e) {
             throw new SearchEngineException(e);
         }
@@ -52,8 +50,8 @@ class ResponseParser {
         parseDocumentList();
         parseFacetFields();
         SearchResponse response = new BaseSearchResponse(highlightingMap,
-                facetFieldsMap,
-                new ElasticSearchResultDocumentList(documentList, totalHits));
+            facetFieldsMap,
+            new ElasticSearchResultDocumentList(documentList, totalHits));
         log.debug("ESQuery.ResponseParser.parse: " + response);
         return response;
     }
@@ -62,7 +60,8 @@ class ResponseParser {
         facetFieldsMap = new HashMap<>();
 
         @SuppressWarnings("unchecked")
-        Map<String, Map<String, Object>> aggregations = (Map<String, Map<String, Object>>) responseMap
+        Map<String, Map<String, Object>> aggregations =
+            (Map<String, Map<String, Object>>) responseMap
                 .get("aggregations");
         if (aggregations == null) {
             return;
@@ -79,7 +78,7 @@ class ResponseParser {
     private void parseFacetField(String name, Map<String, Object> facetMap) {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> bucketsList = (List<Map<String, Object>>) facetMap
-                .get("buckets");
+            .get("buckets");
         if (bucketsList == null) {
             return;
         }
@@ -87,7 +86,7 @@ class ResponseParser {
         List<Count> counts = new ArrayList<>();
         for (Map<String, Object> bucket : bucketsList) {
             counts.add(new BaseCount((String) bucket.get("key"),
-                    (Integer) bucket.get("doc_count")));
+                (Integer) bucket.get("doc_count")));
         }
 
         facetFieldsMap.put(name, new BaseSearchFacetField(name, counts));
@@ -99,26 +98,26 @@ class ResponseParser {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> uberHits = (Map<String, Object>) responseMap
-                .get("hits");
+            .get("hits");
         if (uberHits == null) {
             log.warn("Didn't find a 'hits' field " + "in the query response: "
-                    + responseMap);
+                + responseMap);
             return;
         }
 
         Integer total = (Integer) uberHits.get("total");
         if (total == null) {
             log.warn("Didn't find a 'hits.total' field "
-                    + "in the query response: " + responseMap);
+                + "in the query response: " + responseMap);
             return;
         }
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> hits = (List<Map<String, Object>>) uberHits
-                .get("hits");
+            .get("hits");
         if (hits == null) {
             log.warn("Didn't find a 'hits.hits' field "
-                    + "in the query response: " + responseMap);
+                + "in the query response: " + responseMap);
             return;
         }
 
@@ -142,7 +141,7 @@ class ResponseParser {
     private SearchResultDocument parseDocument(Map<String, Object> hitMap) {
         @SuppressWarnings("unchecked")
         Map<String, Collection<Object>> sourceMap = (Map<String, Collection<Object>>) hitMap
-                .get("_source");
+            .get("_source");
         if (sourceMap == null) {
             log.warn("Didn't find a '_source' field in the hit: " + hitMap);
             return null;
@@ -158,10 +157,10 @@ class ResponseParser {
     }
 
     private Map<String, List<String>> parseHighlight(
-            Map<String, Object> hitMap) {
+        Map<String, Object> hitMap) {
         @SuppressWarnings("unchecked")
         Map<String, List<String>> highlightMap = (Map<String, List<String>>) hitMap
-                .get("highlight");
+            .get("highlight");
         if (highlightMap == null) {
             log.debug("Didn't find a 'highlight' field in the hit: " + hitMap);
             return null;
@@ -171,7 +170,7 @@ class ResponseParser {
         List<String> snippets = highlightMap.get("ALLTEXT");
         if (snippets == null) {
             log.warn("Didn't find a 'highlight.ALLTEXT' field in the hit: "
-                    + hitMap);
+                + hitMap);
             return null;
         }
 

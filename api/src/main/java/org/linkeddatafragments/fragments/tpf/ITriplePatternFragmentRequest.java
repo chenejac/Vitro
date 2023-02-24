@@ -7,15 +7,13 @@ import org.linkeddatafragments.fragments.ILinkedDataFragmentRequest;
  *
  * @param <ConstantTermType> type for representing constants in triple patterns
  *                           (i.e., URIs and literals)
- * @param <NamedVarType> type for representing named variables in triple patterns
- * @param <AnonVarType> type for representing anonymous variables in triple
- *                      patterns (i.e., variables denoted by a blank node)
- *
+ * @param <NamedVarType>     type for representing named variables in triple patterns
+ * @param <AnonVarType>      type for representing anonymous variables in triple
+ *                           patterns (i.e., variables denoted by a blank node)
  * @author <a href="http://olafhartig.de">Olaf Hartig</a>
  */
-public interface ITriplePatternFragmentRequest<ConstantTermType,NamedVarType,AnonVarType>
-    extends ILinkedDataFragmentRequest
-{
+public interface ITriplePatternFragmentRequest<ConstantTermType, NamedVarType, AnonVarType>
+    extends ILinkedDataFragmentRequest {
 
     /**
      *
@@ -34,19 +32,22 @@ public interface ITriplePatternFragmentRequest<ConstantTermType,NamedVarType,Ano
 
     /**
      * Returns the subject position of the requested triple pattern.
+     *
      * @return
      */
-    ITriplePatternElement<ConstantTermType,NamedVarType,AnonVarType> getSubject();
+    ITriplePatternElement<ConstantTermType, NamedVarType, AnonVarType> getSubject();
 
     /**
      * Returns the predicate position of the requested triple pattern.
+     *
      * @return
      */
-    ITriplePatternElement<ConstantTermType,NamedVarType,AnonVarType> getPredicate();
+    ITriplePatternElement<ConstantTermType, NamedVarType, AnonVarType> getPredicate();
 
     /**
      * Returns the object position of the requested triple pattern.
+     *
      * @return
      */
-    ITriplePatternElement<ConstantTermType,NamedVarType,AnonVarType> getObject();
+    ITriplePatternElement<ConstantTermType, NamedVarType, AnonVarType> getObject();
 }

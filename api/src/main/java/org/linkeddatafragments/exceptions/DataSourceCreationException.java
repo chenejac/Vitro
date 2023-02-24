@@ -1,13 +1,11 @@
 package org.linkeddatafragments.exceptions;
 
 /**
- *
  * @author Miel Vander Sande
  */
 public class DataSourceCreationException extends DataSourceException {
 
     /**
-     *
      * @param cause
      */
     public DataSourceCreationException(Throwable cause) {
@@ -15,7 +13,6 @@ public class DataSourceCreationException extends DataSourceException {
     }
 
     /**
-     *
      * @param datasourceName
      * @param message
      */

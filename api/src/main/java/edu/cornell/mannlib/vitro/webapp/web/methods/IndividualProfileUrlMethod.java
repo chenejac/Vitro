@@ -2,12 +2,11 @@
 
 package edu.cornell.mannlib.vitro.webapp.web.methods;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
 
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
@@ -37,7 +36,7 @@ public class IndividualProfileUrlMethod extends BaseTemplateMethodModel {
 
         map.put("return value", "The profile url of the individual");
 
-        List<String>params = new ArrayList<String>();
+        List<String> params = new ArrayList<String>();
         params.add("Uri of individual");
         map.put("parameters", params);
 

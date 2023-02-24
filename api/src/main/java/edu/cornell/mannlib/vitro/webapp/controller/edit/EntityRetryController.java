@@ -2,6 +2,9 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.text.DateFormat;
@@ -13,18 +16,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.collections4.map.ListOrderedMap;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import com.ctc.wstx.util.StringUtil;
 
 import edu.cornell.mannlib.vedit.beans.DynamicField;
 import edu.cornell.mannlib.vedit.beans.DynamicFieldRow;
@@ -54,16 +45,21 @@ import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassGroupDao;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 import edu.cornell.mannlib.vitro.webapp.edit.listener.impl.IndividualDataPropertyStatementProcessor;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.collections4.map.ListOrderedMap;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-@WebServlet(name = "EntityRetryController", urlPatterns = {"/entity_retry"} )
+@WebServlet(name = "EntityRetryController", urlPatterns = {"/entity_retry"})
 public class EntityRetryController extends BaseEditController {
 
-	private static final Log log = LogFactory.getLog(EntityRetryController.class.getName());
+    private static final Log log = LogFactory.getLog(EntityRetryController.class.getName());
 
-    public void doPost (HttpServletRequest request, HttpServletResponse response) {
-		if (!isAuthorizedToDisplayPage(request, response,
-				SimplePermission.DO_BACK_END_EDITING.ACTION)) {
-        	return;
+    public void doPost(HttpServletRequest request, HttpServletResponse response) {
+        if (!isAuthorizedToDisplayPage(request, response,
+            SimplePermission.DO_BACK_END_EDITING.ACTION)) {
+            return;
         }
 
         VitroRequest vreq = new VitroRequest(request);
@@ -94,12 +90,12 @@ public class EntityRetryController extends BaseEditController {
 
         Individual individualForEditing = null;
         if (epo.getUseRecycledBean()) {
-            individualForEditing = (Individual)epo.getNewBean();
+            individualForEditing = (Individual) epo.getNewBean();
         } else {
             String uri = vreq.getParameter("uri");
             if (uri != null) {
                 try {
-                    individualForEditing = (Individual)ewDao.getIndividualByURI(uri);
+                    individualForEditing = (Individual) ewDao.getIndividualByURI(uri);
                     action = "update";
                     epo.setAction("update");
                 } catch (NullPointerException e) {
@@ -116,8 +112,8 @@ public class EntityRetryController extends BaseEditController {
 
             //make a simple mask for the entity's id
             Object[] simpleMaskPair = new Object[2];
-            simpleMaskPair[0]="URI";
-            simpleMaskPair[1]=individualForEditing.getURI();
+            simpleMaskPair[0] = "URI";
+            simpleMaskPair[1] = individualForEditing.getURI();
             epo.getSimpleMask().add(simpleMaskPair);
 
         }
@@ -126,7 +122,7 @@ public class EntityRetryController extends BaseEditController {
 
         LinkedList lnList = new LinkedList();
         lnList.add(new RequiredFieldValidator());
-        epo.getValidatorMap().put("Name",lnList);
+        epo.getValidatorMap().put("Name", lnList);
 
         //make a postinsert pageforwarder that will send us to a new entity's fetch screen
         epo.setPostInsertPageForwarder(new EntityInsertPageForwarder());
@@ -136,7 +132,7 @@ public class EntityRetryController extends BaseEditController {
         try {
             Class[] args = new Class[1];
             args[0] = String.class;
-            epo.setGetMethod(ewDao.getClass().getDeclaredMethod("getIndividualByURI",args));
+            epo.setGetMethod(ewDao.getClass().getDeclaredMethod("getIndividualByURI", args));
         } catch (NoSuchMethodException e) {
             log.error("EntityRetryController could not find the entityByURI method in the dao");
         }
@@ -147,35 +143,43 @@ public class EntityRetryController extends BaseEditController {
         HashMap hash = new HashMap();
 
         if (individualForEditing.getVClassURI() == null) {
-	        // we need to do a special thing here to make an option list with option groups for the classgroups.
-	        List classGroups = cgDao.getPublicGroupsWithVClasses(true,true,false); // order by displayRank, include uninstantiated classes, don't get the counts of individuals
-	        Iterator classGroupIt = classGroups.iterator();
-	        ListOrderedMap optGroupMap = new ListOrderedMap();
-	        while (classGroupIt.hasNext()) {
-	            VClassGroup group = (VClassGroup)classGroupIt.next();
-	            List classes = group.getVitroClassList();
-	            optGroupMap.put(group.getPublicName(),FormUtils.makeOptionListFromBeans(classes,"URI","Name",individualForEditing.getVClassURI(),null,false));
-	        }
-	        hash.put("VClassURI", optGroupMap);
+            // we need to do a special thing here to make an option list with option groups for the classgroups.
+            List classGroups = cgDao.getPublicGroupsWithVClasses(true, true,
+                false); // order by displayRank, include uninstantiated classes, don't get the counts of individuals
+            Iterator classGroupIt = classGroups.iterator();
+            ListOrderedMap optGroupMap = new ListOrderedMap();
+            while (classGroupIt.hasNext()) {
+                VClassGroup group = (VClassGroup) classGroupIt.next();
+                List classes = group.getVitroClassList();
+                optGroupMap.put(group.getPublicName(), FormUtils
+                    .makeOptionListFromBeans(classes, "URI", "Name",
+                        individualForEditing.getVClassURI(), null, false));
+            }
+            hash.put("VClassURI", optGroupMap);
         } else {
-        	VClass vClass = null;
-        	Option opt = null;
-        	try {
-        		vClass = vcDao.getVClassByURI(individualForEditing.getVClassURI());
-        	} catch (Exception e) {}
-    		if (vClass != null) {
-    			opt = new Option(vClass.getURI(),vClass.getName(),true);
-    		} else {
-    			opt = new Option(individualForEditing.getVClassURI(),individualForEditing.getVClassURI(),true);
-    		}
-    		List<Option> optList  = new LinkedList<Option>();
-    		optList.add(opt);
-			hash.put("VClassURI", optList);
+            VClass vClass = null;
+            Option opt = null;
+            try {
+                vClass = vcDao.getVClassByURI(individualForEditing.getVClassURI());
+            } catch (Exception e) {
+            }
+            if (vClass != null) {
+                opt = new Option(vClass.getURI(), vClass.getName(), true);
+            } else {
+                opt = new Option(individualForEditing.getVClassURI(),
+                    individualForEditing.getVClassURI(), true);
+            }
+            List<Option> optList = new LinkedList<Option>();
+            optList.add(opt);
+            hash.put("VClassURI", optList);
         }
 
-        hash.put("HiddenFromDisplayBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getDisplayOptionsList(individualForEditing));
-        hash.put("ProhibitedFromUpdateBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getUpdateOptionsList(individualForEditing));
-        hash.put("HiddenFromPublishBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getPublishOptionsList(individualForEditing));
+        hash.put("HiddenFromDisplayBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getDisplayOptionsList(individualForEditing));
+        hash.put("ProhibitedFromUpdateBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getUpdateOptionsList(individualForEditing));
+        hash.put("HiddenFromPublishBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getPublishOptionsList(individualForEditing));
 
         FormObject foo = new FormObject();
         foo.setOptionLists(hash);
@@ -185,31 +189,33 @@ public class EntityRetryController extends BaseEditController {
         //make dynamic datatype property fields
         List<VClass> vclasses = individualForEditing.getVClasses(true);
         if (vclasses == null) {
-        	vclasses = new ArrayList<VClass>();
-        	if (individualForEditing.getVClassURI() != null) {
-        		try {
-	        		VClass cls = vreq.getUnfilteredWebappDaoFactory().getVClassDao().getVClassByURI(individualForEditing.getVClassURI());
-	        		if (cls != null) {
-	        			vclasses.add(cls);
-	        		}
-        		} catch (Exception e) {}
-        	}
+            vclasses = new ArrayList<VClass>();
+            if (individualForEditing.getVClassURI() != null) {
+                try {
+                    VClass cls = vreq.getUnfilteredWebappDaoFactory().getVClassDao()
+                        .getVClassByURI(individualForEditing.getVClassURI());
+                    if (cls != null) {
+                        vclasses.add(cls);
+                    }
+                } catch (Exception e) {
+                }
+            }
         }
         List<DataProperty> allApplicableDataprops = new ArrayList<DataProperty>();
         for (VClass cls : vclasses) {
-        	List<DataProperty> dataprops = dpDao.getDataPropertiesForVClass(cls.getURI());
-        	for (DataProperty dp : dataprops) {
-        		boolean notDuplicate = true;
-        		for (DataProperty existingDp : allApplicableDataprops) {
-        			if (existingDp.getURI().equals(dp.getURI())) {
-        				notDuplicate = false;
-        				break;
-        			}
-        		}
-        		if (notDuplicate) {
-        			allApplicableDataprops.add(dp);
-        		}
-        	}
+            List<DataProperty> dataprops = dpDao.getDataPropertiesForVClass(cls.getURI());
+            for (DataProperty dp : dataprops) {
+                boolean notDuplicate = true;
+                for (DataProperty existingDp : allApplicableDataprops) {
+                    if (existingDp.getURI().equals(dp.getURI())) {
+                        notDuplicate = false;
+                        break;
+                    }
+                }
+                if (notDuplicate) {
+                    allApplicableDataprops.add(dp);
+                }
+            }
         }
         Collections.sort(allApplicableDataprops);
 
@@ -259,15 +265,17 @@ public class EntityRetryController extends BaseEditController {
                         if (!StringUtils.isBlank(language)) {
                             row.setLanguage(language);
                         }
-                        if (dynamo.getRowList() == null)
+                        if (dynamo.getRowList() == null) {
                             dynamo.setRowList(new ArrayList());
+                        }
                         dynamo.getRowList().add(row);
                     }
                 } catch (NullPointerException npe) {
                     //whatever
                 }
-                if (dynamo.getRowList() == null)
+                if (dynamo.getRowList() == null) {
                     dynamo.setRowList(new ArrayList());
+                }
                 dynamo.getRowList().add(rowTemplate);
                 dynamicFields.add(dynamo);
             }
@@ -279,30 +287,35 @@ public class EntityRetryController extends BaseEditController {
         epo.setFormObject(foo);
 
         // DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        DateFormat minutesOnlyDateFormat = new SimpleDateFormat ("yyyy-MM-dd HH:mm");
+        DateFormat minutesOnlyDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         DateFormat dateOnlyFormat = new SimpleDateFormat("yyyy-MM-dd");
-        FormUtils.populateFormFromBean(individualForEditing,action,epo,foo,epo.getBadValueMap());
+        FormUtils
+            .populateFormFromBean(individualForEditing, action, epo, foo, epo.getBadValueMap());
 
         List cList = new ArrayList();
         cList.add(new IndividualDataPropertyStatementProcessor());
         //cList.add(new SearchReindexer()); // handled for now by SearchReindexingListener on model
         epo.setChangeListenerList(cList);
 
-        epo.getAdditionalDaoMap().put("DataPropertyStatement",myWebappDaoFactory.getDataPropertyStatementDao()); // EntityDatapropProcessor will look for this
-        epo.getAdditionalDaoMap().put("DataProperty",myWebappDaoFactory.getDataPropertyDao()); // EntityDatapropProcessor will look for this
+        epo.getAdditionalDaoMap().put("DataPropertyStatement", myWebappDaoFactory
+            .getDataPropertyStatementDao()); // EntityDatapropProcessor will look for this
+        epo.getAdditionalDaoMap().put("DataProperty",
+            myWebappDaoFactory.getDataPropertyDao()); // EntityDatapropProcessor will look for this
 
         ApplicationBean appBean = vreq.getAppBean();
 
-        request.setAttribute("formJsp","/templates/edit/specific/entity_retry.jsp");
-        request.setAttribute("epoKey",epo.getKey());
-        request.setAttribute("title","Individual Editing Form");
-        request.setAttribute("css", "<link rel=\"stylesheet\" type=\"text/css\" href=\""+appBean.getThemeDir()+"css/edit.css\"/>");
+        request.setAttribute("formJsp", "/templates/edit/specific/entity_retry.jsp");
+        request.setAttribute("epoKey", epo.getKey());
+        request.setAttribute("title", "Individual Editing Form");
+        request.setAttribute("css",
+            "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + appBean.getThemeDir() +
+                "css/edit.css\"/>");
         request.setAttribute("scripts", "/js/edit/entityRetry.js");
         // NC Commenting this out for now. Going to pass on DWR for moniker and use jQuery instead
         // request.setAttribute("bodyAttr"," onLoad=\"monikerInit()\"");
-        request.setAttribute("_action",action);
-        request.setAttribute("unqualifiedClassName","Individual");
-        setRequestAttributes(request,epo);
+        request.setAttribute("_action", action);
+        request.setAttribute("unqualifiedClassName", "Individual");
+        setRequestAttributes(request, epo);
         try {
             JSPPageHandler.renderBasicPage(request, response, "/templates/edit/formBasic.jsp");
         } catch (Exception e) {
@@ -313,26 +326,27 @@ public class EntityRetryController extends BaseEditController {
 
     }
 
-    public void doGet (HttpServletRequest request, HttpServletResponse response) {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
         doPost(request, response);
     }
 
     class EntityInsertPageForwarder implements PageForwarder {
 
-        public void doForward(HttpServletRequest request, HttpServletResponse response, EditProcessObject epo){
+        public void doForward(HttpServletRequest request, HttpServletResponse response,
+                              EditProcessObject epo) {
             String newEntityUrl = "entityEdit?uri=";
             Individual ent = (Individual) epo.getNewBean();
             //log.error(ent.getName() + " : " + ent.getURI()+" ; "+ent.getNamespace()+" ; "+ent.getLocalName());
             if (ent != null && ent.getURI() != null) {
                 try {
-                    newEntityUrl += URLEncoder.encode(ent.getURI(),"UTF-8");
+                    newEntityUrl += URLEncoder.encode(ent.getURI(), "UTF-8");
                     response.sendRedirect(newEntityUrl);
                 } catch (Exception e) {
                     log.error("EntityInsertPageForwarder could not send redirect.");
                 }
             } else {
                 try {
-                	String siteAdminUrl = request.getContextPath() + Controllers.SITE_ADMIN;
+                    String siteAdminUrl = request.getContextPath() + Controllers.SITE_ADMIN;
                     response.sendRedirect(siteAdminUrl);
                 } catch (IOException e) {
                     log.error("EntityInsertPageForwarder could not redirect to about page.");

@@ -2,16 +2,15 @@ package edu.cornell.mannlib.vitro.webapp.dao.jena;
 
 import static org.junit.Assert.assertEquals;
 
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.junit.Test;
-
 import edu.cornell.mannlib.vitro.testing.AbstractTestClass;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeListener;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.ModelChange;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.jena.model.RDFServiceModel;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.junit.Test;
 
 
 public class RDFServiceGraphTest extends AbstractTestClass {
@@ -38,15 +37,15 @@ public class RDFServiceGraphTest extends AbstractTestClass {
         model.notifyEvent("event");
         assertEquals(1, counter.getCount());
     }
-    
+
     private class EventsCounter implements ChangeListener {
 
         private int count = 0;
-        
+
         public int getCount() {
             return count;
         }
-        
+
         @Override
         public void notifyModelChange(ModelChange modelChange) {
             // TODO Auto-generated method stub            
@@ -56,7 +55,7 @@ public class RDFServiceGraphTest extends AbstractTestClass {
         public void notifyEvent(String graphURI, Object event) {
             count++;
         }
-        
+
     }
-    
+
 }

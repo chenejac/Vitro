@@ -41,7 +41,7 @@ public class DynamicFieldRow {
 
     public void setLanguage(String language) {
         if (language != null) {
-            this.language = language;    
+            this.language = language;
         }
     }
 }

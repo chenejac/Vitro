@@ -2,35 +2,34 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
-import java.io.IOException;
-import java.util.HashMap;
-
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.io.IOException;
+import java.util.HashMap;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.controller.BaseEditController;
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-@WebServlet(name = "IndividualTypeOperationController", urlPatterns = {"/individualTypeOp"} )
+@WebServlet(name = "IndividualTypeOperationController", urlPatterns = {"/individualTypeOp"})
 public class IndividualTypeOperationController extends BaseEditController {
 
-    private static final Log log = LogFactory.getLog(IndividualTypeOperationController.class.getName());
+    private static final Log log =
+        LogFactory.getLog(IndividualTypeOperationController.class.getName());
 
     public void doGet(HttpServletRequest req, HttpServletResponse response) {
-		if (!isAuthorizedToDisplayPage(req, response,
-				SimplePermission.DO_BACK_END_EDITING.ACTION)) {
-        	return;
+        if (!isAuthorizedToDisplayPage(req, response,
+            SimplePermission.DO_BACK_END_EDITING.ACTION)) {
+            return;
         }
 
-    	VitroRequest request = new VitroRequest(req);
-    	String defaultLandingPage = getDefaultLandingPage(request);
+        VitroRequest request = new VitroRequest(req);
+        String defaultLandingPage = getDefaultLandingPage(request);
 
         HashMap epoHash = null;
         EditProcessObject epo = null;
@@ -62,21 +61,22 @@ public class IndividualTypeOperationController extends BaseEditController {
         IndividualDao dao = request.getUnfilteredAssertionsWebappDaoFactory().getIndividualDao();
 
         if (request.getParameter("_cancel") == null) {
-	        try {
-	            if (request.getParameter("operation").equals("remove")) {
-	                String[] typeURIstrs = request.getParameterValues("TypeURI");
-	                String individualURIstr = request.getParameter("individualURI");
-	                    if (individualURIstr != null) {
-                            for (String typeURIstr : typeURIstrs) {
-                                dao.removeVClass(individualURIstr, typeURIstr);
-                            }
-	                    }
-	            } else if (request.getParameter("operation").equals("add")) {
-		                dao.addVClass(request.getParameter("individualURI"),request.getParameter("TypeURI"));
-	            }
-	        } catch (Exception e) {
-	            log.error(e, e);
-	        }
+            try {
+                if (request.getParameter("operation").equals("remove")) {
+                    String[] typeURIstrs = request.getParameterValues("TypeURI");
+                    String individualURIstr = request.getParameter("individualURI");
+                    if (individualURIstr != null) {
+                        for (String typeURIstr : typeURIstrs) {
+                            dao.removeVClass(individualURIstr, typeURIstr);
+                        }
+                    }
+                } else if (request.getParameter("operation").equals("add")) {
+                    dao.addVClass(request.getParameter("individualURI"),
+                        request.getParameter("TypeURI"));
+                }
+            } catch (Exception e) {
+                log.error(e, e);
+            }
         }
 
         //if no page forwarder was set, just go back to referring page:

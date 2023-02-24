@@ -7,10 +7,10 @@ package edu.cornell.mannlib.vitro.webapp.utils;
  */
 public class SimpleStemmer {
 
-   private int MAX_LENGTH = 32; // value used elsewhere in Vitro
+    private int MAX_LENGTH = 32; // value used elsewhere in Vitro
 
-   public String stemString(String str) {
-	   return Stemmer.StemString(str,MAX_LENGTH);
-   }
+    public String stemString(String str) {
+        return Stemmer.StemString(str, MAX_LENGTH);
+    }
 
 }

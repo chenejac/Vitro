@@ -2,14 +2,12 @@
 
 package edu.cornell.mannlib.vitro.webapp.dao.jena;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import javax.sql.DataSource;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.graph.Graph;
 import org.apache.jena.sdb.SDBFactory;
 import org.apache.jena.sdb.Store;
@@ -17,38 +15,38 @@ import org.apache.jena.sdb.StoreDesc;
 
 public class SDBGraphGenerator implements SQLGraphGenerator {
 
-	private static final Log log = LogFactory.getLog(SDBGraphGenerator.class.getName());
+    private static final Log log = LogFactory.getLog(SDBGraphGenerator.class.getName());
 
-	private SDBGraphConnectionGenerator connGen;
+    private SDBGraphConnectionGenerator connGen;
     private Connection connection;
     private StoreDesc storeDesc;
     private String graphID;
 
     public SDBGraphGenerator(DataSource dataSource, StoreDesc storeDesc,
-    							String graphID) {
-    	this.connGen = new SDBGraphConnectionGenerator(dataSource);
-    	this.storeDesc = storeDesc;
-    	this.graphID = graphID;
+                             String graphID) {
+        this.connGen = new SDBGraphConnectionGenerator(dataSource);
+        this.storeDesc = storeDesc;
+        this.graphID = graphID;
     }
 
     public SDBGraphGenerator(SDBGraphConnectionGenerator connectionGenerator,
-            StoreDesc storeDesc, String graphID) {
-    	this.connGen = connectionGenerator;
-    	this.storeDesc = storeDesc;
-    	this.graphID = graphID;
+                             StoreDesc storeDesc, String graphID) {
+        this.connGen = connectionGenerator;
+        this.storeDesc = storeDesc;
+        this.graphID = graphID;
     }
 
     public boolean isGraphClosed() {
-    	try {
-    		return (connection == null || connection.isClosed());
+        try {
+            return (connection == null || connection.isClosed());
         } catch (SQLException e) {
-        	throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
     }
 
     public Graph generateGraph() {
         try {
-        	this.connection = connGen.generateConnection();
+            this.connection = connGen.generateConnection();
             Store store = SDBFactory.connectStore(connection, storeDesc);
             return SDBFactory.connectNamedGraph(store, graphID);
         } catch (SQLException e) {
@@ -58,8 +56,8 @@ public class SDBGraphGenerator implements SQLGraphGenerator {
         }
     }
 
-	public Connection getConnection() {
-		return connection;
-	}
+    public Connection getConnection() {
+        return connection;
+    }
 
 }

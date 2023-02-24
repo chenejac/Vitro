@@ -10,11 +10,11 @@ import java.lang.annotation.Target;
 /**
  * The annotated method should be called after the bean is instantiated, to
  * confirm that the bean is correctly formed.
- *
+ * <p>
  * If the bean is not correctly formed, throw a runtime exception.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Validation {
-	// No elements
+    // No elements
 }

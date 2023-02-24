@@ -9,11 +9,11 @@ public class Checkbox {
     private String body = null;
     private boolean checked = false;
 
-    public String getName(){
+    public String getName() {
         return name;
     }
 
-    private void setName(String name){
+    private void setName(String name) {
         this.name = name;
     }
 
@@ -33,11 +33,11 @@ public class Checkbox {
         this.body = body;
     }
 
-    public boolean getChecked (){
+    public boolean getChecked() {
         return checked;
     }
 
-    public void setChecked (boolean checked){
+    public void setChecked(boolean checked) {
         this.checked = checked;
     }
 

@@ -2,15 +2,11 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
-import java.io.IOException;
-import java.util.HashMap;
-
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.io.IOException;
+import java.util.HashMap;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.controller.BaseEditController;
@@ -18,18 +14,21 @@ import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.beans.Classes2Classes;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-@WebServlet(name = "Classes2ClassesOperationController", urlPatterns = {"/classes2ClassesOp"} )
+@WebServlet(name = "Classes2ClassesOperationController", urlPatterns = {"/classes2ClassesOp"})
 public class Classes2ClassesOperationController extends BaseEditController {
 
-    private static final Log log = LogFactory.getLog(Classes2ClassesOperationController.class.getName());
+    private static final Log log =
+        LogFactory.getLog(Classes2ClassesOperationController.class.getName());
 
     public void doGet(HttpServletRequest req, HttpServletResponse response) {
         if (!isAuthorizedToDisplayPage(req, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-        	return;
+            return;
         }
 
-    	VitroRequest request = new VitroRequest(req);
+        VitroRequest request = new VitroRequest(req);
         String defaultLandingPage = getDefaultLandingPage(request);
 
         HashMap epoHash = null;
@@ -66,19 +65,21 @@ public class Classes2ClassesOperationController extends BaseEditController {
 
         if (request.getParameter("_cancel") == null) {
 
-	        try {
-	            if (request.getParameter("operation").equals("remove")) {
-	                String[] subclassURIstrs = request.getParameterValues("SubclassURI");
-	                if ((subclassURIstrs != null) && (subclassURIstrs.length > 1)) {
-	                    String superclassURIstr = request.getParameter("SuperclassURI");
-	                    if (superclassURIstr != null) {
+            try {
+                if (request.getParameter("operation").equals("remove")) {
+                    String[] subclassURIstrs = request.getParameterValues("SubclassURI");
+                    if ((subclassURIstrs != null) && (subclassURIstrs.length > 1)) {
+                        String superclassURIstr = request.getParameter("SuperclassURI");
+                        if (superclassURIstr != null) {
                             for (String subclassURIstr : subclassURIstrs) {
                                 switch (modeStr) {
                                     case "disjointWith":
-                                        vcDao.removeDisjointWithClass(superclassURIstr, subclassURIstr);
+                                        vcDao.removeDisjointWithClass(superclassURIstr,
+                                            subclassURIstr);
                                         break;
                                     case "equivalentClass":
-                                        vcDao.removeEquivalentClass(superclassURIstr, subclassURIstr);
+                                        vcDao.removeEquivalentClass(superclassURIstr,
+                                            subclassURIstr);
                                         break;
                                     default:
                                         Classes2Classes c2c = new Classes2Classes();
@@ -88,18 +89,20 @@ public class Classes2ClassesOperationController extends BaseEditController {
                                         break;
                                 }
                             }
-	                    }
-	                } else {
-	                    String subclassURIstr = subclassURIstrs[0];
-	                    String[] superclassURIstrs = request.getParameterValues("SuperclassURI");
-	                    if (superclassURIstrs != null) {
+                        }
+                    } else {
+                        String subclassURIstr = subclassURIstrs[0];
+                        String[] superclassURIstrs = request.getParameterValues("SuperclassURI");
+                        if (superclassURIstrs != null) {
                             for (String superclassURIstr : superclassURIstrs) {
                                 switch (modeStr) {
                                     case "disjointWith":
-                                        vcDao.removeDisjointWithClass(superclassURIstr, subclassURIstr);
+                                        vcDao.removeDisjointWithClass(superclassURIstr,
+                                            subclassURIstr);
                                         break;
                                     case "equivalentClass":
-                                        vcDao.removeEquivalentClass(subclassURIstr, superclassURIstr);
+                                        vcDao.removeEquivalentClass(subclassURIstr,
+                                            superclassURIstr);
                                         break;
                                     default:
                                         Classes2Classes c2c = new Classes2Classes();
@@ -109,15 +112,17 @@ public class Classes2ClassesOperationController extends BaseEditController {
                                         break;
                                 }
                             }
-	                    }
-	                }
-	            } else if (request.getParameter("operation").equals("add")) {
+                        }
+                    }
+                } else if (request.getParameter("operation").equals("add")) {
                     switch (modeStr) {
                         case "disjointWith":
-                            vcDao.addDisjointWithClass(request.getParameter("SuperclassURI"), request.getParameter("SubclassURI"));
+                            vcDao.addDisjointWithClass(request.getParameter("SuperclassURI"),
+                                request.getParameter("SubclassURI"));
                             break;
                         case "equivalentClass":
-                            vcDao.addEquivalentClass(request.getParameter("SuperclassURI"), request.getParameter("SubclassURI"));
+                            vcDao.addEquivalentClass(request.getParameter("SuperclassURI"),
+                                request.getParameter("SubclassURI"));
                             break;
                         default:
                             Classes2Classes c2c = new Classes2Classes();
@@ -126,10 +131,10 @@ public class Classes2ClassesOperationController extends BaseEditController {
                             vcDao.insertNewClasses2Classes(c2c);
                             break;
                     }
-	            }
-	        } catch (Exception e) {
-	            log.error(e, e);
-	        }
+                }
+            } catch (Exception e) {
+                log.error(e, e);
+            }
         }
 
         //if no page forwarder was set, just go back to referring page:

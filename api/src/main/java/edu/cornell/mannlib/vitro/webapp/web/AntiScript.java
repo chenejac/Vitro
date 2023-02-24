@@ -20,28 +20,28 @@ import org.owasp.validator.html.ScanException;
 public class AntiScript {
 
     private static final Log log = LogFactory.getLog(AntiScript.class);
-
+    private static final String ANTI_SCRIPT_SCANNER = "ANTI_SCRIPT_SCANNER";
     private static Policy policy;
     private static AntiSamy antiSamy;
-
-    private static final String ANTI_SCRIPT_SCANNER = "ANTI_SCRIPT_SCANNER";
-    private static String ANTI_SCRIPT_POLICY_FILE = "/edu/cornell/mannlib/vitro/webapp/web/antisamy-vitro-1.4.4.xml";
+    private static String ANTI_SCRIPT_POLICY_FILE =
+        "/edu/cornell/mannlib/vitro/webapp/web/antisamy-vitro-1.4.4.xml";
 
     /**
      * This will attempt to return HTML that has been cleaned up according
      * to the policy.
-     *
+     * <p>
      * If there is any error during the scan, an error message
      * will be returned instead of the HTML.  This might not be ideal so
      * consider changing it once we see how this works. Other options include
      * returning an empty string or some other error message.  Returning
      * the un-scanned HTML is not a secure option as it may contain scripts.
-     *
+     * <p>
      * This will return null if dirtyInput is null.
      */
-    public static String cleanText( String dirtyInput ){
-        if( dirtyInput == null )
+    public static String cleanText(String dirtyInput) {
+        if (dirtyInput == null) {
             return null;
+        }
 
         AntiSamy as = getAntiSamyScanner();
         CleanResults cr;
@@ -49,7 +49,7 @@ public class AntiScript {
             cr = as.scan(dirtyInput);
             return cr.getCleanHTML();
         } catch (ScanException | PolicyException e) {
-            log.error("Error while scanning HTML" ,e );
+            log.error("Error while scanning HTML", e);
         }
         return "AntiScript: HTML caused scan error.";
     }
@@ -57,7 +57,7 @@ public class AntiScript {
     /**
      * Method to clean a URL or URI.
      */
-    public static String cleanURI( String dirtyInput ){
+    public static String cleanURI(String dirtyInput) {
         return cleanText(dirtyInput);
     }
 
@@ -65,9 +65,9 @@ public class AntiScript {
      * Method to clean all of the values in a map where the values are of
      * type String.
      */
-    public static <T> void cleanMapValues( Map<T,String> map ){
-        for( T key : map.keySet() ){
-            map.put(key, cleanText(map.get(key)) );
+    public static <T> void cleanMapValues(Map<T, String> map) {
+        for (T key : map.keySet()) {
+            map.put(key, cleanText(map.get(key)));
         }
     }
 
@@ -76,14 +76,14 @@ public class AntiScript {
      * This is a anti-script policy for use with OWASP AntiSamy, not a vivo auth Policy.
      * Returns null if no policy can be created.
      */
-    protected static Policy getAntiScriptPolicy( ){
+    protected static Policy getAntiScriptPolicy() {
 
-        if( policy == null ){
+        if (policy == null) {
             Policy newPolicy;
             try {
                 String url = ANTI_SCRIPT_POLICY_FILE;
-                URL policyFile= AntiScript.class.getResource( url );
-                newPolicy = Policy.getInstance( policyFile );
+                URL policyFile = AntiScript.class.getResource(url);
+                newPolicy = Policy.getInstance(policyFile);
                 log.debug("anti-script policy loaded successfully");
                 policy = newPolicy;
             } catch (Throwable e) {
@@ -100,10 +100,10 @@ public class AntiScript {
      * whole application. This may return a scanner with a null
      * policy if the policy is not setup correctly.
      */
-    public static AntiSamy getAntiSamyScanner(  ){
+    public static AntiSamy getAntiSamyScanner() {
 
-        if( antiSamy == null ){
-            antiSamy = new AntiSamy( getAntiScriptPolicy() );
+        if (antiSamy == null) {
+            antiSamy = new AntiSamy(getAntiScriptPolicy());
             log.debug("anti-script scanner loaded successfully");
         }
 

@@ -2,18 +2,13 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.beans.FormObject;
@@ -31,15 +26,19 @@ import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
 import edu.cornell.mannlib.vitro.webapp.dao.ObjectPropertyDao;
 import edu.cornell.mannlib.vitro.webapp.dao.PropertyInstanceDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class ObjectPropertyStatementRetryController extends BaseEditController {
 
-	private static final Log log = LogFactory.getLog(ObjectPropertyStatementRetryController.class.getName());
+    private static final Log log =
+        LogFactory.getLog(ObjectPropertyStatementRetryController.class.getName());
 
-    public void doPost (HttpServletRequest request, HttpServletResponse response) {
-		if (!isAuthorizedToDisplayPage(request, response,
-				SimplePermission.DO_BACK_END_EDITING.ACTION)) {
-        	return;
+    public void doPost(HttpServletRequest request, HttpServletResponse response) {
+        if (!isAuthorizedToDisplayPage(request, response,
+            SimplePermission.DO_BACK_END_EDITING.ACTION)) {
+            return;
         }
 
         VitroRequest vreq = new VitroRequest(request);
@@ -49,20 +48,21 @@ public class ObjectPropertyStatementRetryController extends BaseEditController {
         epo.setBeanClass(PropertyInstanceIface.class);
         Class[] classarray = {PropertyInstanceIface.class};
         try {
-        	epo.setInsertMethod(PropertyInstanceDao.class.getMethod("insertProp", classarray));
-        	epo.setUpdateMethod(epo.getInsertMethod());
+            epo.setInsertMethod(PropertyInstanceDao.class.getMethod("insertProp", classarray));
+            epo.setUpdateMethod(epo.getInsertMethod());
         } catch (NoSuchMethodException nsme) {
-        	log.error("Unable to find "+PropertyInstanceDao.class.getName()+".insertProp("+PropertyInstanceIface.class.getName()+")");
+            log.error("Unable to find " + PropertyInstanceDao.class.getName() + ".insertProp(" +
+                PropertyInstanceIface.class.getName() + ")");
         }
 
         try {
-        	epo.setDeleteMethod(
-        			PropertyInstanceDao.class.getMethod(
-        					"deletePropertyInstance", classarray));
-        } catch(NoSuchMethodException nsme) {
-        	log.error("Unable to find "+PropertyInstanceDao.class.getName()+
-        			".deletePropertyInstance("+
-        					PropertyInstanceIface.class.getName()+")");
+            epo.setDeleteMethod(
+                PropertyInstanceDao.class.getMethod(
+                    "deletePropertyInstance", classarray));
+        } catch (NoSuchMethodException nsme) {
+            log.error("Unable to find " + PropertyInstanceDao.class.getName() +
+                ".deletePropertyInstance(" +
+                PropertyInstanceIface.class.getName() + ")");
         }
 
         String action = "insert";
@@ -74,9 +74,9 @@ public class ObjectPropertyStatementRetryController extends BaseEditController {
         VClassDao vcDao = vreq.getUnfilteredWebappDaoFactory().getVClassDao();
 
         PropertyInstance objectForEditing = null;
-        if (!epo.getUseRecycledBean()){
+        if (!epo.getUseRecycledBean()) {
             objectForEditing = new PropertyInstance();
-            populateBeanFromParams(objectForEditing,vreq);
+            populateBeanFromParams(objectForEditing, vreq);
             if (vreq.getParameter(MULTIPLEXED_PARAMETER_NAME) != null) {
                 action = "update";
             }
@@ -93,7 +93,7 @@ public class ObjectPropertyStatementRetryController extends BaseEditController {
         FormObject foo = new FormObject();
         ObjectProperty p = pDao.getObjectPropertyByURI(objectForEditing.getPropertyURI());
         if (p != null) {
-                foo.getValues().put("Prop",p.getDomainPublic());
+            foo.getValues().put("Prop", p.getDomainPublic());
         } else {
             foo.getValues().put("Prop", "The property must be specified.");
         }
@@ -110,7 +110,8 @@ public class ObjectPropertyStatementRetryController extends BaseEditController {
         optionMap.put("SubjectEntURI", domainOptionList);
 
         // TODO : handle list of VClasses
-        List<VClass> possibleClasses = vcDao.getVClassesForProperty(domainEntity.getVClassURI(),objectForEditing.getPropertyURI());
+        List<VClass> possibleClasses = vcDao
+            .getVClassesForProperty(domainEntity.getVClassURI(), objectForEditing.getPropertyURI());
         Iterator<VClass> possIt = possibleClasses.iterator();
         HashSet<Individual> possIndSet = new HashSet<Individual>();
         while (possIt.hasNext()) {
@@ -124,27 +125,29 @@ public class ObjectPropertyStatementRetryController extends BaseEditController {
         List objectEntOptionList = new LinkedList();
         for (Individual objInd : indList) {
             Option objIndOpt = new Option(objInd.getURI(), objInd.getName());
-            if (objectForEditing.getObjectEntURI() != null && objectForEditing.getObjectEntURI().equals(objInd.getURI())) {
+            if (objectForEditing.getObjectEntURI() != null &&
+                objectForEditing.getObjectEntURI().equals(objInd.getURI())) {
                 objIndOpt.setSelected(true);
             }
             objectEntOptionList.add(objIndOpt);
         }
-        if (objectEntOptionList.size()==0) {
-            objectEntOptionList.add(new Option("", "There are no individuals yet defined that could fill this role."));
+        if (objectEntOptionList.size() == 0) {
+            objectEntOptionList.add(
+                new Option("", "There are no individuals yet defined that could fill this role."));
         }
         optionMap.put("ObjectEntURI", objectEntOptionList);
 
         foo.setOptionLists(optionMap);
         epo.setFormObject(foo);
 
-        FormUtils.populateFormFromBean(objectForEditing,action,foo);
+        FormUtils.populateFormFromBean(objectForEditing, action, foo);
 
-        request.setAttribute("formJsp","/templates/edit/specific/ents2ents_retry_domainSide.jsp");
-        request.setAttribute("scripts","/templates/edit/formBasic.js");
-        request.setAttribute("title","Object Property Instance Editing Form");
-        request.setAttribute("_action",action);
-        request.setAttribute("unqualifiedClassName","ObjectPropertyStatement");
-        setRequestAttributes(request,epo);
+        request.setAttribute("formJsp", "/templates/edit/specific/ents2ents_retry_domainSide.jsp");
+        request.setAttribute("scripts", "/templates/edit/formBasic.js");
+        request.setAttribute("title", "Object Property Instance Editing Form");
+        request.setAttribute("_action", action);
+        request.setAttribute("unqualifiedClassName", "ObjectPropertyStatement");
+        setRequestAttributes(request, epo);
 
         try {
             JSPPageHandler.renderBasicPage(request, response, "/templates/edit/formBasic.jsp");
@@ -156,7 +159,7 @@ public class ObjectPropertyStatementRetryController extends BaseEditController {
 
     }
 
-    public void doGet (HttpServletRequest request, HttpServletResponse response) {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
         doPost(request, response);
     }
 

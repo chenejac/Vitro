@@ -6,25 +6,19 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import freemarker.core.Environment;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateMethodModel;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public abstract class BaseTemplateMethodModel implements TemplateMethodModel {
 
     private static final Log log = LogFactory.getLog(BaseTemplateMethodModel.class);
 
-    public abstract Map<String, Object> help(String name);
-
-    protected String mergeToHelpTemplate(Map<String, Object> map, Environment env) {
-        return processTemplateToString("help-method.ftl", map, env);
-    }
-
-    public static String processTemplateToString(String templateName, Map<String, Object> map, Environment env) {
+    public static String processTemplateToString(String templateName, Map<String, Object> map,
+                                                 Environment env) {
         Template template = getTemplate(templateName, env);
         StringWriter sw = new StringWriter();
         try {
@@ -46,6 +40,12 @@ public abstract class BaseTemplateMethodModel implements TemplateMethodModel {
             log.error("Cannot get template " + templateName, e);
         }
         return template;
+    }
+
+    public abstract Map<String, Object> help(String name);
+
+    protected String mergeToHelpTemplate(Map<String, Object> map, Environment env) {
+        return processTemplateToString("help-method.ftl", map, env);
     }
 
 }

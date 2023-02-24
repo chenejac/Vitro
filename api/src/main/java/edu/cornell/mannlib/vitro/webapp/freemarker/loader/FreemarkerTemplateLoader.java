@@ -18,24 +18,23 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import freemarker.cache.TemplateLoader;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import freemarker.cache.TemplateLoader;
-
 /**
  * Loads Freemarker templates from a given directory.
- *
+ * <p>
  * Different from a file loader in two ways:
- *
+ * <p>
  * 1) Flattens the directory. When it searches for a template, it will look in
  * the base directory and in any sub-directories. While doing this, it ignores
  * any path that is attached to the template name.
- *
+ * <p>
  * So if you were to ask for 'admin/silly.ftl', it would search for 'silly.ftl'
  * in the base directory, and in any sub-directories, until it finds one.
- *
+ * <p>
  * 2) Accepts approximate matches on locales. When asked for a template, it will
  * accepts an approximate match that matches the basename and extension, and
  * language or region if specifed. So a search for a template with no language
@@ -47,7 +46,7 @@ import freemarker.cache.TemplateLoader;
  * "this_es.ftl"    matches "this_es.ftl" or "this_es_MX.ftl"
  * "this.ftl"       matches "this.ftl" or "this_es.ftl" or "this_es_MX.ftl"
  * </pre>
- *
+ * <p>
  * This allows Freemarker to mimic the behavior of the language filtering RDF
  * service, because if Freemarker does not find a match for "this_es_MX.ftl", it
  * will try again with "this_es.ftl" and "this.ftl". So the net effect is that a
@@ -61,263 +60,260 @@ import freemarker.cache.TemplateLoader;
  * silly.ftl
  * silly_*.ftl
  * </pre>
- *
+ * <p>
  * If more than one template file qualifies, we choose by best fit, shortest
  * path, and alphabetical order, to insure that identical requests produce
  * identical results.
  */
 public class FreemarkerTemplateLoader implements TemplateLoader {
-	private static final Log log = LogFactory
-			.getLog(FreemarkerTemplateLoader.class);
+    private static final Log log = LogFactory
+        .getLog(FreemarkerTemplateLoader.class);
 
-	private final File baseDir;
+    private final File baseDir;
 
-	public FreemarkerTemplateLoader(File baseDir) {
-		if (baseDir == null) {
-			throw new NullPointerException("baseDir may not be null.");
-		}
+    public FreemarkerTemplateLoader(File baseDir) {
+        if (baseDir == null) {
+            throw new NullPointerException("baseDir may not be null.");
+        }
 
-		String path = baseDir.getAbsolutePath();
-		if (!baseDir.exists()) {
-			throw new IllegalArgumentException("Template directory '" + path
-					+ "' does not exist");
-		}
-		if (!baseDir.isDirectory()) {
-			throw new IllegalArgumentException("Template directory '" + path
-					+ "' is not a directory");
-		}
-		if (!baseDir.canRead()) {
-			throw new IllegalArgumentException(
-					"Can't read template directory '" + path + "'");
-		}
+        String path = baseDir.getAbsolutePath();
+        if (!baseDir.exists()) {
+            throw new IllegalArgumentException("Template directory '" + path
+                + "' does not exist");
+        }
+        if (!baseDir.isDirectory()) {
+            throw new IllegalArgumentException("Template directory '" + path
+                + "' is not a directory");
+        }
+        if (!baseDir.canRead()) {
+            throw new IllegalArgumentException(
+                "Can't read template directory '" + path + "'");
+        }
 
-		log.debug("Created template loader - baseDir is '" + path + "'");
-		this.baseDir = baseDir;
-	}
+        log.debug("Created template loader - baseDir is '" + path + "'");
+        this.baseDir = baseDir;
+    }
 
-	/**
-	 * Get the best template for this name. Walk the tree finding all possible
-	 * matches, then choose our favorite.
-	 */
-	@Override
-	public Object findTemplateSource(String name) throws IOException {
-		if (StringUtils.isBlank(name)) {
-			return null;
-		}
+    /**
+     * Get the best template for this name. Walk the tree finding all possible
+     * matches, then choose our favorite.
+     */
+    @Override
+    public Object findTemplateSource(String name) throws IOException {
+        if (StringUtils.isBlank(name)) {
+            return null;
+        }
 
-		SortedSet<PathPieces> matches = findAllMatches(new PathPieces(name));
+        SortedSet<PathPieces> matches = findAllMatches(new PathPieces(name));
 
-		if (matches.isEmpty()) {
-			return null;
-		} else {
-			return matches.last().path.toFile();
-		}
-	}
+        if (matches.isEmpty()) {
+            return null;
+        } else {
+            return matches.last().path.toFile();
+        }
+    }
 
-	private SortedSet<PathPieces> findAllMatches(PathPieces searchTerm) {
-		PathPiecesFileVisitor visitor = new PathPiecesFileVisitor(searchTerm);
-		try {
-			Files.walkFileTree(baseDir.toPath(), visitor);
-		} catch (IOException e) {
-			log.error(e);
-		}
-		return visitor.getMatches();
-	}
+    private SortedSet<PathPieces> findAllMatches(PathPieces searchTerm) {
+        PathPiecesFileVisitor visitor = new PathPiecesFileVisitor(searchTerm);
+        try {
+            Files.walkFileTree(baseDir.toPath(), visitor);
+        } catch (IOException e) {
+            log.error(e);
+        }
+        return visitor.getMatches();
+    }
 
-	/**
-	 * Ask the file when it was last modified.
-	 *
-	 * @param templateSource
-	 *            a File that was obtained earlier from findTemplateSource().
-	 */
-	@Override
-	public long getLastModified(Object templateSource) {
-		return asFile(templateSource).lastModified();
-	}
+    /**
+     * Ask the file when it was last modified.
+     *
+     * @param templateSource a File that was obtained earlier from findTemplateSource().
+     */
+    @Override
+    public long getLastModified(Object templateSource) {
+        return asFile(templateSource).lastModified();
+    }
 
-	/**
-	 * Get a Reader on this File. The framework will close the Reader after
-	 * reading it.
-	 *
-	 * @param templateSource
-	 *            a File that was obtained earlier from findTemplateSource().
-	 */
-	@Override
-	public Reader getReader(Object templateSource, String encoding)
-			throws IOException {
-		return new FileReader(asFile(templateSource));
-	}
+    /**
+     * Get a Reader on this File. The framework will close the Reader after
+     * reading it.
+     *
+     * @param templateSource a File that was obtained earlier from findTemplateSource().
+     */
+    @Override
+    public Reader getReader(Object templateSource, String encoding)
+        throws IOException {
+        return new FileReader(asFile(templateSource));
+    }
 
-	/**
-	 * Nothing to do here. No resources to free up.
-	 *
-	 * @param templateSource
-	 *            a File that was obtained earlier from findTemplateSource().
-	 */
-	@Override
-	public void closeTemplateSource(Object templateSource) throws IOException {
-		// Nothing to do.
-	}
+    /**
+     * Nothing to do here. No resources to free up.
+     *
+     * @param templateSource a File that was obtained earlier from findTemplateSource().
+     */
+    @Override
+    public void closeTemplateSource(Object templateSource) throws IOException {
+        // Nothing to do.
+    }
 
-	/**
-	 * That templateSource is a File, right?
-	 */
-	private File asFile(Object templateSource) {
-		if (templateSource instanceof File) {
-			return (File) templateSource;
-		} else {
-			throw new IllegalArgumentException("templateSource is not a File: "
-					+ templateSource);
-		}
-	}
+    /**
+     * That templateSource is a File, right?
+     */
+    private File asFile(Object templateSource) {
+        if (templateSource instanceof File) {
+            return (File) templateSource;
+        } else {
+            throw new IllegalArgumentException("templateSource is not a File: "
+                + templateSource);
+        }
+    }
 
-	// ----------------------------------------------------------------------
-	// Helper classes
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // Helper classes
+    // ----------------------------------------------------------------------
 
-	/**
-	 * Break a path into handy segments, so we can see whether they match the
-	 * search term, and how well they match.
-	 */
-	static class PathPieces {
-		static final Pattern PATTERN = Pattern.compile("(.+?)" // base name
-				+ "(_[a-z]{2})?" // optional language
-				+ "(_[A-Z]{2})?" // optional country
-				+ "(\\.\\w+)?" // optional extension
-		);
+    /**
+     * Break a path into handy segments, so we can see whether they match the
+     * search term, and how well they match.
+     */
+    static class PathPieces {
+        static final Pattern PATTERN = Pattern.compile("(.+?)" // base name
+            + "(_[a-z]{2})?" // optional language
+            + "(_[A-Z]{2})?" // optional country
+            + "(\\.\\w+)?" // optional extension
+        );
 
-		final Path path;
-		final String base;
-		final String language;
-		final String region;
-		final String extension;
+        final Path path;
+        final String base;
+        final String language;
+        final String region;
+        final String extension;
 
-		public PathPieces(String pathString) {
-			this(Paths.get(pathString));
-		}
+        public PathPieces(String pathString) {
+            this(Paths.get(pathString));
+        }
 
-		public PathPieces(Path path) {
-			this.path = path;
+        public PathPieces(Path path) {
+            this.path = path;
 
-			String filename = path.getFileName().toString();
+            String filename = path.getFileName().toString();
 
-			Matcher m = PATTERN.matcher(filename);
-			if (m.matches()) {
-				base = getGroup(m, 1);
-				language = getGroup(m, 2);
-				region = getGroup(m, 3);
-				extension = getGroup(m, 4);
-			} else {
-				base = filename;
-				language = "";
-				region = "";
-				extension = "";
-			}
-		}
+            Matcher m = PATTERN.matcher(filename);
+            if (m.matches()) {
+                base = getGroup(m, 1);
+                language = getGroup(m, 2);
+                region = getGroup(m, 3);
+                extension = getGroup(m, 4);
+            } else {
+                base = filename;
+                language = "";
+                region = "";
+                extension = "";
+            }
+        }
 
-		private String getGroup(Matcher m, int i) {
-			return (m.start(i) == -1) ? "" : m.group(i);
-		}
+        private String getGroup(Matcher m, int i) {
+            return (m.start(i) == -1) ? "" : m.group(i);
+        }
 
-		/**
-		 * If I'm searching for this, is that an acceptable match?
-		 *
-		 * Note that this is asymetrical -- a search term without a region will
-		 * match a candidate with a region, but not vice versa. Same with
-		 * language.
-		 */
-		public boolean matches(PathPieces that) {
-			return base.equals(that.base) && extension.equals(that.extension)
-					&& (language.isEmpty() || language.equals(that.language))
-					&& (region.isEmpty() || region.equals(that.region));
-		}
+        /**
+         * If I'm searching for this, is that an acceptable match?
+         * <p>
+         * Note that this is asymetrical -- a search term without a region will
+         * match a candidate with a region, but not vice versa. Same with
+         * language.
+         */
+        public boolean matches(PathPieces that) {
+            return base.equals(that.base) && extension.equals(that.extension)
+                && (language.isEmpty() || language.equals(that.language))
+                && (region.isEmpty() || region.equals(that.region));
+        }
 
-		/**
-		 * How good a match is that to this?
-		 */
-		public int score(PathPieces that) {
-			if (matches(that)) {
-				if (that.language.equals(language)) {
-					if (that.region.equals(region)) {
-						return 3; // exact match.
-					} else {
-						return 2; // same language, approximate region.
-					}
-				} else {
-					return 1; // approximate language.
-				}
-			} else {
-				return -1; // doesn't match.
-			}
-		}
+        /**
+         * How good a match is that to this?
+         */
+        public int score(PathPieces that) {
+            if (matches(that)) {
+                if (that.language.equals(language)) {
+                    if (that.region.equals(region)) {
+                        return 3; // exact match.
+                    } else {
+                        return 2; // same language, approximate region.
+                    }
+                } else {
+                    return 1; // approximate language.
+                }
+            } else {
+                return -1; // doesn't match.
+            }
+        }
 
-		@Override
-		public String toString() {
-			return "PathPieces[" + base + ", " + language + ", " + region
-					+ ", " + extension + "]";
-		}
+        @Override
+        public String toString() {
+            return "PathPieces[" + base + ", " + language + ", " + region
+                + ", " + extension + "]";
+        }
 
-	}
+    }
 
-	/**
-	 * While walking the file tree, collect all files that match the search
-	 * term, as a sorted set of PathPieces.
-	 */
-	static class PathPiecesFileVisitor extends SimpleFileVisitor<Path> {
-		private final PathPieces searchTerm;
-		private final SortedSet<PathPieces> matches;
+    /**
+     * While walking the file tree, collect all files that match the search
+     * term, as a sorted set of PathPieces.
+     */
+    static class PathPiecesFileVisitor extends SimpleFileVisitor<Path> {
+        private final PathPieces searchTerm;
+        private final SortedSet<PathPieces> matches;
 
-		public PathPiecesFileVisitor(PathPieces searchTerm) {
-			this.searchTerm = searchTerm;
-			this.matches = new TreeSet<>(new PathPiecesComparator(searchTerm));
-		}
+        public PathPiecesFileVisitor(PathPieces searchTerm) {
+            this.searchTerm = searchTerm;
+            this.matches = new TreeSet<>(new PathPiecesComparator(searchTerm));
+        }
 
-		@Override
-		public FileVisitResult visitFile(Path path, BasicFileAttributes attrs)
-				throws IOException {
-			if (fileQualifies(path)) {
-				PathPieces found = new PathPieces(path);
-				if (searchTerm.matches(found)) {
-					matches.add(found);
-				}
-			}
-			return FileVisitResult.CONTINUE;
-		}
+        @Override
+        public FileVisitResult visitFile(Path path, BasicFileAttributes attrs)
+            throws IOException {
+            if (fileQualifies(path)) {
+                PathPieces found = new PathPieces(path);
+                if (searchTerm.matches(found)) {
+                    matches.add(found);
+                }
+            }
+            return FileVisitResult.CONTINUE;
+        }
 
-		public boolean fileQualifies(Path path) {
-			return !Files.isDirectory(path);
-		}
+        public boolean fileQualifies(Path path) {
+            return !Files.isDirectory(path);
+        }
 
-		public SortedSet<PathPieces> getMatches() {
-			return matches;
-		}
-	}
+        public SortedSet<PathPieces> getMatches() {
+            return matches;
+        }
+    }
 
-	/**
-	 * Produce an ordering of paths by desirability. Best match, then shortest
-	 * directory path, and finally alphabetical order.
-	 */
-	static class PathPiecesComparator implements Comparator<PathPieces> {
-		private final PathPieces searchFor;
+    /**
+     * Produce an ordering of paths by desirability. Best match, then shortest
+     * directory path, and finally alphabetical order.
+     */
+    static class PathPiecesComparator implements Comparator<PathPieces> {
+        private final PathPieces searchFor;
 
-		public PathPiecesComparator(PathPieces searchFor) {
-			this.searchFor = searchFor;
-		}
+        public PathPiecesComparator(PathPieces searchFor) {
+            this.searchFor = searchFor;
+        }
 
-		@Override
-		public int compare(PathPieces p1, PathPieces p2) {
-			int scoring = searchFor.score(p1) - searchFor.score(p2);
-			if (scoring != 0) {
-				return scoring; // prefer matches to region and language
-			}
+        @Override
+        public int compare(PathPieces p1, PathPieces p2) {
+            int scoring = searchFor.score(p1) - searchFor.score(p2);
+            if (scoring != 0) {
+                return scoring; // prefer matches to region and language
+            }
 
-			int pathLength = p1.path.getNameCount() - p2.path.getNameCount();
-			if (pathLength != 0) {
-				return -pathLength; // shorter is better
-			}
+            int pathLength = p1.path.getNameCount() - p2.path.getNameCount();
+            if (pathLength != 0) {
+                return -pathLength; // shorter is better
+            }
 
-			return -p1.path.compareTo(p2.path); // early in alphabet is better
-		}
+            return -p1.path.compareTo(p2.path); // early in alphabet is better
+        }
 
-	}
+    }
 }

@@ -9,5 +9,5 @@ import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
  * call this method, supplying the RDF models from the context.
  */
 public interface ContextModelsUser {
-	void setContextModels(ContextModelAccess models);
+    void setContextModels(ContextModelAccess models);
 }

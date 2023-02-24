@@ -2,57 +2,56 @@
 
 package edu.cornell.mannlib.vitro.webapp.utils.developer.listeners;
 
+import edu.cornell.mannlib.vitro.webapp.utils.developer.DeveloperSettings;
+import edu.cornell.mannlib.vitro.webapp.utils.developer.Key;
 import org.apache.jena.rdf.listeners.StatementListener;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelChangedListener;
 import org.apache.jena.rdf.model.Statement;
 
-import edu.cornell.mannlib.vitro.webapp.utils.developer.DeveloperSettings;
-import edu.cornell.mannlib.vitro.webapp.utils.developer.Key;
-
 /**
  * If a particular developer flag is NOT set to true, this is transparent.
- *
+ * <p>
  * Set the flag and this becomes opaque, passing no events through.
  */
 public class DeveloperDisabledChangeListener extends StatementListener
-        implements ModelChangedListener {
-	private final ModelChangedListener inner;
-	private final Key disablingKey;
+    implements ModelChangedListener {
+    private final ModelChangedListener inner;
+    private final Key disablingKey;
 
-	public DeveloperDisabledChangeListener(ModelChangedListener inner,
-			Key disablingKey) {
-		this.inner = inner;
-		this.disablingKey = disablingKey;
-	}
+    public DeveloperDisabledChangeListener(ModelChangedListener inner,
+                                           Key disablingKey) {
+        this.inner = inner;
+        this.disablingKey = disablingKey;
+    }
 
-	private boolean isEnabled() {
-		return !DeveloperSettings.getInstance().getBoolean(disablingKey);
-	}
+    private boolean isEnabled() {
+        return !DeveloperSettings.getInstance().getBoolean(disablingKey);
+    }
 
-	// ----------------------------------------------------------------------
-	// Delegated methods.
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // Delegated methods.
+    // ----------------------------------------------------------------------
 
-	@Override
-	public void addedStatement(Statement stmt) {
-		if (isEnabled()) {
-			inner.addedStatement(stmt);
-		}
-	}
+    @Override
+    public void addedStatement(Statement stmt) {
+        if (isEnabled()) {
+            inner.addedStatement(stmt);
+        }
+    }
 
-	@Override
-	public void removedStatement(Statement stmt) {
-		if (isEnabled()) {
-			inner.removedStatement(stmt);
-		}
-	}
+    @Override
+    public void removedStatement(Statement stmt) {
+        if (isEnabled()) {
+            inner.removedStatement(stmt);
+        }
+    }
 
-	@Override
-	public void notifyEvent(Model model, Object event) {
-		if (isEnabled()) {
-			inner.notifyEvent(model, event);
-		}
-	}
+    @Override
+    public void notifyEvent(Model model, Object event) {
+        if (isEnabled()) {
+            inner.notifyEvent(model, event);
+        }
+    }
 
 }

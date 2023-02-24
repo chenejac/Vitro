@@ -2,9 +2,8 @@
 
 package edu.cornell.mannlib.vitro.webapp.utils.menuManagement;
 
-import java.util.Map;
-
 import javax.servlet.ServletContext;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,8 +19,9 @@ public class MenuManagementDataUtils {
 
     //Data that is to be returned to template that does not involve data getters
     //e.g. what are the current class groups, etc.
-    public static void includeRequiredSystemData(ServletContext context, Map<String, Object> templateData) {
-    	if (impl != null) {
+    public static void includeRequiredSystemData(ServletContext context,
+                                                 Map<String, Object> templateData) {
+        if (impl != null) {
             impl.includeRequiredSystemData(context, templateData);
         }
     }
@@ -32,7 +32,8 @@ public class MenuManagementDataUtils {
 
 
     public interface IMenuManagementDataUtils {
-        public void includeRequiredSystemData(ServletContext context, Map<String, Object> templateData);
+        public void includeRequiredSystemData(ServletContext context,
+                                              Map<String, Object> templateData);
     }
 
 }

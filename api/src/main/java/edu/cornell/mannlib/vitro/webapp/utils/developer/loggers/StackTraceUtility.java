@@ -16,125 +16,125 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Records and process the stack trace so a developer's logger can (1) test
  * against it, and (2) display it.
- *
+ * <p>
  * If the "enabled" flag is not set, no processing is done, and the stack trace
  * is empty. That way, there is essentially no overhead in creating a disabled
  * instance.
  */
 public class StackTraceUtility {
-	private static final Log log = LogFactory.getLog(StackTraceUtility.class);
+    private static final Log log = LogFactory.getLog(StackTraceUtility.class);
 
-	private final Class<?> lowestClassInStackTrace;
-	private final List<StackTraceElement> stackTrace;
-	private final String methodName;
+    private final Class<?> lowestClassInStackTrace;
+    private final List<StackTraceElement> stackTrace;
+    private final String methodName;
 
-	public StackTraceUtility(Class<?> lowestClassInStackTrace, boolean enabled) {
-		this.lowestClassInStackTrace = lowestClassInStackTrace;
+    public StackTraceUtility(Class<?> lowestClassInStackTrace, boolean enabled) {
+        this.lowestClassInStackTrace = lowestClassInStackTrace;
 
-		this.stackTrace = enabled ? loadStackTrace() : Collections
-				.<StackTraceElement> emptyList();
+        this.stackTrace = enabled ? loadStackTrace() : Collections
+            .<StackTraceElement>emptyList();
 
-		this.methodName = (this.stackTrace.isEmpty()) ? "UNKNOWN"
-				: this.stackTrace.get(0).getMethodName();
+        this.methodName = (this.stackTrace.isEmpty()) ? "UNKNOWN"
+            : this.stackTrace.get(0).getMethodName();
 
-	}
+    }
 
-	private List<StackTraceElement> loadStackTrace() {
-		StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-		List<StackTraceElement> list = new ArrayList<StackTraceElement>(
-				Arrays.asList(stack));
+    private List<StackTraceElement> loadStackTrace() {
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        List<StackTraceElement> list = new ArrayList<StackTraceElement>(
+            Arrays.asList(stack));
 
-		trimStackTraceAtBeginning(list);
-		trimStackTraceAtEnd(list);
-		removeJenaClassesFromStackTrace(list);
+        trimStackTraceAtBeginning(list);
+        trimStackTraceAtEnd(list);
+        removeJenaClassesFromStackTrace(list);
 
-		log.debug("Stack array: " + Arrays.toString(stack));
-		log.debug("Stack trace: " + list);
-		return Collections.unmodifiableList(list);
-	}
+        log.debug("Stack array: " + Arrays.toString(stack));
+        log.debug("Stack trace: " + list);
+        return Collections.unmodifiableList(list);
+    }
 
-	private void trimStackTraceAtBeginning(List<StackTraceElement> list) {
-		ListIterator<StackTraceElement> iter = list.listIterator();
-		while (iter.hasNext()) {
-			StackTraceElement ste = iter.next();
-			if (ste.getClassName().equals(lowestClassInStackTrace.getName())) {
-				break;
-			} else {
-				iter.remove();
-			}
-		}
-	}
+    private void trimStackTraceAtBeginning(List<StackTraceElement> list) {
+        ListIterator<StackTraceElement> iter = list.listIterator();
+        while (iter.hasNext()) {
+            StackTraceElement ste = iter.next();
+            if (ste.getClassName().equals(lowestClassInStackTrace.getName())) {
+                break;
+            } else {
+                iter.remove();
+            }
+        }
+    }
 
-	private void trimStackTraceAtEnd(List<StackTraceElement> list) {
-		ListIterator<StackTraceElement> iter = list.listIterator();
-		boolean trimming = false;
-		while (iter.hasNext()) {
-			StackTraceElement ste = iter.next();
-			if (trimming) {
-				iter.remove();
-			} else if (ste.getClassName().contains("ApplicationFilterChain")) {
-				trimming = true;
-			}
-		}
-	}
+    private void trimStackTraceAtEnd(List<StackTraceElement> list) {
+        ListIterator<StackTraceElement> iter = list.listIterator();
+        boolean trimming = false;
+        while (iter.hasNext()) {
+            StackTraceElement ste = iter.next();
+            if (trimming) {
+                iter.remove();
+            } else if (ste.getClassName().contains("ApplicationFilterChain")) {
+                trimming = true;
+            }
+        }
+    }
 
-	private void removeJenaClassesFromStackTrace(List<StackTraceElement> list) {
-		ListIterator<StackTraceElement> iter = list.listIterator();
-		while (iter.hasNext()) {
-			StackTraceElement ste = iter.next();
-			if (ste.getClassName().startsWith("org.apache.jena.")) {
-				iter.remove();
-			}
-		}
-	}
+    private void removeJenaClassesFromStackTrace(List<StackTraceElement> list) {
+        ListIterator<StackTraceElement> iter = list.listIterator();
+        while (iter.hasNext()) {
+            StackTraceElement ste = iter.next();
+            if (ste.getClassName().startsWith("org.apache.jena.")) {
+                iter.remove();
+            }
+        }
+    }
 
-	public boolean passesStackRestriction(String restriction) {
-		if (StringUtils.isEmpty(restriction)) {
-			return true;
-		} else {
-			try {
-				return passesStackRestriction(Pattern.compile(restriction));
-			} catch (Exception e) {
-				log.warn("Failed when testing stack restriction: '"
-						+ restriction + "'");
-				return true;
-			}
-		}
+    public boolean passesStackRestriction(String restriction) {
+        if (StringUtils.isEmpty(restriction)) {
+            return true;
+        } else {
+            try {
+                return passesStackRestriction(Pattern.compile(restriction));
+            } catch (Exception e) {
+                log.warn("Failed when testing stack restriction: '"
+                    + restriction + "'");
+                return true;
+            }
+        }
 
-	}
+    }
 
-	public boolean passesStackRestriction(Pattern restriction) {
-		if (restriction == null) {
-			return true;
-		}
-		String q = assembleCallStackString();
-		return restriction.matcher(q).find();
-	}
+    public boolean passesStackRestriction(Pattern restriction) {
+        if (restriction == null) {
+            return true;
+        }
+        String q = assembleCallStackString();
+        return restriction.matcher(q).find();
+    }
 
-	private String assembleCallStackString() {
-		StringBuilder stack = new StringBuilder();
-		for (StackTraceElement ste : stackTrace) {
-			stack.append(ste.getClassName()).append(" ")
-					.append(ste.getMethodName()).append(" ");
-		}
-		return stack.deleteCharAt(stack.length() - 1).toString();
-	}
+    private String assembleCallStackString() {
+        StringBuilder stack = new StringBuilder();
+        for (StackTraceElement ste : stackTrace) {
+            stack.append(ste.getClassName()).append(" ")
+                .append(ste.getMethodName()).append(" ");
+        }
+        return stack.deleteCharAt(stack.length() - 1).toString();
+    }
 
-	public String format(boolean requested) {
-		StringBuilder sb = new StringBuilder();
-		if (requested) {
-			for (StackTraceElement ste : stackTrace) {
-				sb.append(String.format("   %s.%s(%s:%d) \n",
-						ste.getClassName(), ste.getMethodName(),
-						ste.getFileName(), ste.getLineNumber()));
-			}
-			sb.append("   ...\n");
-		}
-		return sb.toString();
-	}
+    public String format(boolean requested) {
+        StringBuilder sb = new StringBuilder();
+        if (requested) {
+            for (StackTraceElement ste : stackTrace) {
+                sb.append(String.format("   %s.%s(%s:%d) \n",
+                    ste.getClassName(), ste.getMethodName(),
+                    ste.getFileName(), ste.getLineNumber()));
+            }
+            sb.append("   ...\n");
+        }
+        return sb.toString();
+    }
 
-	public String getMethodName() {
-		return this.methodName;
-	}
+    public String getMethodName() {
+        return this.methodName;
+    }
 
 }

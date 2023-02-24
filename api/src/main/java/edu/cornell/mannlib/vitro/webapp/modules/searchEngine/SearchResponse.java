@@ -11,24 +11,24 @@ import java.util.Map;
  */
 public interface SearchResponse {
 
-	/**
-	 * May return an empty list, but never null.
-	 */
-	SearchResultDocumentList getResults();
+    /**
+     * May return an empty list, but never null.
+     */
+    SearchResultDocumentList getResults();
 
-	/**
-	 * May return an empty map, but never null.
-	 */
-	Map<String, Map<String, List<String>>> getHighlighting();
+    /**
+     * May return an empty map, but never null.
+     */
+    Map<String, Map<String, List<String>>> getHighlighting();
 
-	/**
-	 * May return null.
-	 */
-	SearchFacetField getFacetField(String name);
+    /**
+     * May return null.
+     */
+    SearchFacetField getFacetField(String name);
 
-	/**
-	 * May return an empty list, but never null.
-	 */
-	List<SearchFacetField> getFacetFields();
+    /**
+     * May return an empty list, but never null.
+     */
+    List<SearchFacetField> getFacetFields();
 
 }

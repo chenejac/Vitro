@@ -2,19 +2,14 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.beans.FormObject;
@@ -30,25 +25,29 @@ import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.DataPropertyDao;
 import edu.cornell.mannlib.vitro.webapp.dao.PropertyGroupDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-@WebServlet(name = "DatapropEditController", urlPatterns = {"/datapropEdit"} )
+@WebServlet(name = "DatapropEditController", urlPatterns = {"/datapropEdit"})
 public class DatapropEditController extends BaseEditController {
 
-	private static final Log log = LogFactory.getLog(DatapropEditController.class.getName());
+    private static final Log log = LogFactory.getLog(DatapropEditController.class.getName());
 
-    public void doPost (HttpServletRequest request, HttpServletResponse response) {
+    public void doPost(HttpServletRequest request, HttpServletResponse response) {
         if (!isAuthorizedToDisplayPage(request, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-        	return;
+            return;
         }
 
-    	VitroRequest vreq = new VitroRequest(request);
+        VitroRequest vreq = new VitroRequest(request);
 
-        final int NUM_COLS=19;
+        final int NUM_COLS = 19;
 
         String datapropURI = request.getParameter("uri");
 
         DataPropertyDao dpDao = vreq.getUnfilteredWebappDaoFactory().getDataPropertyDao();
-        DataPropertyDao dpDaoLangNeut = vreq.getLanguageNeutralWebappDaoFactory().getDataPropertyDao();
+        DataPropertyDao dpDaoLangNeut =
+            vreq.getLanguageNeutralWebappDaoFactory().getDataPropertyDao();
         VClassDao vcDao = vreq.getLanguageNeutralWebappDaoFactory().getVClassDao();
         VClassDao vcDaoWLang = vreq.getUnfilteredWebappDaoFactory().getVClassDao();
 
@@ -79,7 +78,8 @@ public class DatapropEditController extends BaseEditController {
         results.add("publish level");         // column 19
 
         results.add(dp.getPickListName()); // column 1
-        results.add(dp.getPublicName() == null ? "(no public label)" : dp.getPublicName()); // column 2
+        results
+            .add(dp.getPublicName() == null ? "(no public label)" : dp.getPublicName()); // column 2
 
         if (dp.getGroupURI() != null) {
             PropertyGroup pGroup = pgDao.getGroupByURI(dp.getGroupURI());
@@ -94,12 +94,13 @@ public class DatapropEditController extends BaseEditController {
 
         String ontologyName = null;
         if (dp.getNamespace() != null) {
-            Ontology ont = vreq.getUnfilteredWebappDaoFactory().getOntologyDao().getOntologyByURI(dp.getNamespace());
-            if ( (ont != null) && (ont.getName() != null) ) {
+            Ontology ont = vreq.getUnfilteredWebappDaoFactory().getOntologyDao()
+                .getOntologyByURI(dp.getNamespace());
+            if ((ont != null) && (ont.getName() != null)) {
                 ontologyName = ont.getName();
             }
         }
-        results.add(ontologyName==null ? "(not identified)" : ontologyName); // column 4
+        results.add(ontologyName == null ? "(not identified)" : ontologyName); // column 4
 
         results.add(dp.getLocalName()); // column 5
 
@@ -111,12 +112,15 @@ public class DatapropEditController extends BaseEditController {
         if (pLangNeut.getDomainVClassURI() != null) {
             VClass domainClass = vcDao.getVClassByURI(pLangNeut.getDomainVClassURI());
             VClass domainWLang = vcDaoWLang.getVClassByURI(pLangNeut.getDomainVClassURI());
-            if (domainClass != null && domainClass.getURI() != null && domainClass.getPickListName() != null) {
+            if (domainClass != null && domainClass.getURI() != null &&
+                domainClass.getPickListName() != null) {
                 try {
                     if (domainClass.isAnonymous()) {
                         domainStr = domainClass.getPickListName();
                     } else {
-                        domainStr = "<a href=\"vclassEdit?uri="+URLEncoder.encode(domainClass.getURI(),"UTF-8")+"\">"+domainWLang.getPickListName()+"</a>";
+                        domainStr = "<a href=\"vclassEdit?uri=" +
+                            URLEncoder.encode(domainClass.getURI(), "UTF-8") + "\">" +
+                            domainWLang.getPickListName() + "</a>";
                     }
                 } catch (UnsupportedEncodingException e) {
                     log.error(e, e);
@@ -125,32 +129,36 @@ public class DatapropEditController extends BaseEditController {
         }
         results.add(domainStr); // column 6
 
-        String rangeStr = (dp.getRangeDatatypeURI() == null) ? "<i>untyped</i> (rdfs:Literal)" : dp.getRangeDatatypeURI();
+        String rangeStr = (dp.getRangeDatatypeURI() == null) ? "<i>untyped</i> (rdfs:Literal)" :
+            dp.getRangeDatatypeURI();
         results.add(rangeStr); // column 7
 
         results.add(dp.getFunctional() ? "true" : "false"); // column 8
 
-        String publicDescriptionStr = (dp.getPublicDescription() == null) ? "" : dp.getPublicDescription(); // column 9
+        String publicDescriptionStr =
+            (dp.getPublicDescription() == null) ? "" : dp.getPublicDescription(); // column 9
         results.add(publicDescriptionStr);
         String exampleStr = (dp.getExample() == null) ? "" : dp.getExample();  // column 10
         results.add(exampleStr);
-        String descriptionStr = (dp.getDescription() == null) ? "" : dp.getDescription();  // column 11
+        String descriptionStr =
+            (dp.getDescription() == null) ? "" : dp.getDescription();  // column 11
         results.add(descriptionStr);
 
-		results.add(dp.getHiddenFromDisplayBelowRoleLevel() == null ? "(unspecified)"
-				: dp.getHiddenFromDisplayBelowRoleLevel().getDisplayLabel()); // column 12
-		results.add(dp.getProhibitedFromUpdateBelowRoleLevel() == null ? "(unspecified)"
-				: dp.getProhibitedFromUpdateBelowRoleLevel().getUpdateLabel()); // column 13
+        results.add(dp.getHiddenFromDisplayBelowRoleLevel() == null ? "(unspecified)"
+            : dp.getHiddenFromDisplayBelowRoleLevel().getDisplayLabel()); // column 12
+        results.add(dp.getProhibitedFromUpdateBelowRoleLevel() == null ? "(unspecified)"
+            : dp.getProhibitedFromUpdateBelowRoleLevel().getUpdateLabel()); // column 13
         results.add(String.valueOf(dp.getDisplayTier()));  // column 14
         results.add(String.valueOf(dp.getDisplayLimit()));  // column 15
-        results.add(dp.getCustomEntryForm() == null ? "(unspecified)" : dp.getCustomEntryForm());  // column 16
+        results.add(dp.getCustomEntryForm() == null ? "(unspecified)" :
+            dp.getCustomEntryForm());  // column 16
         results.add(dp.getEditing() == null ? "" : dp.getEditing()); // column 17
         results.add(dp.getURI() == null ? "" : dp.getURI()); // column 18
-		results.add(dp.getHiddenFromPublishBelowRoleLevel() == null ? "(unspecified)"
-				: dp.getHiddenFromPublishBelowRoleLevel().getDisplayLabel()); // column 19
-        request.setAttribute("results",results);
-        request.setAttribute("columncount",NUM_COLS);
-        request.setAttribute("suppressquery","true");
+        results.add(dp.getHiddenFromPublishBelowRoleLevel() == null ? "(unspecified)"
+            : dp.getHiddenFromPublishBelowRoleLevel().getDisplayLabel()); // column 19
+        request.setAttribute("results", results);
+        request.setAttribute("columncount", NUM_COLS);
+        request.setAttribute("suppressquery", "true");
 
         boolean FORCE_NEW = true;
 
@@ -161,37 +169,42 @@ public class DatapropEditController extends BaseEditController {
         foo.setOptionLists(OptionMap);
         epo.setFormObject(foo);
 
-        DataPropertyDao assertionsDpDao = vreq.getUnfilteredAssertionsWebappDaoFactory().getDataPropertyDao();
+        DataPropertyDao assertionsDpDao =
+            vreq.getUnfilteredAssertionsWebappDaoFactory().getDataPropertyDao();
 
         List<DataProperty> superProps = getDataPropertiesForURIList(
-                assertionsDpDao.getSuperPropertyURIs(dp.getURI(), false), assertionsDpDao);
+            assertionsDpDao.getSuperPropertyURIs(dp.getURI(), false), assertionsDpDao);
         sortForPickList(superProps, vreq);
         request.setAttribute("superproperties", superProps);
 
         List<DataProperty> subProps = getDataPropertiesForURIList(
-                assertionsDpDao.getSubPropertyURIs(dp.getURI()), assertionsDpDao);
+            assertionsDpDao.getSubPropertyURIs(dp.getURI()), assertionsDpDao);
         sortForPickList(subProps, vreq);
         request.setAttribute("subproperties", subProps);
 
         List<DataProperty> eqProps = getDataPropertiesForURIList(
-                assertionsDpDao.getEquivalentPropertyURIs(dp.getURI()), assertionsDpDao);
+            assertionsDpDao.getEquivalentPropertyURIs(dp.getURI()), assertionsDpDao);
         sortForPickList(eqProps, vreq);
         request.setAttribute("equivalentProperties", eqProps);
-	
-        List<FauxProperty> fauxProps = vreq.getUnfilteredAssertionsWebappDaoFactory().getFauxPropertyDao().
-        		getFauxPropertiesForBaseUri(dp.getURI());
+
+        List<FauxProperty> fauxProps =
+            vreq.getUnfilteredAssertionsWebappDaoFactory().getFauxPropertyDao().
+                getFauxPropertiesForBaseUri(dp.getURI());
         sortForPickList(fauxProps, vreq);
-        request.setAttribute("fauxproperties", fauxProps);	
+        request.setAttribute("fauxproperties", fauxProps);
 
         ApplicationBean appBean = vreq.getAppBean();
 
-        request.setAttribute("epoKey",epo.getKey());
+        request.setAttribute("epoKey", epo.getKey());
         request.setAttribute("datatypeProperty", dp);
-        request.setAttribute("title","Data Property Control Panel");
-        request.setAttribute("css", "<link rel=\"stylesheet\" type=\"text/css\" href=\""+appBean.getThemeDir()+"css/edit.css\"/>");
+        request.setAttribute("title", "Data Property Control Panel");
+        request.setAttribute("css",
+            "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + appBean.getThemeDir() +
+                "css/edit.css\"/>");
 
         try {
-            JSPPageHandler.renderBasicPage(request, response, "/templates/edit/specific/dataprops_edit.jsp");
+            JSPPageHandler
+                .renderBasicPage(request, response, "/templates/edit/specific/dataprops_edit.jsp");
         } catch (Exception e) {
             log.error("DatapropEditController could not forward to view.");
             log.error(e.getMessage());
@@ -200,12 +213,12 @@ public class DatapropEditController extends BaseEditController {
 
     }
 
-    public void doGet (HttpServletRequest request, HttpServletResponse response) {
-        doPost(request,response);
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
+        doPost(request, response);
     }
 
     private List<DataProperty> getDataPropertiesForURIList(List<String> propertyURIs,
-            DataPropertyDao dpDao) {
+                                                           DataPropertyDao dpDao) {
         List<DataProperty> properties = new ArrayList<DataProperty>();
         for (String propertyURI : propertyURIs) {
             DataProperty property = dpDao.getDataPropertyByURI(propertyURI);

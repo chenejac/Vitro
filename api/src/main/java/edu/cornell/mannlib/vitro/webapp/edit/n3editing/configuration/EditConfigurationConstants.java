@@ -5,32 +5,35 @@ package edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 
 public class EditConfigurationConstants {
-    /** Constants used by edit configuration */
-	//forces creation of new uri if present
+    /**
+     * Constants used by edit configuration
+     */
+    //forces creation of new uri if present
     public static final String NEW_URI_SENTINEL = ">NEW URI REQUIRED<";
     public static final String BLANK_SENTINEL = ">SUBMITTED VALUE WAS BLANK<";
+    private static Log log = LogFactory.getLog(EditConfigurationConstants.class);
 
     //For freemarker configuration
     public static Map<String, String> exportConstants() {
-    	Map<String, String> constants = new HashMap<String, String>();
-    	java.lang.reflect.Field[] fields = EditConfigurationConstants.class.getDeclaredFields();
-    	for(java.lang.reflect.Field f: fields) {
-    		if(Modifier.isStatic(f.getModifiers()) &&
-    			Modifier.isPublic(f.getModifiers())) {
-    			try {
-    				constants.put(f.getName(), f.get(null).toString());
-    			} catch(Exception ex) {
-    				log.error("An exception occurred in trying to retrieve this field ", ex);
-    			}
-    		}
-    	}
-    	return constants;
+        Map<String, String> constants = new HashMap<String, String>();
+        java.lang.reflect.Field[] fields = EditConfigurationConstants.class.getDeclaredFields();
+        for (java.lang.reflect.Field f : fields) {
+            if (Modifier.isStatic(f.getModifiers()) &&
+                Modifier.isPublic(f.getModifiers())) {
+                try {
+                    constants.put(f.getName(), f.get(null).toString());
+                } catch (Exception ex) {
+                    log.error("An exception occurred in trying to retrieve this field ", ex);
+                }
+            }
+        }
+        return constants;
     }
-    private static Log log = LogFactory.getLog(EditConfigurationConstants.class);
 
 }

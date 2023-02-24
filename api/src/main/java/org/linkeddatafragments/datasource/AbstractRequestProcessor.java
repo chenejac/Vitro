@@ -9,10 +9,10 @@ import org.linkeddatafragments.fragments.ILinkedDataFragmentRequest;
  * @author <a href="http://olafhartig.de">Olaf Hartig</a>
  */
 abstract public class AbstractRequestProcessor
-    implements IFragmentRequestProcessor
-{
+    implements IFragmentRequestProcessor {
     @Override
-    public void close() {}
+    public void close() {
+    }
 
     /**
      * Create an {@link ILinkedDataFragment} from {@link ILinkedDataFragmentRequest}
@@ -23,10 +23,9 @@ abstract public class AbstractRequestProcessor
      */
     @Override
     final public ILinkedDataFragment createRequestedFragment(
-            final ILinkedDataFragmentRequest request )
-                    throws IllegalArgumentException
-    {
-        return getWorker( request ).createRequestedFragment();
+        final ILinkedDataFragmentRequest request)
+        throws IllegalArgumentException {
+        return getWorker(request).createRequestedFragment();
     }
 
     /**
@@ -37,15 +36,13 @@ abstract public class AbstractRequestProcessor
      * @throws IllegalArgumentException
      */
     abstract protected Worker getWorker(
-            final ILinkedDataFragmentRequest request )
-                    throws IllegalArgumentException;
+        final ILinkedDataFragmentRequest request)
+        throws IllegalArgumentException;
 
     /**
      * Processes {@link ILinkedDataFragmentRequest}s
-     *
      */
-    abstract static protected class Worker
-    {
+    abstract static protected class Worker {
 
         /**
          * The  {@link ILinkedDataFragmentRequest} to process
@@ -57,8 +54,7 @@ abstract public class AbstractRequestProcessor
          *
          * @param request
          */
-        public Worker( final ILinkedDataFragmentRequest request )
-        {
+        public Worker(final ILinkedDataFragmentRequest request) {
             this.request = request;
         }
 
@@ -69,7 +65,7 @@ abstract public class AbstractRequestProcessor
          * @throws IllegalArgumentException
          */
         abstract public ILinkedDataFragment createRequestedFragment()
-                                               throws IllegalArgumentException;
+            throws IllegalArgumentException;
 
     } // end of class Worker
 

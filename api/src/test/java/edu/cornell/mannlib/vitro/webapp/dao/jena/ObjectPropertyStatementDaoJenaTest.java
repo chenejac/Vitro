@@ -2,13 +2,12 @@
 
 package edu.cornell.mannlib.vitro.webapp.dao.jena;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import edu.cornell.mannlib.vitro.testing.AbstractTestClass;
-import org.junit.Test;
-
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.junit.Test;
 
 public class ObjectPropertyStatementDaoJenaTest extends AbstractTestClass {
 
@@ -22,11 +21,11 @@ public class ObjectPropertyStatementDaoJenaTest extends AbstractTestClass {
 
         String n3WithSameAs = " <http://example.com/bob> = <http://example.com/robert> .";
 
-        try{
+        try {
             Model m = ModelFactory.createDefaultModel();
             m.read(n3WithSameAs, null, "N3");
-            fail( "If this test fails it means that jena now correctly parses = when reading N3.");
-        }catch(Exception ex ){
+            fail("If this test fails it means that jena now correctly parses = when reading N3.");
+        } catch (Exception ex) {
 
 
         }

@@ -2,15 +2,23 @@
 
 package edu.cornell.mannlib.vedit.validator.impl;
 
-import edu.cornell.mannlib.vedit.validator.Validator;
 import edu.cornell.mannlib.vedit.validator.ValidationObject;
+import edu.cornell.mannlib.vedit.validator.Validator;
 
 public class IntValidator implements Validator {
 
     protected int minVal = 0; // the edit framework doesn't handle negative ints
     protected int maxVal = Integer.MAX_VALUE;
 
-    public ValidationObject validate (Object obj) throws IllegalArgumentException {
+    public IntValidator() {
+    }
+
+    public IntValidator(int minVal, int maxVal) {
+        this.minVal = minVal;
+        this.maxVal = maxVal;
+    }
+
+    public ValidationObject validate(Object obj) throws IllegalArgumentException {
 
         ValidationObject vo = new ValidationObject();
         int theInt = -1;
@@ -35,9 +43,9 @@ public class IntValidator implements Validator {
             }
         }
 
-        if ( theInt < minVal || theInt > maxVal ) {
+        if (theInt < minVal || theInt > maxVal) {
             vo.setValid(false);
-            vo.setMessage("Enter a number between "+minVal+" and "+maxVal);
+            vo.setMessage("Enter a number between " + minVal + " and " + maxVal);
         } else {
             vo.setValid(true);
         }
@@ -45,12 +53,5 @@ public class IntValidator implements Validator {
         vo.setValidatedObject(obj);
 
         return vo;
-    }
-
-    public IntValidator(){}
-
-    public IntValidator (int minVal, int maxVal){
-        this.minVal = minVal;
-        this.maxVal = maxVal;
     }
 }

@@ -7,15 +7,15 @@ package edu.cornell.mannlib.vitro.webapp.modules;
  * ServletContextListener is.
  */
 public interface ComponentStartupStatus {
-	void info(String message);
+    void info(String message);
 
-	void info(String message, Throwable cause);
+    void info(String message, Throwable cause);
 
-	void warning(String message);
+    void warning(String message);
 
-	void warning(String message, Throwable cause);
+    void warning(String message, Throwable cause);
 
-	void fatal(String message);
+    void fatal(String message);
 
-	void fatal(String message, Throwable cause);
+    void fatal(String message, Throwable cause);
 }

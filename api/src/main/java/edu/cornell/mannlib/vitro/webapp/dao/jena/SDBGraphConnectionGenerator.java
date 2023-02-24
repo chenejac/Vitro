@@ -2,30 +2,29 @@
 
 package edu.cornell.mannlib.vitro.webapp.dao.jena;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import javax.sql.DataSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class SDBGraphConnectionGenerator {
 
-	private final static Log log = LogFactory.getLog(
-			SDBGraphConnectionGenerator.class);
+    private final static Log log = LogFactory.getLog(
+        SDBGraphConnectionGenerator.class);
 
-	private DataSource ds = null;
-	private Connection connection = null;
+    private DataSource ds = null;
+    private Connection connection = null;
 
-	public SDBGraphConnectionGenerator(DataSource dataSource) {
-		this.ds = dataSource;
-	}
+    public SDBGraphConnectionGenerator(DataSource dataSource) {
+        this.ds = dataSource;
+    }
 
-	public Connection generateConnection() throws SQLException {
-        if ( this.connection == null ) {
+    public Connection generateConnection() throws SQLException {
+        if (this.connection == null) {
             this.connection = ds.getConnection();
-        } else if ( this.connection.isClosed() ) {
+        } else if (this.connection.isClosed()) {
             try {
                 this.connection.close();
             } catch (SQLException e) {
@@ -42,6 +41,6 @@ public class SDBGraphConnectionGenerator {
             this.connection = ds.getConnection();
         }
         return connection;
-	}
+    }
 
 }

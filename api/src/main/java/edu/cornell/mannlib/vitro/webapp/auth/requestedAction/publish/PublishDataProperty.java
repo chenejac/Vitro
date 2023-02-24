@@ -5,20 +5,22 @@ package edu.cornell.mannlib.vitro.webapp.auth.requestedAction.publish;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 
-/** Should we allow the user to publish this DataProperty in Linked Open Data? */
+/**
+ * Should we allow the user to publish this DataProperty in Linked Open Data?
+ */
 public class PublishDataProperty extends RequestedAction {
-	private final DataProperty dataProperty;
+    private final DataProperty dataProperty;
 
-	public PublishDataProperty(DataProperty dataProperty) {
-		this.dataProperty = dataProperty;
-	}
+    public PublishDataProperty(DataProperty dataProperty) {
+        this.dataProperty = dataProperty;
+    }
 
-	public DataProperty getDataProperty() {
-		return dataProperty;
-	}
+    public DataProperty getDataProperty() {
+        return dataProperty;
+    }
 
-	@Override
-	public String toString() {
-		return "PublishDataProperty[" + dataProperty + "]";
-	}
+    @Override
+    public String toString() {
+        return "PublishDataProperty[" + dataProperty + "]";
+    }
 }

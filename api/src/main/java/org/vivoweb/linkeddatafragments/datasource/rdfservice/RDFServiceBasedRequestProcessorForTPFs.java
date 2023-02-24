@@ -20,9 +20,14 @@ import org.linkeddatafragments.fragments.tpf.ITriplePatternElement;
 import org.linkeddatafragments.fragments.tpf.ITriplePatternFragmentRequest;
 
 public class RDFServiceBasedRequestProcessorForTPFs
-    extends AbstractRequestProcessorForTriplePatterns<RDFNode,String,String>
-{
+    extends AbstractRequestProcessorForTriplePatterns<RDFNode, String, String> {
     private static RDFService rdfService;
+
+    /**
+     * Constructor
+     */
+    public RDFServiceBasedRequestProcessorForTPFs() {
+    }
 
     public static void setRDFService(RDFService pRDFService) {
         rdfService = pRDFService;
@@ -30,22 +35,19 @@ public class RDFServiceBasedRequestProcessorForTPFs
 
     @Override
     protected Worker getTPFSpecificWorker(
-            final ITriplePatternFragmentRequest<RDFNode,String,String> request )
-                                                throws IllegalArgumentException
-    {
-        return new Worker( request );
+        final ITriplePatternFragmentRequest<RDFNode, String, String> request)
+        throws IllegalArgumentException {
+        return new Worker(request);
     }
 
     /**
      *
      */
     protected class Worker
-       extends AbstractRequestProcessorForTriplePatterns.Worker<RDFNode,String,String>
-    {
+        extends AbstractRequestProcessorForTriplePatterns.Worker<RDFNode, String, String> {
         public Worker(
-                final ITriplePatternFragmentRequest<RDFNode,String,String> req )
-        {
-            super( req );
+            final ITriplePatternFragmentRequest<RDFNode, String, String> req) {
+            super(req);
         }
 
         private void appendNode(StringBuilder builder, RDFNode node) {
@@ -81,7 +83,7 @@ public class RDFServiceBasedRequestProcessorForTPFs
                 if (uri != null && uri.startsWith("bnode://")) {
                     String bnodeId = uri.substring(8);
                     return ModelFactory.createDefaultModel().asRDFNode(
-                            NodeFactory.createBlankNode(bnodeId)
+                        NodeFactory.createBlankNode(bnodeId)
                     );
                 }
             }
@@ -91,15 +93,16 @@ public class RDFServiceBasedRequestProcessorForTPFs
 
         @Override
         protected ILinkedDataFragment createFragment(
-                   final ITriplePatternElement<RDFNode,String,String> subject,
-                   final ITriplePatternElement<RDFNode,String,String> predicate,
-                   final ITriplePatternElement<RDFNode,String,String> object,
-                   final long offset,
-                   final long limit )
-        {
+            final ITriplePatternElement<RDFNode, String, String> subject,
+            final ITriplePatternElement<RDFNode, String, String> predicate,
+            final ITriplePatternElement<RDFNode, String, String> object,
+            final long offset,
+            final long limit) {
             try {
-                RDFNode nSubject = subject.isVariable() ? null : deskolemize(subject.asConstantTerm());
-                RDFNode nPredicate = predicate.isVariable() ? null : deskolemize(predicate.asConstantTerm());
+                RDFNode nSubject =
+                    subject.isVariable() ? null : deskolemize(subject.asConstantTerm());
+                RDFNode nPredicate =
+                    predicate.isVariable() ? null : deskolemize(predicate.asConstantTerm());
                 RDFNode nObject = object.isVariable() ? null : deskolemize(object.asConstantTerm());
 
                 Model triples = rdfService.getTriples(nSubject, nPredicate, nObject, limit, offset);
@@ -114,13 +117,13 @@ public class RDFServiceBasedRequestProcessorForTPFs
                         Statement oldStmt = iter.next();
                         Triple t = oldStmt.asTriple();
                         replacedBlankNodes.add(
-                                replacedBlankNodes.asStatement(
-                                        new Triple(
-                                                skolemize(t.getSubject()),
-                                                skolemize(t.getPredicate()),
-                                                skolemize(t.getObject())
-                                        )
+                            replacedBlankNodes.asStatement(
+                                new Triple(
+                                    skolemize(t.getSubject()),
+                                    skolemize(t.getPredicate()),
+                                    skolemize(t.getObject())
                                 )
+                            )
                         );
                     }
 
@@ -137,19 +140,12 @@ public class RDFServiceBasedRequestProcessorForTPFs
                 }
 
                 // create the fragment
-                final boolean isLastPage = ( estimate < offset + limit );
-                return createTriplePatternFragment( triples, estimate, isLastPage );
+                final boolean isLastPage = (estimate < offset + limit);
+                return createTriplePatternFragment(triples, estimate, isLastPage);
             } catch (RDFServiceException e) {
                 return createEmptyTriplePatternFragment();
             }
         }
 
     } // end of class Worker
-
-
-    /**
-     * Constructor
-     */
-    public RDFServiceBasedRequestProcessorForTPFs() {
-    }
 }

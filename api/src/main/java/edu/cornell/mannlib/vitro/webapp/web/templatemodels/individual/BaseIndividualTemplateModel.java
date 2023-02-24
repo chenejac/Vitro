@@ -6,16 +6,11 @@ import static edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAct
 import static edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction.SOME_PREDICATE;
 import static edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction.SOME_URI;
 
+import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.ServletContext;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.LoginStatusBean;
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
@@ -35,6 +30,9 @@ import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 import edu.cornell.mannlib.vitro.webapp.reasoner.SimpleReasoner;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.BaseTemplateModel;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public abstract class BaseIndividualTemplateModel extends BaseTemplateModel {
 
@@ -63,9 +61,11 @@ public abstract class BaseIndividualTemplateModel extends BaseTemplateModel {
         boolean isVClass = individual.isVClass(vClassUri);
         // If reasoning is asynchronous, this inference may not have been made yet.
         // Check the superclasses of the individual's vclass.
-        SimpleReasoner simpleReasoner = (SimpleReasoner) ctx.getAttribute(SimpleReasoner.class.getName());
+        SimpleReasoner simpleReasoner =
+            (SimpleReasoner) ctx.getAttribute(SimpleReasoner.class.getName());
         if (!isVClass && simpleReasoner != null && simpleReasoner.isABoxReasoningAsynchronous()) {
-            log.debug("Checking superclasses to see if individual is a " + vClassUri + " because reasoning is asynchronous");
+            log.debug("Checking superclasses to see if individual is a " + vClassUri +
+                " because reasoning is asynchronous");
             List<VClass> directVClasses = individual.getVClasses(true);
             for (VClass directVClass : directVClasses) {
                 VClassDao vcDao = vreq.getWebappDaoFactory().getVClassDao();
@@ -101,9 +101,10 @@ public abstract class BaseIndividualTemplateModel extends BaseTemplateModel {
         String individualUri = getUri();
         String profileUrl = getProfileUrl();
         if (UrlBuilder.isUriInDefaultNamespace(individualUri, vreq)) {
-        	return UrlBuilder.getUrl("/individual/" + getLocalName() + "/" + getLocalName() + ".rdf") ;
+            return UrlBuilder
+                .getUrl("/individual/" + getLocalName() + "/" + getLocalName() + ".rdf");
         } else {
-        	return UrlBuilder.addParams(profileUrl, "format", "rdfxml");
+            return UrlBuilder.addParams(profileUrl, "format", "rdfxml");
         }
     }
 
@@ -114,23 +115,23 @@ public abstract class BaseIndividualTemplateModel extends BaseTemplateModel {
         return propertyList;
     }
 
-	/**
-	 * This page is editable if the user is authorized to add a data property or
-	 * an object property to the Individual being shown.
-	 */
+    /**
+     * This page is editable if the user is authorized to add a data property or
+     * an object property to the Individual being shown.
+     */
     public boolean isEditable() {
-		AddDataPropertyStatement adps = new AddDataPropertyStatement(
-				vreq.getJenaOntModel(), individual.getURI(),
-				SOME_URI, SOME_LITERAL);
-		AddObjectPropertyStatement aops = new AddObjectPropertyStatement(
-				vreq.getJenaOntModel(), individual.getURI(),
-				SOME_PREDICATE, SOME_URI);
-    	return PolicyHelper.isAuthorizedForActions(vreq, adps.or(aops));
+        AddDataPropertyStatement adps = new AddDataPropertyStatement(
+            vreq.getJenaOntModel(), individual.getURI(),
+            SOME_URI, SOME_LITERAL);
+        AddObjectPropertyStatement aops = new AddObjectPropertyStatement(
+            vreq.getJenaOntModel(), individual.getURI(),
+            SOME_PREDICATE, SOME_URI);
+        return PolicyHelper.isAuthorizedForActions(vreq, adps.or(aops));
     }
 
     public boolean getShowAdminPanel() {
-		return PolicyHelper.isAuthorizedForActions(vreq,
-				SimplePermission.SEE_INDVIDUAL_EDITING_PANEL.ACTION);
+        return PolicyHelper.isAuthorizedForActions(vreq,
+            SimplePermission.SEE_INDVIDUAL_EDITING_PANEL.ACTION);
     }
 
     /* rdfs:label needs special treatment, because it is not possible to construct a
@@ -151,25 +152,26 @@ public abstract class BaseIndividualTemplateModel extends BaseTemplateModel {
     public String getName() {
         return individual.getName();
     }
-    
-    public String getDeleteUrl() {
-    	Collection<String> types = getMostSpecificTypes();
-    	ParamMap params = new ParamMap(
-          "objectUri", individual.getURI(),
-          "cmd", "delete",
-          "individualName",getNameStatement().getValue()
-          );
-    	Iterator<String> typesIterator = types.iterator();
-    	if (types.iterator().hasNext()) {
-				String type = typesIterator.next();
-				params.put("individualType", type);
-			}
 
-			return UrlBuilder.getUrl(EDIT_PATH, params);
-		}
+    public String getDeleteUrl() {
+        Collection<String> types = getMostSpecificTypes();
+        ParamMap params = new ParamMap(
+            "objectUri", individual.getURI(),
+            "cmd", "delete",
+            "individualName", getNameStatement().getValue()
+        );
+        Iterator<String> typesIterator = types.iterator();
+        if (types.iterator().hasNext()) {
+            String type = typesIterator.next();
+            params.put("individualType", type);
+        }
+
+        return UrlBuilder.getUrl(EDIT_PATH, params);
+    }
 
     public Collection<String> getMostSpecificTypes() {
-        ObjectPropertyStatementDao opsDao = vreq.getWebappDaoFactory().getObjectPropertyStatementDao();
+        ObjectPropertyStatementDao opsDao =
+            vreq.getWebappDaoFactory().getObjectPropertyStatementDao();
         Map<String, String> types = opsDao.getMostSpecificTypesInClassgroupsForIndividual(getUri());
         return types.values();
     }
@@ -244,10 +246,12 @@ public abstract class BaseIndividualTemplateModel extends BaseTemplateModel {
         String id = null;
         String idMatchingProperty =
             ConfigurationProperties.getBean(ctx).getProperty("selfEditing.idMatchingProperty");
-        if (! StringUtils.isBlank(idMatchingProperty)) {
+        if (!StringUtils.isBlank(idMatchingProperty)) {
             WebappDaoFactory wdf = vreq.getUnfilteredWebappDaoFactory();
             Collection<DataPropertyStatement> ids =
-                wdf.getDataPropertyStatementDao().getDataPropertyStatementsForIndividualByDataPropertyURI(individual, idMatchingProperty);
+                wdf.getDataPropertyStatementDao()
+                    .getDataPropertyStatementsForIndividualByDataPropertyURI(individual,
+                        idMatchingProperty);
             if (ids.size() > 0) {
                 id = ids.iterator().next().getData();
             }

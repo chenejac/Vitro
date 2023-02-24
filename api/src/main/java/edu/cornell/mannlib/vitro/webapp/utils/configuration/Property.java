@@ -14,7 +14,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Property {
-	String uri();
-	int minOccurs() default 0;
-	int maxOccurs() default Integer.MAX_VALUE;
+    String uri();
+
+    int minOccurs() default 0;
+
+    int maxOccurs() default Integer.MAX_VALUE;
 }

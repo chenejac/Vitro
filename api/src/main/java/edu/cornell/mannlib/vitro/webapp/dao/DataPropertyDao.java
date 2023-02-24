@@ -2,11 +2,11 @@
 
 package edu.cornell.mannlib.vitro.webapp.dao;
 
+import java.util.Collection;
+import java.util.List;
+
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
-
-import java.util.List;
-import java.util.Collection;
 
 public interface DataPropertyDao extends PropertyDao {
 

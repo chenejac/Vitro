@@ -3,7 +3,7 @@
 package edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo;
 
 public abstract class BaseEditSubmissionPreprocessorVTwo implements
-        EditSubmissionVTwoPreprocessor {
+    EditSubmissionVTwoPreprocessor {
 
     protected EditConfigurationVTwo editConfiguration;
 

@@ -17,7 +17,7 @@ public class IndividualURIQueue<E> implements Queue<E> {
     public synchronized boolean addAll(Collection<? extends E> c) {
         boolean changed = false;
         for (E e : c) {
-            if(!m.containsKey(e)) {
+            if (!m.containsKey(e)) {
                 m.put(e, Boolean.TRUE);
                 q.add(e);
                 changed = true;
@@ -40,7 +40,7 @@ public class IndividualURIQueue<E> implements Queue<E> {
     @Override
     public boolean containsAll(Collection<?> c) {
         boolean contains = true;
-        for(Object e : c) {
+        for (Object e : c) {
             contains |= m.containsKey(e);
         }
         return contains;
@@ -100,7 +100,7 @@ public class IndividualURIQueue<E> implements Queue<E> {
 
     @Override
     public synchronized boolean add(E e) {
-        if(m.containsKey(e)) {
+        if (m.containsKey(e)) {
             return false;
         } else {
             m.put(e, Boolean.TRUE);
@@ -126,7 +126,7 @@ public class IndividualURIQueue<E> implements Queue<E> {
 
     @Override
     public synchronized E poll() {
-        E e =  q.poll();
+        E e = q.poll();
         m.remove(e);
         return e;
     }

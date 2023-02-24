@@ -4,7 +4,7 @@ import edu.cornell.mannlib.vitro.webapp.beans.FauxProperty;
 
 public interface FauxPropertyWrapper {
 
-	public FauxProperty getFauxProperty();
-	
-	public String getContextUri();
+    public FauxProperty getFauxProperty();
+
+    public String getContextUri();
 }

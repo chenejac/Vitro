@@ -16,59 +16,59 @@ import edu.cornell.mannlib.vitro.webapp.filestorage.model.FileInfo;
  * an individual, but that we do not want to do in unit tests.
  */
 public class IndividualRequestAnalysisContextImpl implements
-		IndividualRequestAnalysisContext {
+    IndividualRequestAnalysisContext {
 
-	private final VitroRequest vreq;
-	private final WebappDaoFactory wadf;
-	private final IndividualDao iDao;
+    private final VitroRequest vreq;
+    private final WebappDaoFactory wadf;
+    private final IndividualDao iDao;
 
-	public IndividualRequestAnalysisContextImpl(VitroRequest vreq) {
-		this.vreq = vreq;
-		this.wadf = vreq.getWebappDaoFactory();
-		this.iDao = wadf.getIndividualDao();
-	}
+    public IndividualRequestAnalysisContextImpl(VitroRequest vreq) {
+        this.vreq = vreq;
+        this.wadf = vreq.getWebappDaoFactory();
+        this.iDao = wadf.getIndividualDao();
+    }
 
-	@Override
-	public String getDefaultNamespace() {
-		return wadf.getDefaultNamespace();
-	}
+    @Override
+    public String getDefaultNamespace() {
+        return wadf.getDefaultNamespace();
+    }
 
-	@Override
-	public Individual getIndividualByURI(String individualUri) {
-		if (individualUri == null) {
-			return null;
-		}
-		return iDao.getIndividualByURI(individualUri);
-	}
+    @Override
+    public Individual getIndividualByURI(String individualUri) {
+        if (individualUri == null) {
+            return null;
+        }
+        return iDao.getIndividualByURI(individualUri);
+    }
 
-	@Override
-	public Individual getIndividualByNetId(String netId) {
-		if (netId == null) {
-			return null;
-		}
+    @Override
+    public Individual getIndividualByNetId(String netId) {
+        if (netId == null) {
+            return null;
+        }
 
-		SelfEditingConfiguration sec = SelfEditingConfiguration.getBean(vreq);
-		List<Individual> assocInds = sec.getAssociatedIndividuals(iDao, netId);
-		if (!assocInds.isEmpty()) {
-			return assocInds.get(0);
-		} else {
-			return null;
-		}
-	}
+        SelfEditingConfiguration sec = SelfEditingConfiguration.getBean(vreq);
+        List<Individual> assocInds = sec.getAssociatedIndividuals(iDao, netId);
+        if (!assocInds.isEmpty()) {
+            return assocInds.get(0);
+        } else {
+            return null;
+        }
+    }
 
-	@Override
-	public String getAliasUrlForBytestreamIndividual(Individual individual) {
-		if (individual == null) {
-			return null;
-		}
+    @Override
+    public String getAliasUrlForBytestreamIndividual(Individual individual) {
+        if (individual == null) {
+            return null;
+        }
 
-		FileInfo fileInfo = FileInfo.instanceFromBytestreamUri(wadf,
-				individual.getURI());
-		if (fileInfo == null) {
-			return null;
-		}
+        FileInfo fileInfo = FileInfo.instanceFromBytestreamUri(wadf,
+            individual.getURI());
+        if (fileInfo == null) {
+            return null;
+        }
 
-		return fileInfo.getBytestreamAliasUrl();
-	}
+        return fileInfo.getBytestreamAliasUrl();
+    }
 
 }

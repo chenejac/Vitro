@@ -2,11 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.web.templatemodels.individual;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.jena.rdf.model.Literal;
-
 import edu.cornell.mannlib.vitro.webapp.auth.policy.PolicyHelper;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.propstmt.DropDataPropertyStatement;
@@ -19,6 +14,9 @@ import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder.ParamMap;
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
 import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.RdfLiteralHash;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.jena.rdf.model.Literal;
 
 
 public class DataPropertyStatementTemplateModel extends PropertyStatementTemplateModel {
@@ -31,7 +29,7 @@ public class DataPropertyStatementTemplateModel extends PropertyStatementTemplat
 
     //Extended to include vitro request to check for special parameters
     public DataPropertyStatementTemplateModel(String subjectUri, Property property, Literal literal,
-            String templateName, VitroRequest vreq) {
+                                              String templateName, VitroRequest vreq) {
 
         super(subjectUri, property, vreq);
 
@@ -43,81 +41,82 @@ public class DataPropertyStatementTemplateModel extends PropertyStatementTemplat
         this.editUrl = makeEditUrl();
     }
 
-	private String makeDeleteUrl() {
+    private String makeDeleteUrl() {
         // Determine whether the statement can be deleted
-		DataPropertyStatement dps = makeStatement();
+        DataPropertyStatement dps = makeStatement();
         RequestedAction action = new DropDataPropertyStatement(vreq.getJenaOntModel(), dps);
-        if ( ! PolicyHelper.isAuthorizedForActions(vreq, action) ) {
+        if (!PolicyHelper.isAuthorizedForActions(vreq, action)) {
             return "";
         }
 
         ParamMap params = new ParamMap(
-                "subjectUri", subjectUri,
-                "predicateUri", property.getURI(),
-                "datapropKey", makeHash(dps),
-                "cmd", "delete");
+            "subjectUri", subjectUri,
+            "predicateUri", property.getURI(),
+            "datapropKey", makeHash(dps),
+            "cmd", "delete");
 
         params.put("templateName", templateName);
         params.putAll(UrlBuilder.getModelParams(vreq));
 
         return UrlBuilder.getUrl(EDIT_PATH, params);
-	}
+    }
 
-	private String makeEditUrl() {
+    private String makeEditUrl() {
         // vitro:moniker is deprecated. We display existing data values so editors can
         // move them to other properties and delete, but don't allow editing.
-        if ( VitroVocabulary.MONIKER.equals(property.getURI()) ) {
+        if (VitroVocabulary.MONIKER.equals(property.getURI())) {
             return "";
         }
 
         // Determine whether the statement can be edited
-		DataPropertyStatement dps = makeStatement();
+        DataPropertyStatement dps = makeStatement();
         RequestedAction action = new EditDataPropertyStatement(vreq.getJenaOntModel(), dps);
-        if ( ! PolicyHelper.isAuthorizedForActions(vreq, action) ) {
+        if (!PolicyHelper.isAuthorizedForActions(vreq, action)) {
             return "";
         }
 
         ParamMap params = new ParamMap(
-                "subjectUri", subjectUri,
-                "predicateUri", property.getURI(),
-                "datapropKey", makeHash(dps));
+            "subjectUri", subjectUri,
+            "predicateUri", property.getURI(),
+            "datapropKey", makeHash(dps));
 
-        if ( deleteUrl.isEmpty() ) {
+        if (deleteUrl.isEmpty()) {
             params.put("deleteProhibited", "prohibited");
         }
 
         params.putAll(UrlBuilder.getModelParams(vreq));
 
         return UrlBuilder.getUrl(EDIT_PATH, params);
-	}
+    }
 
-	private DataPropertyStatement makeStatement() {
-		DataPropertyStatement dps = new DataPropertyStatementImpl(subjectUri, property.getURI(), literalValue.getLexicalForm());
-		// Language and datatype are needed to get the correct hash value
-		dps.setLanguage(literalValue.getLanguage());
-		dps.setDatatypeURI(literalValue.getDatatypeURI());
-		return dps;
-	}
+    private DataPropertyStatement makeStatement() {
+        DataPropertyStatement dps = new DataPropertyStatementImpl(subjectUri, property.getURI(),
+            literalValue.getLexicalForm());
+        // Language and datatype are needed to get the correct hash value
+        dps.setLanguage(literalValue.getLanguage());
+        dps.setDatatypeURI(literalValue.getDatatypeURI());
+        return dps;
+    }
 
-	private String makeHash(DataPropertyStatement dps) {
+    private String makeHash(DataPropertyStatement dps) {
         // Language and datatype are needed to get the correct hash value
         return String.valueOf(RdfLiteralHash.makeRdfLiteralHash(dps));
-	}
+    }
 
     /* Template properties */
 
     public String getValue() {
         //attempt to strip any odd HTML
-        return cleanTextForDisplay( literalValue.getLexicalForm() );
+        return cleanTextForDisplay(literalValue.getLexicalForm());
     }
 
     @Override
-	public String getDeleteUrl() {
-		return deleteUrl;
-	}
+    public String getDeleteUrl() {
+        return deleteUrl;
+    }
 
     @Override
-	public String getEditUrl() {
-		return editUrl;
-	}
+    public String getEditUrl() {
+        return editUrl;
+    }
 }

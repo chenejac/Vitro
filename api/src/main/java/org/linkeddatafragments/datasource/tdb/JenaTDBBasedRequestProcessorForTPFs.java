@@ -1,5 +1,7 @@
 package org.linkeddatafragments.datasource.tdb;
 
+import java.io.File;
+
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
@@ -20,8 +22,6 @@ import org.linkeddatafragments.fragments.ILinkedDataFragment;
 import org.linkeddatafragments.fragments.tpf.ITriplePatternElement;
 import org.linkeddatafragments.fragments.tpf.ITriplePatternFragmentRequest;
 
-import java.io.File;
-
 /**
  * Implementation of {@link IFragmentRequestProcessor} that processes
  * {@link ITriplePatternFragmentRequest}s over data stored in Jena TDB.
@@ -30,11 +30,10 @@ import java.io.File;
  * @author <a href="http://olafhartig.de">Olaf Hartig</a>
  */
 public class JenaTDBBasedRequestProcessorForTPFs
-    extends AbstractRequestProcessorForTriplePatterns<RDFNode,String,String>
-{
+    extends AbstractRequestProcessorForTriplePatterns<RDFNode, String, String> {
     private final Dataset tdb;
     private final String sparql = "CONSTRUCT WHERE { ?s ?p ?o } " +
-                                    "ORDER BY ?s ?p ?o";
+        "ORDER BY ?s ?p ?o";
 
     private final String count = "SELECT (COUNT(?s) AS ?count) WHERE { ?s ?p ?o }";
 
@@ -42,38 +41,41 @@ public class JenaTDBBasedRequestProcessorForTPFs
     private final Query countQuery = QueryFactory.create(count, Syntax.syntaxSPARQL_11);
 
     /**
+     * Constructor
      *
+     * @param tdbdir directory used for TDB backing
+     */
+    public JenaTDBBasedRequestProcessorForTPFs(File tdbdir) {
+        this.tdb = TDBFactory.createDataset(tdbdir.getAbsolutePath());
+    }
+
+    /**
      * @param request
      * @return
      * @throws IllegalArgumentException
      */
     @Override
     protected Worker getTPFSpecificWorker(
-            final ITriplePatternFragmentRequest<RDFNode,String,String> request )
-                                                throws IllegalArgumentException
-    {
-        return new Worker( request );
+        final ITriplePatternFragmentRequest<RDFNode, String, String> request)
+        throws IllegalArgumentException {
+        return new Worker(request);
     }
 
     /**
      *
      */
     protected class Worker
-       extends AbstractRequestProcessorForTriplePatterns.Worker<RDFNode,String,String>
-    {
+        extends AbstractRequestProcessorForTriplePatterns.Worker<RDFNode, String, String> {
 
         /**
-         *
          * @param req
          */
         public Worker(
-                final ITriplePatternFragmentRequest<RDFNode,String,String> req )
-        {
-            super( req );
+            final ITriplePatternFragmentRequest<RDFNode, String, String> req) {
+            super(req);
         }
 
         /**
-         *
          * @param subject
          * @param predicate
          * @param object
@@ -83,12 +85,11 @@ public class JenaTDBBasedRequestProcessorForTPFs
          */
         @Override
         protected ILinkedDataFragment createFragment(
-                   final ITriplePatternElement<RDFNode,String,String> subject,
-                   final ITriplePatternElement<RDFNode,String,String> predicate,
-                   final ITriplePatternElement<RDFNode,String,String> object,
-                   final long offset,
-                   final long limit )
-        {
+            final ITriplePatternElement<RDFNode, String, String> subject,
+            final ITriplePatternElement<RDFNode, String, String> predicate,
+            final ITriplePatternElement<RDFNode, String, String> object,
+            final long offset,
+            final long limit) {
             // FIXME: The following algorithm is incorrect for cases in which
             //        the requested triple pattern contains a specific variable
             //        multiple times;
@@ -97,13 +98,13 @@ public class JenaTDBBasedRequestProcessorForTPFs
 
             Model model = tdb.getDefaultModel();
             QuerySolutionMap map = new QuerySolutionMap();
-            if ( ! subject.isVariable() ) {
+            if (!subject.isVariable()) {
                 map.add("s", subject.asConstantTerm());
             }
-            if ( ! predicate.isVariable() ) {
+            if (!predicate.isVariable()) {
                 map.add("p", predicate.asConstantTerm());
             }
-            if ( ! object.isVariable() ) {
+            if (!object.isVariable()) {
                 map.add("o", object.asConstantTerm());
             }
 
@@ -127,7 +128,7 @@ public class JenaTDBBasedRequestProcessorForTPFs
             try (QueryExecution qexec = QueryExecutionFactory.create(countQuery, model, map)) {
                 ResultSet results = qexec.execSelect();
                 if (results.hasNext()) {
-                    QuerySolution soln = results.nextSolution() ;
+                    QuerySolution soln = results.nextSolution();
                     Literal literal = soln.getLiteral("count");
                     estimate = literal.getLong();
                 }
@@ -147,19 +148,9 @@ public class JenaTDBBasedRequestProcessorForTPFs
             }
 
             // create the fragment
-            final boolean isLastPage = ( estimate < offset + limit );
-            return createTriplePatternFragment( triples, estimate, isLastPage );
+            final boolean isLastPage = (estimate < offset + limit);
+            return createTriplePatternFragment(triples, estimate, isLastPage);
         }
 
     } // end of class Worker
-
-
-    /**
-     * Constructor
-     *
-     * @param tdbdir directory used for TDB backing
-     */
-    public JenaTDBBasedRequestProcessorForTPFs(File tdbdir) {
-        this.tdb = TDBFactory.createDataset(tdbdir.getAbsolutePath());
-    }
 }

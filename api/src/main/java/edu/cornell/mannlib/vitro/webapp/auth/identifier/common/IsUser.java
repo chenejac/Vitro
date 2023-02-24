@@ -13,54 +13,54 @@ import edu.cornell.mannlib.vitro.webapp.auth.identifier.IdentifierBundle;
  * The current user has this URI.
  */
 public class IsUser extends AbstractCommonIdentifier implements Identifier {
-	public static Collection<IsUser> getIdentifiers(IdentifierBundle ids) {
-		return getIdentifiersForClass(ids, IsUser.class);
-	}
+    private final String uri; // never null
 
-	public static Collection<String> getUserUris(IdentifierBundle ids) {
-		Set<String> set = new HashSet<String>();
-		for (IsUser id : getIdentifiers(ids)) {
-			set.add(id.getUri());
-		}
-		return set;
-	}
+    public IsUser(String uri) {
+        if (uri == null) {
+            throw new NullPointerException("uri may not be null.");
+        }
 
-	private final String uri; // never null
+        this.uri = uri;
+    }
 
-	public IsUser(String uri) {
-		if (uri == null) {
-			throw new NullPointerException("uri may not be null.");
-		}
+    public static Collection<IsUser> getIdentifiers(IdentifierBundle ids) {
+        return getIdentifiersForClass(ids, IsUser.class);
+    }
 
-		this.uri = uri;
-	}
+    public static Collection<String> getUserUris(IdentifierBundle ids) {
+        Set<String> set = new HashSet<String>();
+        for (IsUser id : getIdentifiers(ids)) {
+            set.add(id.getUri());
+        }
+        return set;
+    }
 
-	public String getUri() {
-		return uri;
-	}
+    public String getUri() {
+        return uri;
+    }
 
-	@Override
-	public int hashCode() {
-		return uri.hashCode();
-	}
+    @Override
+    public int hashCode() {
+        return uri.hashCode();
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (!(obj instanceof IsUser)) {
-			return false;
-		}
-		IsUser that = (IsUser) obj;
-		return this.uri.equals(that.uri);
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof IsUser)) {
+            return false;
+        }
+        IsUser that = (IsUser) obj;
+        return this.uri.equals(that.uri);
+    }
 
-	@Override
-	public String toString() {
-		return "IsUser[" + uri + "]";
-	}
+    @Override
+    public String toString() {
+        return "IsUser[" + uri + "]";
+    }
 }

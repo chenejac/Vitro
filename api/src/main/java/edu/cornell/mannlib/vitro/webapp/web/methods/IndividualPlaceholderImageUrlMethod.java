@@ -2,12 +2,11 @@
 
 package edu.cornell.mannlib.vitro.webapp.web.methods;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
 
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
@@ -41,9 +40,9 @@ public class IndividualPlaceholderImageUrlMethod extends BaseTemplateMethodModel
         Map<String, Object> map = new LinkedHashMap<String, Object>();
 
         map.put("return value", "The URL of the placeholder image for this individual, " +
-        		"based on the VClasses that the individual belongs to.");
+            "based on the VClasses that the individual belongs to.");
 
-        List<String>params = new ArrayList<String>();
+        List<String> params = new ArrayList<String>();
         params.add("Uri of individual");
         map.put("parameters", params);
 

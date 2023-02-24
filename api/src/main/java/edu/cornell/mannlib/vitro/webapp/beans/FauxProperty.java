@@ -6,268 +6,264 @@ import static org.apache.jena.rdf.model.ResourceFactory.createResource;
 
 import java.util.Objects;
 
-import org.apache.commons.lang3.StringUtils;
-
 import edu.cornell.mannlib.vitro.webapp.auth.policy.bean.RoleRestrictedProperty;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Represents a specialization on an ObjectProperty, only meaningful for
  * display.
  */
 public class FauxProperty extends BaseResourceBean implements ResourceBean,
-		RoleRestrictedProperty {
-	// Must be null on insert. Must not be null on update. Ignored on delete.
-	private String contextUri;
-	// Must be null on insert. Must not be null on update. Ignored on delete.
-	private String configUri;
+    RoleRestrictedProperty {
+    // Must be null on insert. Must not be null on update. Ignored on delete.
+    private String contextUri;
+    // Must be null on insert. Must not be null on update. Ignored on delete.
+    private String configUri;
 
-	// Must not be null on insert or update. Partial identifier on delete.
-	private String rangeURI = "";
-	
-	private String rootRangeURI;
-	// May be null. Partial identifier on delete.
-	private String domainURI;
+    // Must not be null on insert or update. Partial identifier on delete.
+    private String rangeURI = "";
 
-	private String baseLabel;
-	private String rangeLabel;
-	private String domainLabel;
+    private String rootRangeURI;
+    // May be null. Partial identifier on delete.
+    private String domainURI;
 
-	private String groupURI;
+    private String baseLabel;
+    private String rangeLabel;
+    private String domainLabel;
 
-	private String publicDescription;
+    private String groupURI;
 
-	private int displayTier;
-	private int displayLimit;
+    private String publicDescription;
 
-	private boolean collateBySubclass;
-	private boolean selectFromExisting;
-	private boolean offerCreateNewOption;
+    private int displayTier;
+    private int displayLimit;
 
-	private String customEntryForm;
-	private String customListView;
+    private boolean collateBySubclass;
+    private boolean selectFromExisting;
+    private boolean offerCreateNewOption;
 
-	/**
-	 * Arguments are in this order to mimic the relationship: subject ==&gt;
-	 * property ==&gt; object
-	 *
-	 * @param domainURI
-	 *            URI of the subject class. May be null.
-	 * @param baseURI
-	 *            URI of the property. May not be null.
-	 * @param rangeURI
-	 *            URI of the object class. May be null.
-	 */
-	public FauxProperty(String domainURI, String baseURI, String rangeURI) {
-		super(Objects.requireNonNull(baseURI, "baseURI may not be null"));
-		this.setRangeURI(rangeURI);
-		this.domainURI = domainURI;
-	}
+    private String customEntryForm;
+    private String customListView;
 
-	public FauxProperty() {
-		// This is required by OperationUtils.cloneBean()
-	}
+    /**
+     * Arguments are in this order to mimic the relationship: subject ==&gt;
+     * property ==&gt; object
+     *
+     * @param domainURI URI of the subject class. May be null.
+     * @param baseURI   URI of the property. May not be null.
+     * @param rangeURI  URI of the object class. May be null.
+     */
+    public FauxProperty(String domainURI, String baseURI, String rangeURI) {
+        super(Objects.requireNonNull(baseURI, "baseURI may not be null"));
+        this.setRangeURI(rangeURI);
+        this.domainURI = domainURI;
+    }
 
-	public String getContextUri() {
-		return contextUri;
-	}
+    public FauxProperty() {
+        // This is required by OperationUtils.cloneBean()
+    }
 
-	public void setContextUri(String contextUri) {
-		this.contextUri = contextUri;
-	}
+    public String getContextUri() {
+        return contextUri;
+    }
 
-	public String getConfigUri() {
-		return configUri;
-	}
+    public void setContextUri(String contextUri) {
+        this.contextUri = contextUri;
+    }
 
-	public void setConfigUri(String configUri) {
-		this.configUri = configUri;
-	}
+    public String getConfigUri() {
+        return configUri;
+    }
 
-	// BaseURI becomes an alias for URI
-	public String getBaseURI() {
-		return getURI();
-	}
+    public void setConfigUri(String configUri) {
+        this.configUri = configUri;
+    }
 
-	public void setBaseURI(String baseURI) {
-		setURI(baseURI);
-	}
+    // BaseURI becomes an alias for URI
+    public String getBaseURI() {
+        return getURI();
+    }
 
-	public String getRangeURI() {
-		return rangeURI;
-	}
+    public void setBaseURI(String baseURI) {
+        setURI(baseURI);
+    }
 
-	public void setRangeURI(String rangeURI) {
-		if (StringUtils.isEmpty(rangeURI)) {
-			this.rangeURI = "";
-		} else {
-			this.rangeURI = rangeURI;	
-		}
-	}
+    public String getRangeURI() {
+        return rangeURI;
+    }
 
-	public String getBaseLabel() {
-		return (baseLabel == null) ? localName(getBaseURI()) : baseLabel;
-	}
+    public void setRangeURI(String rangeURI) {
+        if (StringUtils.isEmpty(rangeURI)) {
+            this.rangeURI = "";
+        } else {
+            this.rangeURI = rangeURI;
+        }
+    }
 
-	public void setBaseLabel(String baseLabel) {
-		this.baseLabel = baseLabel;
-	}
+    public String getBaseLabel() {
+        return (baseLabel == null) ? localName(getBaseURI()) : baseLabel;
+    }
 
-	public String getRangeLabel() {
-		if  (StringUtils.isEmpty(rangeLabel)) {
-			if (StringUtils.isEmpty(rangeURI)) {
-				return "untyped";
-			}
-			return localName(rangeURI);
-		} else {
-			return rangeLabel;
-		}
-	}
+    public void setBaseLabel(String baseLabel) {
+        this.baseLabel = baseLabel;
+    }
 
-	public void setRangeLabel(String rangeLabel) {
-		this.rangeLabel = rangeLabel;
-	}
+    public String getRangeLabel() {
+        if (StringUtils.isEmpty(rangeLabel)) {
+            if (StringUtils.isEmpty(rangeURI)) {
+                return "untyped";
+            }
+            return localName(rangeURI);
+        } else {
+            return rangeLabel;
+        }
+    }
 
-	public String getDomainURI() {
-		return domainURI;
-	}
+    public void setRangeLabel(String rangeLabel) {
+        this.rangeLabel = rangeLabel;
+    }
 
-	public void setDomainURI(String domainURI) {
-		this.domainURI = domainURI;
-	}
+    public String getDomainURI() {
+        return domainURI;
+    }
 
-	public String getDomainLabel() {
-		return (domainLabel == null) ? (domainURI == null ? "null"
-				: localName(domainURI)) : domainLabel;
-	}
+    public void setDomainURI(String domainURI) {
+        this.domainURI = domainURI;
+    }
 
-	public void setDomainLabel(String domainLabel) {
-		this.domainLabel = domainLabel;
-	}
+    public String getDomainLabel() {
+        return (domainLabel == null) ? (domainURI == null ? "null"
+            : localName(domainURI)) : domainLabel;
+    }
 
-	public String getGroupURI() {
-		return groupURI;
-	}
+    public void setDomainLabel(String domainLabel) {
+        this.domainLabel = domainLabel;
+    }
 
-	public void setGroupURI(String groupURI) {
-		this.groupURI = groupURI;
-	}
+    public String getGroupURI() {
+        return groupURI;
+    }
 
-	// DisplayName becomes an alias for PickListName
-	public String getDisplayName() {
-		return getPickListName();
-	}
+    public void setGroupURI(String groupURI) {
+        this.groupURI = groupURI;
+    }
 
-	public void setDisplayName(String displayName) {
-		setPickListName(displayName);
-	}
+    // DisplayName becomes an alias for PickListName
+    public String getDisplayName() {
+        return getPickListName();
+    }
 
-	public String getPublicDescription() {
-		return publicDescription;
-	}
+    public void setDisplayName(String displayName) {
+        setPickListName(displayName);
+    }
 
-	public void setPublicDescription(String publicDescription) {
-		this.publicDescription = publicDescription;
-	}
+    public String getPublicDescription() {
+        return publicDescription;
+    }
 
-	public int getDisplayTier() {
-		return displayTier;
-	}
+    public void setPublicDescription(String publicDescription) {
+        this.publicDescription = publicDescription;
+    }
 
-	public void setDisplayTier(int displayTier) {
-		this.displayTier = displayTier;
-	}
+    public int getDisplayTier() {
+        return displayTier;
+    }
 
-	public int getDisplayLimit() {
-		return displayLimit;
-	}
+    public void setDisplayTier(int displayTier) {
+        this.displayTier = displayTier;
+    }
 
-	public void setDisplayLimit(int displayLimit) {
-		this.displayLimit = displayLimit;
-	}
+    public int getDisplayLimit() {
+        return displayLimit;
+    }
 
-	public boolean isCollateBySubclass() {
-		return collateBySubclass;
-	}
+    public void setDisplayLimit(int displayLimit) {
+        this.displayLimit = displayLimit;
+    }
 
-	public void setCollateBySubclass(boolean collateBySubclass) {
-		this.collateBySubclass = collateBySubclass;
-	}
+    public boolean isCollateBySubclass() {
+        return collateBySubclass;
+    }
 
-	public boolean isSelectFromExisting() {
-		return selectFromExisting;
-	}
+    public void setCollateBySubclass(boolean collateBySubclass) {
+        this.collateBySubclass = collateBySubclass;
+    }
 
-	public void setSelectFromExisting(boolean selectFromExisting) {
-		this.selectFromExisting = selectFromExisting;
-	}
+    public boolean isSelectFromExisting() {
+        return selectFromExisting;
+    }
 
-	public boolean isOfferCreateNewOption() {
-		return offerCreateNewOption;
-	}
+    public void setSelectFromExisting(boolean selectFromExisting) {
+        this.selectFromExisting = selectFromExisting;
+    }
 
-	public void setOfferCreateNewOption(boolean offerCreateNewOption) {
-		this.offerCreateNewOption = offerCreateNewOption;
-	}
+    public boolean isOfferCreateNewOption() {
+        return offerCreateNewOption;
+    }
 
-	public String getCustomEntryForm() {
-		return customEntryForm;
-	}
+    public void setOfferCreateNewOption(boolean offerCreateNewOption) {
+        this.offerCreateNewOption = offerCreateNewOption;
+    }
 
-	public void setCustomEntryForm(String customEntryForm) {
-		this.customEntryForm = customEntryForm;
-	}
+    public String getCustomEntryForm() {
+        return customEntryForm;
+    }
 
-	public String getCustomListView() {
-		return customListView;
-	}
+    public void setCustomEntryForm(String customEntryForm) {
+        this.customEntryForm = customEntryForm;
+    }
 
-	public void setCustomListView(String customListView) {
-		this.customListView = customListView;
-	}
+    public String getCustomListView() {
+        return customListView;
+    }
 
-	private String localName(String uriString) {
-		try {
-			return createResource(uriString).getLocalName();
-		} catch (Exception e) {
-			return uriString;
-		}
-	}
+    public void setCustomListView(String customListView) {
+        this.customListView = customListView;
+    }
 
-	@Override
-	public String toString() {
-		return "FauxProperty[domainURI=" + domainURI + ", baseUri=" + getURI()
-				+ ", baseLabel=" + baseLabel + ", rangeURI=" + rangeURI
-				+ ", rangeLabel=" + rangeLabel + ", domainLabel=" + domainLabel
-				+ ", pickListName=" + getPickListName() + ", contextUri="
-				+ contextUri + ", configUri=" + configUri + ", groupURI="
-				+ groupURI + "publicDescription=" + publicDescription
-				+ ", displayTier=" + displayTier + ", displayLimit="
-				+ displayLimit + ", collateBySubclass=" + collateBySubclass
-				+ ", selectFromExisting=" + selectFromExisting
-				+ ", offerCreateNewOption=" + offerCreateNewOption
-				+ ", customEntryForm=" + customEntryForm + ", customListView="
-				+ customListView + "]";
-	}
+    private String localName(String uriString) {
+        try {
+            return createResource(uriString).getLocalName();
+        } catch (Exception e) {
+            return uriString;
+        }
+    }
 
-	// ----------------------------------------------------------------------
-	// Satisfy the RoleRestrictedProperty interface.
-	// ----------------------------------------------------------------------
+    @Override
+    public String toString() {
+        return "FauxProperty[domainURI=" + domainURI + ", baseUri=" + getURI()
+            + ", baseLabel=" + baseLabel + ", rangeURI=" + rangeURI
+            + ", rangeLabel=" + rangeLabel + ", domainLabel=" + domainLabel
+            + ", pickListName=" + getPickListName() + ", contextUri="
+            + contextUri + ", configUri=" + configUri + ", groupURI="
+            + groupURI + "publicDescription=" + publicDescription
+            + ", displayTier=" + displayTier + ", displayLimit="
+            + displayLimit + ", collateBySubclass=" + collateBySubclass
+            + ", selectFromExisting=" + selectFromExisting
+            + ", offerCreateNewOption=" + offerCreateNewOption
+            + ", customEntryForm=" + customEntryForm + ", customListView="
+            + customListView + "]";
+    }
 
-	@Override
-	public String getDomainVClassURI() {
-		return getDomainURI();
-	}
+    // ----------------------------------------------------------------------
+    // Satisfy the RoleRestrictedProperty interface.
+    // ----------------------------------------------------------------------
 
-	@Override
-	public String getRangeVClassURI() {
-		return getRangeURI();
-	}
+    @Override
+    public String getDomainVClassURI() {
+        return getDomainURI();
+    }
 
-	public void setRootRangeUri(String rootRangeUri) {
-		this.rootRangeURI = rootRangeUri;
-	}
-	
-	public String getRootRangeUri() {
-		return rootRangeURI;
-	}
+    @Override
+    public String getRangeVClassURI() {
+        return getRangeURI();
+    }
+
+    public String getRootRangeUri() {
+        return rootRangeURI;
+    }
+
+    public void setRootRangeUri(String rootRangeUri) {
+        this.rootRangeURI = rootRangeUri;
+    }
 }

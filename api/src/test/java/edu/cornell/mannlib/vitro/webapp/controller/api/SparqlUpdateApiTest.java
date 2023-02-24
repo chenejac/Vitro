@@ -2,13 +2,14 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.api;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.StringReader;
 
-import org.junit.Before;
-import org.junit.Test;
-
+import edu.cornell.mannlib.vitro.testing.AbstractTestClass;
+import edu.cornell.mannlib.vitro.webapp.dao.jena.RDFServiceDataset;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.jena.model.RDFServiceModel;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.ReadWrite;
@@ -18,11 +19,8 @@ import org.apache.jena.update.GraphStore;
 import org.apache.jena.update.GraphStoreFactory;
 import org.apache.jena.update.UpdateAction;
 import org.apache.jena.update.UpdateFactory;
-
-import edu.cornell.mannlib.vitro.testing.AbstractTestClass;
-import edu.cornell.mannlib.vitro.webapp.dao.jena.RDFServiceDataset;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.jena.model.RDFServiceModel;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test that the SparqlQueryApiExecutor can handle all query types and all
@@ -34,17 +32,17 @@ public class SparqlUpdateApiTest extends AbstractTestClass {
 
     private final String updateStr1 =
         "INSERT DATA { GRAPH <" + GRAPH_URI + "> { \n" +
-        "    <http://here.edu/n1> a <http://here.edu/Class1> . \n" +
-        "} } ; \n" +
-        "INSERT { GRAPH <" + GRAPH_URI + "> { \n " +
-        "     ?x a <http://here.edu/Class2> . \n " +
-        "} } WHERE { \n" +
-        "    GRAPH <" + GRAPH_URI + "> { ?x a <http://here.edu/Class1> } \n " +
-        "}";
+            "    <http://here.edu/n1> a <http://here.edu/Class1> . \n" +
+            "} } ; \n" +
+            "INSERT { GRAPH <" + GRAPH_URI + "> { \n " +
+            "     ?x a <http://here.edu/Class2> . \n " +
+            "} } WHERE { \n" +
+            "    GRAPH <" + GRAPH_URI + "> { ?x a <http://here.edu/Class1> } \n " +
+            "}";
 
     private final String result1 =
         "<http://here.edu/n1> a <http://here.edu/Class1> . \n" +
-        "<http://here.edu/n1> a <http://here.edu/Class2> ." ;
+            "<http://here.edu/n1> a <http://here.edu/Class2> .";
 
     // look at how the SimpleReasoner is set up.
 
@@ -71,12 +69,12 @@ public class SparqlUpdateApiTest extends AbstractTestClass {
         Dataset ds = new RDFServiceDataset(rdfService);
         GraphStore graphStore = GraphStoreFactory.create(ds);
         try {
-            if(ds.supportsTransactions()) {
+            if (ds.supportsTransactions()) {
                 ds.begin(ReadWrite.WRITE);
             }
             UpdateAction.execute(UpdateFactory.create(updateStr1), graphStore);
         } finally {
-            if(ds.supportsTransactions()) {
+            if (ds.supportsTransactions()) {
                 ds.commit();
                 ds.end();
             }

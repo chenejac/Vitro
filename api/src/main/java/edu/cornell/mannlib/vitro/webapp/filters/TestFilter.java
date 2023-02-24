@@ -2,14 +2,13 @@
 
 package edu.cornell.mannlib.vitro.webapp.filters;
 
-import java.io.IOException;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,16 +34,17 @@ import org.apache.commons.logging.LogFactory;
  *
  */
 public class TestFilter implements Filter {
-    private FilterConfig filterConfig = null;
     private static final Log log = LogFactory.getLog(TestFilter.class.getName());
+    private FilterConfig filterConfig = null;
+
     public void init(FilterConfig filterConfig) throws ServletException {
         this.filterConfig = filterConfig;
     }
 
     public void doFilter(ServletRequest request, ServletResponse response,
-            FilterChain chain) throws IOException, ServletException {
+                         FilterChain chain) throws IOException, ServletException {
         log.debug("in TestFilter.doFilter()");
-        request.setAttribute("TestAttr","This is a test value, it could be a setup VitroFacade");
+        request.setAttribute("TestAttr", "This is a test value, it could be a setup VitroFacade");
         chain.doFilter(request, response);
     }
 

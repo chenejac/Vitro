@@ -2,6 +2,7 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 
+import javax.servlet.annotation.WebServlet;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,9 +12,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.AuthorizationRequest;
@@ -28,13 +26,15 @@ import edu.cornell.mannlib.vitro.webapp.dao.PropertyGroupDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
 import edu.cornell.mannlib.vitro.webapp.utils.json.JacksonUtils;
 import edu.cornell.mannlib.vitro.webapp.web.URLEncoder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import javax.servlet.annotation.WebServlet;
-
-@WebServlet(name = "ShowObjectPropertyHierarchyController", urlPatterns = {"/showObjectPropertyHierarchy"} )
+@WebServlet(name = "ShowObjectPropertyHierarchyController", urlPatterns = {
+    "/showObjectPropertyHierarchy"})
 public class ShowObjectPropertyHierarchyController extends FreemarkerHttpServlet {
 
-	private static final Log log = LogFactory.getLog(ShowObjectPropertyHierarchyController.class.getName());
+    private static final Log log =
+        LogFactory.getLog(ShowObjectPropertyHierarchyController.class.getName());
 
     private static final String TEMPLATE_NAME = "siteAdmin-objectPropHierarchy.ftl";
 
@@ -48,10 +48,21 @@ public class ShowObjectPropertyHierarchyController extends FreemarkerHttpServlet
 
     private int previous_posn = 0;
 
+    /*
+     * should never be null
+     */
+    public static String getDisplayLabel(ObjectProperty op) {
+        String displayLabel = op.getPickListName();
+        displayLabel = (displayLabel != null && displayLabel.length() > 0)
+            ? displayLabel
+            : op.getLocalName();
+        return (displayLabel != null) ? displayLabel : "[object property]";
+    }
+
     @Override
-	protected AuthorizationRequest requiredActions(VitroRequest vreq) {
-		return SimplePermission.EDIT_ONTOLOGY.ACTION;
-	}
+    protected AuthorizationRequest requiredActions(VitroRequest vreq) {
+        return SimplePermission.EDIT_ONTOLOGY.ACTION;
+    }
 
     @Override
     protected ResponseValues processRequest(VitroRequest vreq) {
@@ -61,18 +72,16 @@ public class ShowObjectPropertyHierarchyController extends FreemarkerHttpServlet
 
             String displayOption = "";
 
-            if ( vreq.getParameter("displayOption") != null ) {
+            if (vreq.getParameter("displayOption") != null) {
                 displayOption = vreq.getParameter("displayOption");
-            }
-            else {
+            } else {
                 displayOption = "hierarchy";
             }
             body.put("displayOption", displayOption);
 
-            if ( displayOption.equals("all") ) {
+            if (displayOption.equals("all")) {
                 body.put("pageTitle", "All Object Properties");
-            }
-            else {
+            } else {
                 body.put("pageTitle", "Object Property Hierarchy");
             }
 
@@ -92,16 +101,16 @@ public class ShowObjectPropertyHierarchyController extends FreemarkerHttpServlet
             List<ObjectProperty> roots = null;
 
             if (startPropertyUri != null) {
-        	    roots = new LinkedList<ObjectProperty>();
-        	    ObjectProperty op = opDao.getObjectPropertyByURI(startPropertyUri);
-        	    if (op == null) {
-        		    op = new ObjectProperty();
-        		    op.setURI(startPropertyUri);
-        	    }
-        	    roots.add(op);
+                roots = new LinkedList<ObjectProperty>();
+                ObjectProperty op = opDao.getObjectPropertyByURI(startPropertyUri);
+                if (op == null) {
+                    op = new ObjectProperty();
+                    op.setURI(startPropertyUri);
+                }
+                roots.add(op);
             } else {
                 roots = opDao.getRootObjectProperties();
-                if (roots!=null){
+                if (roots != null) {
                     roots.sort(new ObjectPropertyAlphaComparator(vreq)); // sorts by domain public
                 }
             }
@@ -112,23 +121,23 @@ public class ShowObjectPropertyHierarchyController extends FreemarkerHttpServlet
                 Iterator<ObjectProperty> rootIt = roots.iterator();
                 if (!rootIt.hasNext()) {
                     ObjectProperty op = new ObjectProperty();
-                    op.setURI(ontologyUri+"fake");
+                    op.setURI(ontologyUri + "fake");
                     String notFoundMessage = "<strong>No object properties found.</strong>";
                     op.setDomainPublic(notFoundMessage);
                     json.append(addObjectPropertyDataToResultsList(op, 0, ontologyUri, counter));
                 } else {
                     while (rootIt.hasNext()) {
                         ObjectProperty root = rootIt.next();
-                        if ( (ontologyUri==null) ||
-                    		    ( (ontologyUri != null)
-                    		    && (root.getNamespace() != null)
-                    		    && (ontologyUri.equals(root.getNamespace())) ) ) {
-                    	            json.append(addChildren(root, 0, ontologyUri, counter));
-                    	            counter += 1;
-                	    }
+                        if ((ontologyUri == null) ||
+                            ((ontologyUri != null)
+                                && (root.getNamespace() != null)
+                                && (ontologyUri.equals(root.getNamespace())))) {
+                            json.append(addChildren(root, 0, ontologyUri, counter));
+                            counter += 1;
+                        }
                     }
                     int length = json.length();
-                    if ( length > 0 ) {
+                    if (length > 0) {
                         json.append(" }");
                     }
                 }
@@ -143,13 +152,14 @@ public class ShowObjectPropertyHierarchyController extends FreemarkerHttpServlet
 
     }
 
-    private String addChildren(ObjectProperty parent, int position, String ontologyUri, int counter) {
+    private String addChildren(ObjectProperty parent, int position, String ontologyUri,
+                               int counter) {
         String details = addObjectPropertyDataToResultsList(parent, position, ontologyUri, counter);
         int length = details.length();
         StringBuilder leaves = new StringBuilder();
         leaves.append(details);
         List<String> childURIstrs = opDao.getSubPropertyURIs(parent.getURI());
-        if ( (childURIstrs.size() > 0) && (position < MAXDEPTH) ) {
+        if ((childURIstrs.size() > 0) && (position < MAXDEPTH)) {
             List<ObjectProperty> childProps = new ArrayList<ObjectProperty>();
             for (String URIstr : childURIstrs) {
                 ObjectProperty child = opDao.getObjectPropertyByURI(URIstr);
@@ -161,10 +171,9 @@ public class ShowObjectPropertyHierarchyController extends FreemarkerHttpServlet
                 ObjectProperty child = childPropIt.next();
                 leaves.append(addChildren(child, position + 1, ontologyUri, counter));
                 if (!childPropIt.hasNext()) {
-                    if ( ontologyUri == null ) {
+                    if (ontologyUri == null) {
                         leaves.append(" }] ");
-                    }
-                    else if ( ontologyUri != null && length > 0 ) {
+                    } else if (ontologyUri != null && length > 0) {
                         // need this for when we show the classes associated with an ontology
                         String ending = leaves.substring(leaves.length() - 2, leaves.length());
                         switch (ending) {
@@ -181,65 +190,64 @@ public class ShowObjectPropertyHierarchyController extends FreemarkerHttpServlet
                     }
                 }
             }
-        }
-        else {
-            if ( ontologyUri == null ) {
-                 leaves.append("] ");
-            }
-            else if ( ontologyUri != null && length > 0 ) {
-                 leaves.append("] ");
+        } else {
+            if (ontologyUri == null) {
+                leaves.append("] ");
+            } else if (ontologyUri != null && length > 0) {
+                leaves.append("] ");
             }
         }
         return leaves.toString();
     }
 
-    private String addObjectPropertyDataToResultsList(ObjectProperty op, int position, String ontologyUri, int counter) {
+    private String addObjectPropertyDataToResultsList(ObjectProperty op, int position,
+                                                      String ontologyUri, int counter) {
         String tempString = "";
-        if (ontologyUri == null || ( (op.getNamespace()!=null) && (op.getNamespace().equals(ontologyUri)) ) ) {
+        if (ontologyUri == null ||
+            ((op.getNamespace() != null) && (op.getNamespace().equals(ontologyUri)))) {
             // first if statement ensures that the first class begins with correct format
-            if ( counter < 1 && position < 1 ) {
-                 tempString += "{ \"name\": ";
-            }
-            else if ( position == previous_posn ) {
-                        tempString += "}, { \"name\": ";
-            }
-            else if ( position > previous_posn ) {
+            if (counter < 1 && position < 1) {
+                tempString += "{ \"name\": ";
+            } else if (position == previous_posn) {
+                tempString += "}, { \"name\": ";
+            } else if (position > previous_posn) {
                 tempString += " { \"name\": ";
-            }
-            else if ( position < previous_posn ) {
+            } else if (position < previous_posn) {
                 tempString += "}, { \"name\": ";
             }
 
             String nameStr = getDisplayLabel(op) == null ? "(no name)" : getDisplayLabel(op);
 
-        	tempString += JacksonUtils.quote(
-        	        "<a href='propertyEdit?uri=" + URLEncoder.encode(
-        	                op.getURI()) + "'>" + nameStr + "</a>") + ", ";
+            tempString += JacksonUtils.quote(
+                "<a href='propertyEdit?uri=" + URLEncoder.encode(
+                    op.getURI()) + "'>" + nameStr + "</a>") + ", ";
 
             tempString += "\"data\": { \"internalName\": " + JacksonUtils.quote(
-                    op.getLocalNameWithPrefix()) + ", ";
+                op.getLocalNameWithPrefix()) + ", ";
 
             ObjectProperty opLangNeut = opDaoLangNeut.getObjectPropertyByURI(op.getURI());
-            if(opLangNeut == null) {
+            if (opLangNeut == null) {
                 opLangNeut = op;
             }
-            String domainStr = getVClassNameFromURI(opLangNeut.getDomainVClassURI(), vcDao, vcDaoLangNeut);
-            String rangeStr = getVClassNameFromURI(opLangNeut.getRangeVClassURI(), vcDao, vcDaoLangNeut);
+            String domainStr =
+                getVClassNameFromURI(opLangNeut.getDomainVClassURI(), vcDao, vcDaoLangNeut);
+            String rangeStr =
+                getVClassNameFromURI(opLangNeut.getRangeVClassURI(), vcDao, vcDaoLangNeut);
 
             try {
-            	tempString += "\"domainVClass\": " + JacksonUtils.quote(domainStr) + ", " ;
+                tempString += "\"domainVClass\": " + JacksonUtils.quote(domainStr) + ", ";
             } catch (NullPointerException e) {
-            	tempString += "\"domainVClass\": \"\",";
+                tempString += "\"domainVClass\": \"\",";
             }
             try {
-            	tempString += "\"rangeVClass\": " + JacksonUtils.quote(rangeStr) + ", " ;
+                tempString += "\"rangeVClass\": " + JacksonUtils.quote(rangeStr) + ", ";
             } catch (NullPointerException e) {
-            	tempString += "\"rangeVClass\": \"\",";
+                tempString += "\"rangeVClass\": \"\",";
             }
             if (op.getGroupURI() != null) {
                 PropertyGroup pGroup = pgDao.getGroupByURI(op.getGroupURI());
                 tempString += "\"group\": " + JacksonUtils.quote(
-                        (pGroup == null) ? "unknown group" : pGroup.getName());
+                    (pGroup == null) ? "unknown group" : pGroup.getName());
             } else {
                 tempString += "\"group\": \"unspecified\"";
             }
@@ -250,15 +258,16 @@ public class ShowObjectPropertyHierarchyController extends FreemarkerHttpServlet
         return tempString;
     }
 
-    private String getVClassNameFromURI(String vclassURI, VClassDao vcDao, VClassDao vcDaoLangNeut) {
-        if(vclassURI == null) {
+    private String getVClassNameFromURI(String vclassURI, VClassDao vcDao,
+                                        VClassDao vcDaoLangNeut) {
+        if (vclassURI == null) {
             return "";
         }
         VClass vclass = vcDaoLangNeut.getVClassByURI(vclassURI);
-        if(vclass == null) {
+        if (vclass == null) {
             return "";
         }
-        if(vclass.isAnonymous()) {
+        if (vclass.isAnonymous()) {
             return vclass.getPickListName();
         } else {
             VClass vclassWLang = vcDao.getVClassByURI(vclassURI);
@@ -275,32 +284,21 @@ public class ShowObjectPropertyHierarchyController extends FreemarkerHttpServlet
         }
 
         public int compare(ObjectProperty op1, ObjectProperty op2) {
-        	if (op1 == null) {
-        		return 1;
-        	} else if (op2 == null) {
-        		return -1;
-        	}
-        	String propLabel1 = op1.getPickListName();
-        	String propLabel2 = op2.getPickListName();
-        	if (propLabel1 == null) {
-        		return 1;
-        	} else if (propLabel2 == null) {
-        		return -1;
-        	} else {
-        		return collator.compare( propLabel1, propLabel2 );
-        	}
+            if (op1 == null) {
+                return 1;
+            } else if (op2 == null) {
+                return -1;
+            }
+            String propLabel1 = op1.getPickListName();
+            String propLabel2 = op2.getPickListName();
+            if (propLabel1 == null) {
+                return 1;
+            } else if (propLabel2 == null) {
+                return -1;
+            } else {
+                return collator.compare(propLabel1, propLabel2);
+            }
         }
-    }
-
-    /*
-     * should never be null
-     */
-    public static String getDisplayLabel(ObjectProperty op) {
-        String displayLabel = op.getPickListName();
-    	displayLabel = (displayLabel != null && displayLabel.length() > 0)
-			? displayLabel
-			: op.getLocalName();
-		return (displayLabel != null) ? displayLabel : "[object property]" ;
     }
 
 }

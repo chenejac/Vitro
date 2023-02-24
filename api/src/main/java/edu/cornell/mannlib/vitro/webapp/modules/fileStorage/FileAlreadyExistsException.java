@@ -9,30 +9,30 @@ import java.io.IOException;
  * different filename from the one specified.
  */
 public class FileAlreadyExistsException extends IOException {
-	private final String id;
-	private final String existingFilename;
-	private final String requestedFilename;
+    private final String id;
+    private final String existingFilename;
+    private final String requestedFilename;
 
-	public FileAlreadyExistsException(String id, String existingFilename,
-			String requestedFilename) {
-		super("File with a different name already exists at this ID: '" + id
-				+ "', requested filename: '" + requestedFilename
-				+ "', existing filename: '" + existingFilename + "'");
-		this.id = id;
-		this.existingFilename = existingFilename;
-		this.requestedFilename = requestedFilename;
-	}
+    public FileAlreadyExistsException(String id, String existingFilename,
+                                      String requestedFilename) {
+        super("File with a different name already exists at this ID: '" + id
+            + "', requested filename: '" + requestedFilename
+            + "', existing filename: '" + existingFilename + "'");
+        this.id = id;
+        this.existingFilename = existingFilename;
+        this.requestedFilename = requestedFilename;
+    }
 
-	public String getId() {
-		return id;
-	}
+    public String getId() {
+        return id;
+    }
 
-	public String getExistingFilename() {
-		return existingFilename;
-	}
+    public String getExistingFilename() {
+        return existingFilename;
+    }
 
-	public String getRequestedFilename() {
-		return requestedFilename;
-	}
+    public String getRequestedFilename() {
+        return requestedFilename;
+    }
 
 }

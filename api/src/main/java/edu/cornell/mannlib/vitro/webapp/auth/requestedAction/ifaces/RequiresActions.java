@@ -8,7 +8,7 @@ import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 /**
  * Interface to objects that provide a list of Actions that are
  * required for the object to be used.
- *
+ * <p>
  * This is intended to provide a way to setup DataGetter
  * objects to be used with the FreemarkerHttpServlet.requiredActions()
  * method.
@@ -20,7 +20,7 @@ public interface RequiresActions {
     /**
      * Returns Actions that are required to be authorized for
      * the object to be used.
-     *
+     * <p>
      * The code that is calling this method
      * could use methods from PolicyHelper to check if the
      * request has authorization to do these Actions. The code
@@ -31,6 +31,6 @@ public interface RequiresActions {
      * @return Should not be null. Return Actions.AUTHORIZED
      * if no authorization is required to do use the object.
      */
-    public AuthorizationRequest requiredActions(VitroRequest vreq) ;
+    public AuthorizationRequest requiredActions(VitroRequest vreq);
 
 }

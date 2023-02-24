@@ -8,21 +8,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
+import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
+import edu.cornell.mannlib.vitro.webapp.utils.configuration.ContextModelsUser;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.shared.Lock;
 import org.apache.jena.vocabulary.RDF;
 
-import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ContextModelAccess;
-import edu.cornell.mannlib.vitro.webapp.utils.configuration.ContextModelsUser;
-
 /**
  * If a class changes classgroups, then all members of that class
  * will have to be update in the search since the serach include
  * the clasgroup membership of all individuals.
- *
+ * <p>
  * Ex. when a statement like:
  * sub='http://vivoweb.org/ontology/core#Summer&#39;
  * pred='http://vitro.mannlib.cornell.edu/ns/vitro/0.7#inClassGroup&#39;
@@ -33,33 +32,33 @@ public class AdditionalURIsForClassGroupChanges implements IndexingUriFinder, Co
 
     private OntModel model;
 
-	@Override
-	public void setContextModels(ContextModelAccess models) {
-		model = models.getOntModel(TBOX_ASSERTIONS);
-	}
+    @Override
+    public void setContextModels(ContextModelAccess models) {
+        model = models.getOntModel(TBOX_ASSERTIONS);
+    }
 
     @Override
     public List<String> findAdditionalURIsToIndex(Statement stmt) {
-        if( stmt != null
-            && VitroVocabulary.IN_CLASSGROUP.equals( stmt.getPredicate().getURI() )
-            && stmt.getSubject() != null ){
+        if (stmt != null
+            && VitroVocabulary.IN_CLASSGROUP.equals(stmt.getPredicate().getURI())
+            && stmt.getSubject() != null) {
             // its a classgroup membership change for a class,
             // update all individuals from the class.
             List<String> uris = new ArrayList<String>();
             model.enterCriticalSection(Lock.READ);
-            try{
+            try {
                 StmtIterator iter = model.listStatements(null, RDF.type, stmt.getSubject());
-                while( iter.hasNext() ){
+                while (iter.hasNext()) {
                     Statement typeStmt = iter.nextStatement();
-                    if( typeStmt != null && typeStmt.getSubject().isURIResource() ){
+                    if (typeStmt != null && typeStmt.getSubject().isURIResource()) {
                         uris.add(typeStmt.getSubject().getURI());
                     }
                 }
-            }finally{
+            } finally {
                 model.leaveCriticalSection();
             }
             return uris;
-        }else{
+        } else {
             return Collections.emptyList();
         }
     }
@@ -70,9 +69,9 @@ public class AdditionalURIsForClassGroupChanges implements IndexingUriFinder, Co
     @Override
     public void endIndexing() { /* nothing to do */ }
 
-	@Override
-	public String toString() {
-		return this.getClass().getSimpleName();
-	}
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
+    }
 
 }

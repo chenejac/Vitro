@@ -4,21 +4,23 @@ package edu.cornell.mannlib.vitro.webapp.web.templatemodels.individual;
 
 import java.util.Map;
 
+import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
-
-/** Data postprocessor for default object property list view **/
+/**
+ * Data postprocessor for default object property list view
+ **/
 public class DefaultListViewDataPostProcessor extends
-        BaseObjectPropertyDataPostProcessor {
+    BaseObjectPropertyDataPostProcessor {
 
     private static final Log log = LogFactory.getLog(DefaultListViewDataPostProcessor.class);
 
     private static final String KEY_NAME = "name";
     private static final String KEY_OBJECT = "object";
 
-    public DefaultListViewDataPostProcessor(ObjectPropertyTemplateModel optm, WebappDaoFactory wdf) {
+    public DefaultListViewDataPostProcessor(ObjectPropertyTemplateModel optm,
+                                            WebappDaoFactory wdf) {
         super(optm, wdf);
     }
 

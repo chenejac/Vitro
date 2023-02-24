@@ -2,7 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.dao.filtering.filters;
 
-import net.sf.jga.fn.UnaryFunctor;
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
@@ -11,6 +10,7 @@ import edu.cornell.mannlib.vitro.webapp.beans.ObjectPropertyStatement;
 import edu.cornell.mannlib.vitro.webapp.beans.PropertyGroup;
 import edu.cornell.mannlib.vitro.webapp.beans.VClass;
 import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
+import net.sf.jga.fn.UnaryFunctor;
 
 public interface VitroFilters {
 

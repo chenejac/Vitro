@@ -2,10 +2,9 @@
 
 package edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.generators;
 
+import javax.servlet.http.HttpSession;
 import java.util.Arrays;
 import java.util.HashMap;
-
-import javax.servlet.http.HttpSession;
 
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
@@ -18,17 +17,25 @@ import edu.cornell.mannlib.vitro.webapp.utils.FrontEndEditingUtils.EditMode;
 
 
 public class DateTimeValueFormGenerator extends BaseEditConfigurationGenerator
-        implements EditConfigurationGenerator {
+    implements EditConfigurationGenerator {
 
-	final static String vivoCore = "http://vivoweb.org/ontology/core#";
-	final  String toDateTimeValue = vivoCore + "dateTimeValue";
-	final static String valueType = vivoCore + "DateTimeValue";
-	final static String dateTimeValue = vivoCore + "dateTime";
-	final static String dateTimePrecision = vivoCore + "dateTimePrecision";
+    final static String vivoCore = "http://vivoweb.org/ontology/core#";
+    final static String valueType = vivoCore + "DateTimeValue";
+    final static String dateTimeValue = vivoCore + "dateTime";
+    final static String dateTimePrecision = vivoCore + "dateTimePrecision";
+    final String toDateTimeValue = vivoCore + "dateTimeValue";
 
-	@Override
-	public EditConfigurationVTwo getEditConfiguration(VitroRequest vreq,
-			HttpSession session) {
+    public static String getNodeVar() {
+        return "valueNode";
+    }
+
+    public static String getNodeN3Var() {
+        return "?" + getNodeVar();
+    }
+
+    @Override
+    public EditConfigurationVTwo getEditConfiguration(VitroRequest vreq,
+                                                      HttpSession session) {
         EditConfigurationVTwo conf = new EditConfigurationVTwo();
 
         initBasics(conf, vreq);
@@ -46,14 +53,14 @@ public class DateTimeValueFormGenerator extends BaseEditConfigurationGenerator
         conf.addNewResource("valueNode", DEFAULT_NS_FOR_NEW_RESOURCE);
 
         conf.addSparqlForExistingLiteral(
-        		"dateTimeField-value", getExistingDateTimeValueQuery());
+            "dateTimeField-value", getExistingDateTimeValueQuery());
         conf.addSparqlForExistingUris(
-        		"dateTimeField-precision", getExistingPrecisionQuery());
+            "dateTimeField-precision", getExistingPrecisionQuery());
 
         FieldVTwo dateTimeField = new FieldVTwo().setName(this.getDateTimeFieldName());
-        		dateTimeField.setEditElement(new DateTimeWithPrecisionVTwo(dateTimeField,
-        				VitroVocabulary.Precision.SECOND.uri(),
-        				VitroVocabulary.Precision.NONE.uri()));
+        dateTimeField.setEditElement(new DateTimeWithPrecisionVTwo(dateTimeField,
+            VitroVocabulary.Precision.SECOND.uri(),
+            VitroVocabulary.Precision.NONE.uri()));
 
         conf.addField(dateTimeField);
 
@@ -62,77 +69,69 @@ public class DateTimeValueFormGenerator extends BaseEditConfigurationGenerator
         //prepare
         prepare(vreq, conf);
         return conf;
-	}
+    }
 
-
-	//Writing these as methods instead of static strings allows the method getToDateTimeValuePredicate
-	//to be called after the class has been initialized - this is important for subclasses of this generator
-	//that rely on vreq for predicate
-	protected String getN3ForValue() {
+    //Writing these as methods instead of static strings allows the method getToDateTimeValuePredicate
+    //to be called after the class has been initialized - this is important for subclasses of this generator
+    //that rely on vreq for predicate
+    protected String getN3ForValue() {
         return "?subject <" + this.getToDateTimeValuePredicate() + "> ?valueNode . \n" +
-        "?valueNode a <" + valueType + "> . \n" +
-        "?valueNode  <" + dateTimeValue + "> ?dateTimeField-value . \n" +
-        "?valueNode  <" + dateTimePrecision + "> ?dateTimeField-precision .";
-	}
+            "?valueNode a <" + valueType + "> . \n" +
+            "?valueNode  <" + dateTimeValue + "> ?dateTimeField-value . \n" +
+            "?valueNode  <" + dateTimePrecision + "> ?dateTimeField-precision .";
+    }
 
-	protected String getExistingDateTimeValueQuery () {
+    protected String getExistingDateTimeValueQuery() {
         return "SELECT ?existingDateTimeValue WHERE { \n" +
-        "?subject <" + this.getToDateTimeValuePredicate() + "> ?valueNode . \n" +
-        "?valueNode a <" + valueType + "> . \n" +
-        "?valueNode <" + dateTimeValue + "> ?existingDateTimeValue }";
-	}
+            "?subject <" + this.getToDateTimeValuePredicate() + "> ?valueNode . \n" +
+            "?valueNode a <" + valueType + "> . \n" +
+            "?valueNode <" + dateTimeValue + "> ?existingDateTimeValue }";
+    }
 
-	protected String getExistingPrecisionQuery() {
+    protected String getExistingPrecisionQuery() {
         return "SELECT ?existingPrecision WHERE { \n" +
-        "?subject <" + this.getToDateTimeValuePredicate() + "> ?valueNode . \n" +
-        "?valueNode a <" + valueType + "> . \n" +
-        "?valueNode <"  + dateTimePrecision + "> ?existingPrecision }";
-	}
+            "?subject <" + this.getToDateTimeValuePredicate() + "> ?valueNode . \n" +
+            "?valueNode a <" + valueType + "> . \n" +
+            "?valueNode <" + dateTimePrecision + "> ?existingPrecision }";
+    }
 
-	public static String getNodeVar() {
-		return "valueNode";
-	}
+    //isolating the predicate in this fashion allows this class to be subclassed for other date time value
+    //properties
+    protected String getToDateTimeValuePredicate() {
+        return this.toDateTimeValue;
+    }
 
-	public static String getNodeN3Var() {
-		return "?" + getNodeVar();
-	}
+    protected String getDateTimeFieldName() {
+        return "dateTimeField";
+    }
 
-	//isolating the predicate in this fashion allows this class to be subclassed for other date time value
-	//properties
-	protected String getToDateTimeValuePredicate() {
-		return this.toDateTimeValue;
-	}
+    protected String getTemplate() {
+        return "dateTimeValueForm.ftl";
+    }
 
-	protected String getDateTimeFieldName() {
-		return "dateTimeField";
-	}
+    //Adding form specific data such as edit mode
+    public void addFormSpecificData(EditConfigurationVTwo editConfiguration, VitroRequest vreq) {
+        HashMap<String, Object> formSpecificData = new HashMap<String, Object>();
+        formSpecificData.put("editMode", getEditMode(vreq).name().toLowerCase());
+        formSpecificData.put("domainUri", getDomainUri(vreq));
+        editConfiguration.setFormSpecificData(formSpecificData);
+    }
 
-	protected String getTemplate() {
-		return "dateTimeValueForm.ftl";
-	}
-//Adding form specific data such as edit mode
-	public void addFormSpecificData(EditConfigurationVTwo editConfiguration, VitroRequest vreq) {
-		HashMap<String, Object> formSpecificData = new HashMap<String, Object>();
-		formSpecificData.put("editMode", getEditMode(vreq).name().toLowerCase());
-		formSpecificData.put("domainUri", getDomainUri(vreq));
-		editConfiguration.setFormSpecificData(formSpecificData);
-	}
+    public EditMode getEditMode(VitroRequest vreq) {
+        //In this case, the original jsp didn't rely on FrontEndEditingUtils
+        //but instead relied on whether or not the object Uri existed
+        String objectUri = EditConfigurationUtils.getObjectUri(vreq);
+        EditMode editMode = FrontEndEditingUtils.EditMode.ADD;
+        if (objectUri != null && !objectUri.isEmpty()) {
+            editMode = FrontEndEditingUtils.EditMode.EDIT;
 
-	public EditMode getEditMode(VitroRequest vreq) {
-		//In this case, the original jsp didn't rely on FrontEndEditingUtils
-		//but instead relied on whether or not the object Uri existed
-		String objectUri = EditConfigurationUtils.getObjectUri(vreq);
-		EditMode editMode = FrontEndEditingUtils.EditMode.ADD;
-		if(objectUri != null && !objectUri.isEmpty()) {
-			editMode = FrontEndEditingUtils.EditMode.EDIT;
+        }
+        return editMode;
+    }
 
-		}
-		return editMode;
-	}
-
-	private String getDomainUri(VitroRequest vreq) {
+    private String getDomainUri(VitroRequest vreq) {
         String domainUri = vreq.getParameter("domainUri");
 
-		return domainUri;
-	}
+        return domainUri;
+    }
 }

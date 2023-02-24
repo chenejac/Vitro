@@ -11,9 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vedit.beans.LoginStatusBean;
 import edu.cornell.mannlib.vitro.webapp.auth.policy.PolicyHelper;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.usepages.ManageRootAccount;
@@ -26,302 +23,308 @@ import edu.cornell.mannlib.vitro.webapp.controller.authenticate.Authenticator;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.ResponseValues;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.TemplateResponseValues;
 import edu.cornell.mannlib.vitro.webapp.dao.InsertException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Handle the "Edit Account" form display and submission.
  */
 public class UserAccountsEditPage extends UserAccountsPage {
-	private static final Log log = LogFactory
-			.getLog(UserAccountsEditPage.class);
+    private static final Log log = LogFactory
+        .getLog(UserAccountsEditPage.class);
 
-	private static final String PARAMETER_SUBMIT = "submitEdit";
-	private static final String PARAMETER_USER_URI = "editAccount";
-	private static final String PARAMETER_EMAIL_ADDRESS = "emailAddress";
-	private static final String PARAMETER_EXTERNAL_AUTH_ID = "externalAuthId";
-	private static final String PARAMETER_EXTERNAL_AUTH_ONLY = "externalAuthOnly";
-	private static final String PARAMETER_FIRST_NAME = "firstName";
-	private static final String PARAMETER_LAST_NAME = "lastName";
-	private static final String PARAMETER_ROLE = "role";
-	private static final String PARAMETER_ASSOCIATED_PROFILE_URI = "associatedProfileUri";
-	private static final String PARAMETER_NEW_PROFILE_CLASS_URI = "newProfileClassUri";
+    private static final String PARAMETER_SUBMIT = "submitEdit";
+    private static final String PARAMETER_USER_URI = "editAccount";
+    private static final String PARAMETER_EMAIL_ADDRESS = "emailAddress";
+    private static final String PARAMETER_EXTERNAL_AUTH_ID = "externalAuthId";
+    private static final String PARAMETER_EXTERNAL_AUTH_ONLY = "externalAuthOnly";
+    private static final String PARAMETER_FIRST_NAME = "firstName";
+    private static final String PARAMETER_LAST_NAME = "lastName";
+    private static final String PARAMETER_ROLE = "role";
+    private static final String PARAMETER_ASSOCIATED_PROFILE_URI = "associatedProfileUri";
+    private static final String PARAMETER_NEW_PROFILE_CLASS_URI = "newProfileClassUri";
 
-	private static final String ERROR_NO_EMAIL = "errorEmailIsEmpty";
-	private static final String ERROR_EMAIL_IN_USE = "errorEmailInUse";
-	private static final String ERROR_EMAIL_INVALID_FORMAT = "errorEmailInvalidFormat";
-	private static final String ERROR_EXTERNAL_AUTH_ID_IN_USE = "errorExternalAuthIdInUse";
-	private static final String ERROR_NO_FIRST_NAME = "errorFirstNameIsEmpty";
-	private static final String ERROR_NO_LAST_NAME = "errorLastNameIsEmpty";
-	private static final String ERROR_NO_ROLE = "errorNoRoleSelected";
+    private static final String ERROR_NO_EMAIL = "errorEmailIsEmpty";
+    private static final String ERROR_EMAIL_IN_USE = "errorEmailInUse";
+    private static final String ERROR_EMAIL_INVALID_FORMAT = "errorEmailInvalidFormat";
+    private static final String ERROR_EXTERNAL_AUTH_ID_IN_USE = "errorExternalAuthIdInUse";
+    private static final String ERROR_NO_FIRST_NAME = "errorFirstNameIsEmpty";
+    private static final String ERROR_NO_LAST_NAME = "errorLastNameIsEmpty";
+    private static final String ERROR_NO_ROLE = "errorNoRoleSelected";
 
-	private static final String TEMPLATE_NAME = "userAccounts-edit.ftl";
+    private static final String TEMPLATE_NAME = "userAccounts-edit.ftl";
 
-	private final UserAccountsEditPageStrategy strategy;
-	private final boolean matchingIsEnabled;
+    private final UserAccountsEditPageStrategy strategy;
+    private final boolean matchingIsEnabled;
 
-	/* The request parameters */
-	private boolean submit;
-	private String userUri = "";
-	private String emailAddress = "";
-	private String externalAuthId = "";
-	private boolean externalAuthOnly;
-	private String firstName = "";
-	private String lastName = "";
-	private Collection<String> selectedRoleUris = new ArrayList<String>();
-	private String associatedProfileUri = "";
-	private String newProfileClassUri = "";
+    /* The request parameters */
+    private boolean submit;
+    private String userUri = "";
+    private String emailAddress = "";
+    private String externalAuthId = "";
+    private boolean externalAuthOnly;
+    private String firstName = "";
+    private String lastName = "";
+    private Collection<String> selectedRoleUris = new ArrayList<String>();
+    private String associatedProfileUri = "";
+    private String newProfileClassUri = "";
 
-	private UserAccount userAccount;
+    private UserAccount userAccount;
 
-	/** The result of checking whether this request is even appropriate. */
-	private String bogusMessage = "";
+    /**
+     * The result of checking whether this request is even appropriate.
+     */
+    private String bogusMessage = "";
 
-	/** The result of validating a "submit" request. */
-	private String errorCode = "";
+    /**
+     * The result of validating a "submit" request.
+     */
+    private String errorCode = "";
 
-	public UserAccountsEditPage(VitroRequest vreq) {
-		super(vreq);
+    public UserAccountsEditPage(VitroRequest vreq) {
+        super(vreq);
 
-		this.strategy = UserAccountsEditPageStrategy.getInstance(vreq, this,
-				isEmailEnabled());
+        this.strategy = UserAccountsEditPageStrategy.getInstance(vreq, this,
+            isEmailEnabled());
 
-		this.matchingIsEnabled = SelfEditingConfiguration.getBean(vreq)
-				.isConfigured();
+        this.matchingIsEnabled = SelfEditingConfiguration.getBean(vreq)
+            .isConfigured();
 
-		parseRequestParameters();
-		validateUserAccountInfo();
+        parseRequestParameters();
+        validateUserAccountInfo();
 
-		if (isSubmit() && !isBogus()) {
-			validateParameters();
-		}
-	}
+        if (isSubmit() && !isBogus()) {
+            validateParameters();
+        }
+    }
 
-	private void parseRequestParameters() {
-		submit = isFlagOnRequest(PARAMETER_SUBMIT);
-		userUri = getStringParameter(PARAMETER_USER_URI, "");
-		emailAddress = getStringParameter(PARAMETER_EMAIL_ADDRESS, "");
-		externalAuthId = getStringParameter(PARAMETER_EXTERNAL_AUTH_ID, "");
-		externalAuthOnly = isFlagOnRequest(PARAMETER_EXTERNAL_AUTH_ONLY);
-		firstName = getStringParameter(PARAMETER_FIRST_NAME, "");
-		lastName = getStringParameter(PARAMETER_LAST_NAME, "");
-		selectedRoleUris = getStringParameters(PARAMETER_ROLE);
-		associatedProfileUri = getStringParameter(
-				PARAMETER_ASSOCIATED_PROFILE_URI, "");
-		newProfileClassUri = getStringParameter(
-				PARAMETER_NEW_PROFILE_CLASS_URI, "");
+    private void parseRequestParameters() {
+        submit = isFlagOnRequest(PARAMETER_SUBMIT);
+        userUri = getStringParameter(PARAMETER_USER_URI, "");
+        emailAddress = getStringParameter(PARAMETER_EMAIL_ADDRESS, "");
+        externalAuthId = getStringParameter(PARAMETER_EXTERNAL_AUTH_ID, "");
+        externalAuthOnly = isFlagOnRequest(PARAMETER_EXTERNAL_AUTH_ONLY);
+        firstName = getStringParameter(PARAMETER_FIRST_NAME, "");
+        lastName = getStringParameter(PARAMETER_LAST_NAME, "");
+        selectedRoleUris = getStringParameters(PARAMETER_ROLE);
+        associatedProfileUri = getStringParameter(
+            PARAMETER_ASSOCIATED_PROFILE_URI, "");
+        newProfileClassUri = getStringParameter(
+            PARAMETER_NEW_PROFILE_CLASS_URI, "");
 
-		strategy.parseAdditionalParameters();
-	}
+        strategy.parseAdditionalParameters();
+    }
 
-	private void validateUserAccountInfo() {
-		userAccount = userAccountsDao.getUserAccountByUri(userUri);
-		if (userAccount == null) {
-			log.warn("Edit account for '" + userUri
-					+ "' is bogus: no such user");
-			bogusMessage = getBogusStandardMessage(vreq);
-			return;
-		}
-		if (userAccount.isRootUser()) {
-			if (!PolicyHelper.isAuthorizedForActions(vreq,
-					new ManageRootAccount())) {
-				log.warn("User is attempting to edit the root account, "
-						+ "but is not authorized to do so. Logged in as: "
-						+ LoginStatusBean.getCurrentUser(vreq));
-				bogusMessage = getBogusStandardMessage(vreq);
+    private void validateUserAccountInfo() {
+        userAccount = userAccountsDao.getUserAccountByUri(userUri);
+        if (userAccount == null) {
+            log.warn("Edit account for '" + userUri
+                + "' is bogus: no such user");
+            bogusMessage = getBogusStandardMessage(vreq);
+            return;
+        }
+        if (userAccount.isRootUser()) {
+            if (!PolicyHelper.isAuthorizedForActions(vreq,
+                new ManageRootAccount())) {
+                log.warn("User is attempting to edit the root account, "
+                    + "but is not authorized to do so. Logged in as: "
+                    + LoginStatusBean.getCurrentUser(vreq));
+                bogusMessage = getBogusStandardMessage(vreq);
             }
-		}
-	}
+        }
+    }
 
-	public boolean isBogus() {
-		return !bogusMessage.isEmpty();
-	}
+    public boolean isBogus() {
+        return !bogusMessage.isEmpty();
+    }
 
-	public String getBogusMessage() {
-		return bogusMessage;
-	}
+    public String getBogusMessage() {
+        return bogusMessage;
+    }
 
-	public boolean isSubmit() {
-		return submit;
-	}
+    public boolean isSubmit() {
+        return submit;
+    }
 
-	private void validateParameters() {
-		if (emailAddress.isEmpty()) {
-			errorCode = ERROR_NO_EMAIL;
-		} else if (emailIsChanged() && isEmailInUse()) {
-			errorCode = ERROR_EMAIL_IN_USE;
-		} else if (!isEmailValidFormat()) {
-			errorCode = ERROR_EMAIL_INVALID_FORMAT;
-		} else if (externalAuthIdIsChanged() && isExternalAuthIdInUse()) {
-			errorCode = ERROR_EXTERNAL_AUTH_ID_IN_USE;
-		} else if (firstName.isEmpty()) {
-			errorCode = ERROR_NO_FIRST_NAME;
-		} else if (lastName.isEmpty()) {
-			errorCode = ERROR_NO_LAST_NAME;
-		} else if (!isRootUser() && selectedRoleUris.isEmpty()) {
-			errorCode = ERROR_NO_ROLE;
-		} else {
-			errorCode = strategy.additionalValidations();
-		}
-	}
+    private void validateParameters() {
+        if (emailAddress.isEmpty()) {
+            errorCode = ERROR_NO_EMAIL;
+        } else if (emailIsChanged() && isEmailInUse()) {
+            errorCode = ERROR_EMAIL_IN_USE;
+        } else if (!isEmailValidFormat()) {
+            errorCode = ERROR_EMAIL_INVALID_FORMAT;
+        } else if (externalAuthIdIsChanged() && isExternalAuthIdInUse()) {
+            errorCode = ERROR_EXTERNAL_AUTH_ID_IN_USE;
+        } else if (firstName.isEmpty()) {
+            errorCode = ERROR_NO_FIRST_NAME;
+        } else if (lastName.isEmpty()) {
+            errorCode = ERROR_NO_LAST_NAME;
+        } else if (!isRootUser() && selectedRoleUris.isEmpty()) {
+            errorCode = ERROR_NO_ROLE;
+        } else {
+            errorCode = strategy.additionalValidations();
+        }
+    }
 
-	private boolean emailIsChanged() {
-		return !emailAddress.equals(userAccount.getEmailAddress());
-	}
+    private boolean emailIsChanged() {
+        return !emailAddress.equals(userAccount.getEmailAddress());
+    }
 
-	private boolean isEmailInUse() {
-		return userAccountsDao.getUserAccountByEmail(emailAddress) != null;
-	}
+    private boolean isEmailInUse() {
+        return userAccountsDao.getUserAccountByEmail(emailAddress) != null;
+    }
 
-	private boolean isEmailValidFormat() {
-		return Authenticator.isValidEmailAddress(emailAddress);
-	}
+    private boolean isEmailValidFormat() {
+        return Authenticator.isValidEmailAddress(emailAddress);
+    }
 
-	private boolean externalAuthIdIsChanged() {
-		return !externalAuthId.equals(userAccount.getExternalAuthId());
-	}
+    private boolean externalAuthIdIsChanged() {
+        return !externalAuthId.equals(userAccount.getExternalAuthId());
+    }
 
-	private boolean isExternalAuthIdInUse() {
-		if (externalAuthId.isEmpty()) {
-			return false;
-		}
-		return userAccountsDao.getUserAccountByExternalAuthId(externalAuthId) != null;
-	}
+    private boolean isExternalAuthIdInUse() {
+        if (externalAuthId.isEmpty()) {
+            return false;
+        }
+        return userAccountsDao.getUserAccountByExternalAuthId(externalAuthId) != null;
+    }
 
-	private boolean isRootUser() {
-		return ((userAccount != null) && userAccount.isRootUser());
-	}
+    private boolean isRootUser() {
+        return ((userAccount != null) && userAccount.isRootUser());
+    }
 
-	public boolean isValid() {
-		return errorCode.isEmpty();
-	}
+    public boolean isValid() {
+        return errorCode.isEmpty();
+    }
 
-	public final ResponseValues showPage() {
-		Map<String, Object> body = new HashMap<String, Object>();
+    public final ResponseValues showPage() {
+        Map<String, Object> body = new HashMap<String, Object>();
 
-		body.put("userUri", userUri);
+        body.put("userUri", userUri);
 
-		if (isSubmit()) {
-			body.put("emailAddress", emailAddress);
-			body.put("externalAuthId", externalAuthId);
-			body.put("firstName", firstName);
-			body.put("lastName", lastName);
-			body.put("selectedRoles", selectedRoleUris);
-			body.put(PARAMETER_NEW_PROFILE_CLASS_URI, newProfileClassUri);
+        if (isSubmit()) {
+            body.put("emailAddress", emailAddress);
+            body.put("externalAuthId", externalAuthId);
+            body.put("firstName", firstName);
+            body.put("lastName", lastName);
+            body.put("selectedRoles", selectedRoleUris);
+            body.put(PARAMETER_NEW_PROFILE_CLASS_URI, newProfileClassUri);
 
-			if (externalAuthOnly) {
-				body.put(PARAMETER_EXTERNAL_AUTH_ONLY, Boolean.TRUE);
-			}
+            if (externalAuthOnly) {
+                body.put(PARAMETER_EXTERNAL_AUTH_ONLY, Boolean.TRUE);
+            }
 
-			if (!associatedProfileUri.isEmpty()) {
-				body.put("associatedProfileInfo",
-						buildProfileInfo(associatedProfileUri));
-			}
-		} else {
-			body.put("emailAddress", userAccount.getEmailAddress());
-			body.put("externalAuthId", userAccount.getExternalAuthId());
-			body.put("firstName", userAccount.getFirstName());
-			body.put("lastName", userAccount.getLastName());
-			body.put("selectedRoles", userAccount.getPermissionSetUris());
-			body.put(PARAMETER_NEW_PROFILE_CLASS_URI, "");
+            if (!associatedProfileUri.isEmpty()) {
+                body.put("associatedProfileInfo",
+                    buildProfileInfo(associatedProfileUri));
+            }
+        } else {
+            body.put("emailAddress", userAccount.getEmailAddress());
+            body.put("externalAuthId", userAccount.getExternalAuthId());
+            body.put("firstName", userAccount.getFirstName());
+            body.put("lastName", userAccount.getLastName());
+            body.put("selectedRoles", userAccount.getPermissionSetUris());
+            body.put(PARAMETER_NEW_PROFILE_CLASS_URI, "");
 
-			if (userAccount.isExternalAuthOnly()) {
-				body.put(PARAMETER_EXTERNAL_AUTH_ONLY, Boolean.TRUE);
-			}
+            if (userAccount.isExternalAuthOnly()) {
+                body.put(PARAMETER_EXTERNAL_AUTH_ONLY, Boolean.TRUE);
+            }
 
-			List<Individual> associatedInds = SelfEditingConfiguration.getBean(
-					vreq).getAssociatedIndividuals(indDao, userAccount);
-			if (!associatedInds.isEmpty()) {
-				body.put("associatedProfileInfo",
-						buildProfileInfo(associatedInds.get(0).getURI()));
-			}
-		}
+            List<Individual> associatedInds = SelfEditingConfiguration.getBean(
+                vreq).getAssociatedIndividuals(indDao, userAccount);
+            if (!associatedInds.isEmpty()) {
+                body.put("associatedProfileInfo",
+                    buildProfileInfo(associatedInds.get(0).getURI()));
+            }
+        }
 
-		if (!isRootUser()) {
-			body.put("roles", buildListOfSelectableRoles());
-			body.put("externalAuthPermitted", Boolean.TRUE);
-		}
+        if (!isRootUser()) {
+            body.put("roles", buildListOfSelectableRoles());
+            body.put("externalAuthPermitted", Boolean.TRUE);
+        }
 
-		body.put("profileTypes", buildProfileTypesList());
-		body.put("formUrls", buildUrlsMapWithEditUrl());
+        body.put("profileTypes", buildProfileTypesList());
+        body.put("formUrls", buildUrlsMapWithEditUrl());
 
-		if (!errorCode.isEmpty()) {
-			body.put(errorCode, Boolean.TRUE);
-		}
+        if (!errorCode.isEmpty()) {
+            body.put(errorCode, Boolean.TRUE);
+        }
 
-		if (matchingIsEnabled) {
-			body.put("showAssociation", Boolean.TRUE);
-		}
+        if (matchingIsEnabled) {
+            body.put("showAssociation", Boolean.TRUE);
+        }
 
-		strategy.addMoreBodyValues(body);
+        strategy.addMoreBodyValues(body);
 
-		return new TemplateResponseValues(TEMPLATE_NAME, body);
-	}
+        return new TemplateResponseValues(TEMPLATE_NAME, body);
+    }
 
-	private Map<String, String> buildUrlsMapWithEditUrl() {
-		Map<String, String> map = buildUrlsMap();
-		map.put("edit", editAccountUrl(userAccount.getUri()));
-		return map;
-	}
+    private Map<String, String> buildUrlsMapWithEditUrl() {
+        Map<String, String> map = buildUrlsMap();
+        map.put("edit", editAccountUrl(userAccount.getUri()));
+        return map;
+    }
 
-	public void updateAccount() {
-		// Assemble the fields of the account.
-		userAccount.setEmailAddress(emailAddress);
-		userAccount.setFirstName(firstName);
-		userAccount.setLastName(lastName);
-		userAccount.setExternalAuthId(externalAuthId);
+    public void updateAccount() {
+        // Assemble the fields of the account.
+        userAccount.setEmailAddress(emailAddress);
+        userAccount.setFirstName(firstName);
+        userAccount.setLastName(lastName);
+        userAccount.setExternalAuthId(externalAuthId);
 
-		if (externalAuthOnly) {
-			userAccount.setMd5Password("");
-			userAccount.setOldPassword("");
-			userAccount.setPasswordChangeRequired(false);
-			userAccount.setPasswordLinkExpires(0L);
-			userAccount.setEmailKey("");
-		}
+        if (externalAuthOnly) {
+            userAccount.setMd5Password("");
+            userAccount.setOldPassword("");
+            userAccount.setPasswordChangeRequired(false);
+            userAccount.setPasswordLinkExpires(0L);
+            userAccount.setEmailKey("");
+        }
 
-		if (isRootUser()) {
-			userAccount.setPermissionSetUris(Collections.<String> emptySet());
-			userAccount.setExternalAuthOnly(false);
-		} else {
-			userAccount.setPermissionSetUris(selectedRoleUris);
-			userAccount.setExternalAuthOnly(externalAuthOnly);
-		}
-		strategy.setAdditionalProperties(userAccount);
+        if (isRootUser()) {
+            userAccount.setPermissionSetUris(Collections.<String>emptySet());
+            userAccount.setExternalAuthOnly(false);
+        } else {
+            userAccount.setPermissionSetUris(selectedRoleUris);
+            userAccount.setExternalAuthOnly(externalAuthOnly);
+        }
+        strategy.setAdditionalProperties(userAccount);
 
-		// Update the account.
-		userAccountsDao.updateUserAccount(userAccount);
+        // Update the account.
+        userAccountsDao.updateUserAccount(userAccount);
 
-		// Associate the profile, as appropriate.
-		if (matchingIsEnabled) {
-			if (!newProfileClassUri.isEmpty()) {
-				try {
-					String newProfileUri = UserAccountsProfileCreator
-							.createProfile(indDao, dpsDao, newProfileClassUri,
-									userAccount);
-					associatedProfileUri = newProfileUri;
-				} catch (InsertException e) {
-					log.error("Failed to create new profile of class '"
-							+ newProfileClassUri + "' for user '"
-							+ userAccount.getEmailAddress() + "'");
-				}
-			}
+        // Associate the profile, as appropriate.
+        if (matchingIsEnabled) {
+            if (!newProfileClassUri.isEmpty()) {
+                try {
+                    String newProfileUri = UserAccountsProfileCreator
+                        .createProfile(indDao, dpsDao, newProfileClassUri,
+                            userAccount);
+                    associatedProfileUri = newProfileUri;
+                } catch (InsertException e) {
+                    log.error("Failed to create new profile of class '"
+                        + newProfileClassUri + "' for user '"
+                        + userAccount.getEmailAddress() + "'");
+                }
+            }
 
-			SelfEditingConfiguration.getBean(vreq)
-					.associateIndividualWithUserAccount(indDao, dpsDao,
-							userAccount, associatedProfileUri);
-		}
+            SelfEditingConfiguration.getBean(vreq)
+                .associateIndividualWithUserAccount(indDao, dpsDao,
+                    userAccount, associatedProfileUri);
+        }
 
-		// Tell the user.
-		strategy.notifyUser();
-	}
+        // Tell the user.
+        strategy.notifyUser();
+    }
 
-	public boolean wasPasswordEmailSent() {
-		return strategy.wasPasswordEmailSent();
-	}
+    public boolean wasPasswordEmailSent() {
+        return strategy.wasPasswordEmailSent();
+    }
 
-	public UserAccount getUpdatedAccount() {
-		return userAccount;
-	}
+    public UserAccount getUpdatedAccount() {
+        return userAccount;
+    }
 
-	boolean isExternalAuthOnly() {
-		return externalAuthOnly;
-	}
+    boolean isExternalAuthOnly() {
+        return externalAuthOnly;
+    }
 }

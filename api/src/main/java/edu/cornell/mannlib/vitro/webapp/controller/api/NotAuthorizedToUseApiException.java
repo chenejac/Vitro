@@ -7,16 +7,16 @@ package edu.cornell.mannlib.vitro.webapp.controller.api;
  * you to the login page. We complain.
  */
 public class NotAuthorizedToUseApiException extends Exception {
-	public NotAuthorizedToUseApiException(String message) {
-		super(message);
-	}
+    public NotAuthorizedToUseApiException(String message) {
+        super(message);
+    }
 
-	public NotAuthorizedToUseApiException(Throwable cause) {
-		super(cause);
-	}
+    public NotAuthorizedToUseApiException(Throwable cause) {
+        super(cause);
+    }
 
-	public NotAuthorizedToUseApiException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public NotAuthorizedToUseApiException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }

@@ -26,37 +26,37 @@ import edu.cornell.mannlib.vitro.webapp.startup.StartupStatus;
  */
 public class CommonPolicyFamilySetup implements ServletContextListener {
 
-	@Override
-	public void contextInitialized(ServletContextEvent sce) {
-		ServletContext ctx = sce.getServletContext();
-		StartupStatus ss = StartupStatus.getBean(ctx);
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        ServletContext ctx = sce.getServletContext();
+        StartupStatus ss = StartupStatus.getBean(ctx);
 
-		try {
-			policy(ctx, new PermissionsPolicy());
-			policy(ctx, new DisplayRestrictedDataToSelfPolicy(ctx));
-			policy(ctx, new SelfEditingPolicy(ctx));
+        try {
+            policy(ctx, new PermissionsPolicy());
+            policy(ctx, new DisplayRestrictedDataToSelfPolicy(ctx));
+            policy(ctx, new SelfEditingPolicy(ctx));
 
-			factory(ctx, new IsUserFactory(ctx));
-			factory(ctx, new IsRootUserFactory(ctx));
-			factory(ctx, new HasProfileOrIsBlacklistedFactory(ctx));
-			factory(ctx, new HasPermissionSetFactory(ctx));
-			factory(ctx, new HasPermissionFactory(ctx));
-			factory(ctx, new HasProxyEditingRightsFactory(ctx));
-		} catch (Exception e) {
-			ss.fatal(this, "could not run CommonPolicyFamilySetup", e);
-		}
-	}
+            factory(ctx, new IsUserFactory(ctx));
+            factory(ctx, new IsRootUserFactory(ctx));
+            factory(ctx, new HasProfileOrIsBlacklistedFactory(ctx));
+            factory(ctx, new HasPermissionSetFactory(ctx));
+            factory(ctx, new HasPermissionFactory(ctx));
+            factory(ctx, new HasProxyEditingRightsFactory(ctx));
+        } catch (Exception e) {
+            ss.fatal(this, "could not run CommonPolicyFamilySetup", e);
+        }
+    }
 
-	private void policy(ServletContext ctx, PolicyIface policy) {
-		ServletPolicyList.addPolicy(ctx, policy);
-	}
+    private void policy(ServletContext ctx, PolicyIface policy) {
+        ServletPolicyList.addPolicy(ctx, policy);
+    }
 
-	private void factory(ServletContext ctx, IdentifierBundleFactory factory) {
-		ActiveIdentifierBundleFactories.addFactory(ctx, factory);
-	}
+    private void factory(ServletContext ctx, IdentifierBundleFactory factory) {
+        ActiveIdentifierBundleFactories.addFactory(ctx, factory);
+    }
 
-	@Override
-	public void contextDestroyed(ServletContextEvent sce) { /* nothing */
-	}
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) { /* nothing */
+    }
 
 }

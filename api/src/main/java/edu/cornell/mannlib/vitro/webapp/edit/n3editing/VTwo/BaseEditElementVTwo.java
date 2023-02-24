@@ -6,31 +6,30 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.fields.FieldVTwo;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-public abstract class BaseEditElementVTwo  implements EditElementVTwo {
+public abstract class BaseEditElementVTwo implements EditElementVTwo {
     private static final Log log = LogFactory.getLog(BaseEditElementVTwo.class);
 
     protected FieldVTwo field;
 
-    public BaseEditElementVTwo(FieldVTwo field){
+    public BaseEditElementVTwo(FieldVTwo field) {
         this.field = field;
     }
 
-    public void setField(FieldVTwo field){
+    public void setField(FieldVTwo field) {
         this.field = field;
     }
 
     /**
      * Utility method for use in EditElements to merge a freemarker template.
      */
-    protected String merge(Configuration fmConfig, String templateName, Map map){
+    protected String merge(Configuration fmConfig, String templateName, Map map) {
         Template template = null;
         try {
             template = fmConfig.getTemplate(templateName);
@@ -42,7 +41,7 @@ public abstract class BaseEditElementVTwo  implements EditElementVTwo {
         try {
             template.process(map, writer);
         } catch (TemplateException | IOException e) {
-            log.error(e,e);
+            log.error(e, e);
         }
         return writer.toString();
     }
@@ -52,25 +51,28 @@ public abstract class BaseEditElementVTwo  implements EditElementVTwo {
      * This returns true if the key is there and the value is null.
      * This does not check if the value is the empty string.
      */
-    protected boolean hasNoneOrSingle(String key, Map<String, String[]> queryParameters){
-        if( queryParameters != null ){
-            if( ! queryParameters.containsKey(key) )
+    protected boolean hasNoneOrSingle(String key, Map<String, String[]> queryParameters) {
+        if (queryParameters != null) {
+            if (!queryParameters.containsKey(key)) {
                 return true; //none
+            }
             String[] vt = queryParameters.get(key);
-            return vt == null || vt.length == 0 || vt.length==1;
-        }else{
+            return vt == null || vt.length == 0 || vt.length == 1;
+        } else {
             log.error("passed null queryParameters");
             return false;
         }
     }
 
-    protected boolean hasSingleNonNullNonEmptyValueForKey(String key, Map<String, String[]> queryParameters){
-        if( queryParameters != null ){
-            if( ! queryParameters.containsKey(key) )
+    protected boolean hasSingleNonNullNonEmptyValueForKey(String key,
+                                                          Map<String, String[]> queryParameters) {
+        if (queryParameters != null) {
+            if (!queryParameters.containsKey(key)) {
                 return true; //none
+            }
             String[] vt = queryParameters.get(key);
-            return vt != null && vt.length == 1 && vt[0] != null && ! vt[0].isEmpty() ;
-        }else{
+            return vt != null && vt.length == 1 && vt[0] != null && !vt[0].isEmpty();
+        } else {
             log.error("passed null queryParameters");
             return false;
         }

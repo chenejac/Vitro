@@ -13,6 +13,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeListener;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeSet;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.ResultSetConsumer;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.RDFServiceUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.jena.query.QuerySolution;
@@ -25,20 +32,18 @@ import org.apache.jena.rdf.model.ModelChangedListener;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.RDFNode;
 
-import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeListener;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeSet;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.ResultSetConsumer;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.RDFServiceUtils;
-
 public class LanguageFilteringRDFService implements RDFService {
 
     private static final Log log = LogFactory.getLog(LanguageFilteringRDFService.class);
     private RDFService s;
     private List<String> langs;
     private LanguageFilterModel filterModel = new LanguageFilterModel();
+    /*
+     * UQAM-Linguistic-Management Useful among other things to transport the linguistic context in the service
+     * (non-Javadoc)
+     * @see edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService#setVitroRequest(edu.cornell.mannlib.vitro.webapp.controller.VitroRequest)
+     */
+    private VitroRequest vitroRequest;
 
     public LanguageFilteringRDFService(RDFService service, List<String> langs) {
         this.s = service;
@@ -47,37 +52,37 @@ public class LanguageFilteringRDFService implements RDFService {
 
     @Override
     public boolean changeSetUpdate(ChangeSet changeSet)
-            throws RDFServiceException {
+        throws RDFServiceException {
         return s.changeSetUpdate(changeSet);
     }
 
     @Override
     public void newIndividual(String individualURI, String individualTypeURI)
-            throws RDFServiceException {
+        throws RDFServiceException {
         s.newIndividual(individualURI, individualTypeURI);
     }
 
     @Override
     public void newIndividual(String individualURI,
-            String individualTypeURI, String graphURI)
-            throws RDFServiceException {
+                              String individualTypeURI, String graphURI)
+        throws RDFServiceException {
         s.newIndividual(individualURI, individualTypeURI, graphURI);
     }
 
     @Override
     public InputStream sparqlConstructQuery(String query,
-            ModelSerializationFormat resultFormat)
-            throws RDFServiceException {
+                                            ModelSerializationFormat resultFormat)
+        throws RDFServiceException {
         Model m = RDFServiceUtils.parseModel(s.sparqlConstructQuery(
-                query, resultFormat), resultFormat);
+            query, resultFormat), resultFormat);
         InputStream in = outputModel(filterModel.filterModel(
-                m, langs), resultFormat);
+            m, langs), resultFormat);
         return in;
     }
 
     @Override
     public void sparqlConstructQuery(String query, Model model)
-            throws RDFServiceException {
+        throws RDFServiceException {
         if (model.isEmpty()) {
             s.sparqlConstructQuery(query, model);
             filterModel.filterModel(model, langs);
@@ -91,9 +96,10 @@ public class LanguageFilteringRDFService implements RDFService {
 
     @Override
     public InputStream sparqlDescribeQuery(String query,
-            ModelSerializationFormat resultFormat)
-            throws RDFServiceException {
-        Model m = RDFServiceUtils.parseModel(s.sparqlDescribeQuery(query, resultFormat), resultFormat);
+                                           ModelSerializationFormat resultFormat)
+        throws RDFServiceException {
+        Model m =
+            RDFServiceUtils.parseModel(s.sparqlDescribeQuery(query, resultFormat), resultFormat);
         return outputModel(filterModel.filterModel(m, langs), resultFormat);
     }
 
@@ -103,12 +109,12 @@ public class LanguageFilteringRDFService implements RDFService {
         return new ByteArrayInputStream(out.toByteArray());
     }
 
-	@Override
+    @Override
     public InputStream sparqlSelectQuery(String query,
-            ResultFormat resultFormat) throws RDFServiceException {
-    	log.debug("sparqlSelectQuery: " + query.replaceAll("\\s+", " "));
+                                         ResultFormat resultFormat) throws RDFServiceException {
+        log.debug("sparqlSelectQuery: " + query.replaceAll("\\s+", " "));
         ResultSet resultSet = ResultSetFactory.fromJSON(
-                s.sparqlSelectQuery(query, RDFService.ResultFormat.JSON));
+            s.sparqlSelectQuery(query, RDFService.ResultFormat.JSON));
         List<QuerySolution> solnList = getSolutionList(resultSet);
         List<String> vars = resultSet.getResultVars();
 
@@ -118,7 +124,8 @@ public class LanguageFilteringRDFService implements RDFService {
         // In this way, all of the QuerySolutions with equal values of their other variables are grouped.
         // This map is used subsequently to filter Literals based on lang
         for (String var : vars) {
-            Map<List<RDFNode>, List<RowIndexedLiteral>> nonVarToRowIndexedLiterals = new HashMap<>();
+            Map<List<RDFNode>, List<RowIndexedLiteral>> nonVarToRowIndexedLiterals =
+                new HashMap<>();
 
             // First pass of solnList to populate map
             for (int i = 0; i < solnList.size(); i++) {
@@ -139,7 +146,8 @@ public class LanguageFilteringRDFService implements RDFService {
                     }
                 }
 
-                List<RowIndexedLiteral> rowIndexedLiterals = nonVarToRowIndexedLiterals.get(nonVarList);
+                List<RowIndexedLiteral> rowIndexedLiterals =
+                    nonVarToRowIndexedLiterals.get(nonVarList);
                 if (rowIndexedLiterals == null) {
                     rowIndexedLiterals = new ArrayList();
                 }
@@ -182,26 +190,27 @@ public class LanguageFilteringRDFService implements RDFService {
         ResultSet filtered = new FilteredResultSet(compactedList, resultSet);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         switch (resultFormat) {
-           case CSV:
-              ResultSetFormatter.outputAsCSV(outputStream, filtered);
-              break;
-           case TEXT:
-              ResultSetFormatter.out(outputStream, filtered);
-              break;
-           case JSON:
-              ResultSetFormatter.outputAsJSON(outputStream, filtered);
-              break;
-           case XML:
-              ResultSetFormatter.outputAsXML(outputStream, filtered);
-              break;
-           default:
-              throw new RDFServiceException("unrecognized result format");
+            case CSV:
+                ResultSetFormatter.outputAsCSV(outputStream, filtered);
+                break;
+            case TEXT:
+                ResultSetFormatter.out(outputStream, filtered);
+                break;
+            case JSON:
+                ResultSetFormatter.outputAsJSON(outputStream, filtered);
+                break;
+            case XML:
+                ResultSetFormatter.outputAsXML(outputStream, filtered);
+                break;
+            default:
+                throw new RDFServiceException("unrecognized result format");
         }
         return new ByteArrayInputStream(outputStream.toByteArray());
     }
 
     @Override
-    public void sparqlSelectQuery(String query, ResultSetConsumer consumer) throws RDFServiceException {
+    public void sparqlSelectQuery(String query, ResultSetConsumer consumer)
+        throws RDFServiceException {
         log.debug("sparqlSelectQuery: " + query.replaceAll("\\s+", " "));
         s.sparqlSelectQuery(query, new ResultSetConsumer.Chaining(consumer) {
             List<String> vars;
@@ -227,7 +236,8 @@ public class LanguageFilteringRDFService implements RDFService {
                 // In this way, all of the QuerySolutions with equal values of their other variables are grouped.
                 // This map is used subsequently to filter Literals based on lang
                 for (String var : vars) {
-                    Map<List<RDFNode>, List<RowIndexedLiteral>> nonVarToRowIndexedLiterals = new HashMap<>();
+                    Map<List<RDFNode>, List<RowIndexedLiteral>> nonVarToRowIndexedLiterals =
+                        new HashMap<>();
 
                     // First pass of solnList to populate map
                     for (int i = 0; i < solnList.size(); i++) {
@@ -248,7 +258,8 @@ public class LanguageFilteringRDFService implements RDFService {
                             }
                         }
 
-                        List<RowIndexedLiteral> rowIndexedLiterals = nonVarToRowIndexedLiterals.get(nonVarList);
+                        List<RowIndexedLiteral> rowIndexedLiterals =
+                            nonVarToRowIndexedLiterals.get(nonVarList);
                         if (rowIndexedLiterals == null) {
                             rowIndexedLiterals = new ArrayList();
                         }
@@ -260,12 +271,14 @@ public class LanguageFilteringRDFService implements RDFService {
 
                     // Second pass of solnList (via the map) to evaluate candidatesForRemoval
                     for (List<RDFNode> key : nonVarToRowIndexedLiterals.keySet()) {
-                        List<RowIndexedLiteral> candidatesForRemoval = nonVarToRowIndexedLiterals.get(key);
+                        List<RowIndexedLiteral> candidatesForRemoval =
+                            nonVarToRowIndexedLiterals.get(key);
                         if (candidatesForRemoval.size() == 1) {
                             continue;
                         }
                         candidatesForRemoval.sort(new RowIndexedLiteralSortByLang(langs));
-                        log.debug("sorted RowIndexedLiterals: " + showSortedRILs(candidatesForRemoval));
+                        log.debug(
+                            "sorted RowIndexedLiterals: " + showSortedRILs(candidatesForRemoval));
                         Iterator<RowIndexedLiteral> candIt = candidatesForRemoval.iterator();
                         String langRegister = null;
                         boolean chuckRemaining = false;
@@ -294,32 +307,12 @@ public class LanguageFilteringRDFService implements RDFService {
         });
     }
 
-	private String showSortedRILs(List<RowIndexedLiteral> candidatesForRemoval) {
-		List<String> langstrings = new ArrayList<String>();
-		for (RowIndexedLiteral ril: candidatesForRemoval) {
-			langstrings.add(ril.getLiteral().getLanguage());
-		}
-		return langstrings.toString();
-	}
-
-	private class RowIndexedLiteral {
-
-        private Literal literal;
-        private int index;
-
-        public RowIndexedLiteral(Literal literal, int index) {
-            this.literal = literal;
-            this.index = index;
+    private String showSortedRILs(List<RowIndexedLiteral> candidatesForRemoval) {
+        List<String> langstrings = new ArrayList<String>();
+        for (RowIndexedLiteral ril : candidatesForRemoval) {
+            langstrings.add(ril.getLiteral().getLanguage());
         }
-
-        public Literal getLiteral() {
-            return this.literal;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
+        return langstrings.toString();
     }
 
     private List<QuerySolution> getSolutionList(ResultSet resultSet) {
@@ -352,23 +345,24 @@ public class LanguageFilteringRDFService implements RDFService {
     }
 
     @Override
-	public void serializeAll(OutputStream outputStream)
-			throws RDFServiceException {
-    	s.serializeAll(outputStream);
-	}
+    public void serializeAll(OutputStream outputStream)
+        throws RDFServiceException {
+        s.serializeAll(outputStream);
+    }
 
-	@Override
-	public void serializeGraph(String graphURI, OutputStream outputStream)
-			throws RDFServiceException {
-		s.serializeGraph(graphURI, outputStream);
-	}
+    @Override
+    public void serializeGraph(String graphURI, OutputStream outputStream)
+        throws RDFServiceException {
+        s.serializeGraph(graphURI, outputStream);
+    }
 
-	@Override
-	public boolean isEquivalentGraph(String graphURI,
-			InputStream serializedGraph,
-			ModelSerializationFormat serializationFormat) throws RDFServiceException {
-		return s.isEquivalentGraph(graphURI, serializedGraph, serializationFormat);
-	}
+    @Override
+    public boolean isEquivalentGraph(String graphURI,
+                                     InputStream serializedGraph,
+                                     ModelSerializationFormat serializationFormat)
+        throws RDFServiceException {
+        return s.isEquivalentGraph(graphURI, serializedGraph, serializationFormat);
+    }
 
     @Override
     public boolean isEquivalentGraph(String graphURI,
@@ -378,25 +372,25 @@ public class LanguageFilteringRDFService implements RDFService {
 
     @Override
     public void registerListener(ChangeListener changeListener)
-            throws RDFServiceException {
+        throws RDFServiceException {
         s.registerListener(changeListener);
     }
 
     @Override
     public void unregisterListener(ChangeListener changeListener)
-            throws RDFServiceException {
+        throws RDFServiceException {
         s.unregisterListener(changeListener);
     }
 
     @Override
     public void registerJenaModelChangedListener(ModelChangedListener changeListener)
-            throws RDFServiceException {
+        throws RDFServiceException {
         s.registerJenaModelChangedListener(changeListener);
     }
 
     @Override
     public void unregisterJenaModelChangedListener(ModelChangedListener changeListener)
-            throws RDFServiceException {
+        throws RDFServiceException {
         s.unregisterJenaModelChangedListener(changeListener);
     }
 
@@ -407,12 +401,14 @@ public class LanguageFilteringRDFService implements RDFService {
     }
 
     @Override
-    public long countTriples(RDFNode subject, RDFNode predicate, RDFNode object) throws RDFServiceException {
+    public long countTriples(RDFNode subject, RDFNode predicate, RDFNode object)
+        throws RDFServiceException {
         return s.countTriples(subject, predicate, object);
     }
 
     @Override
-    public Model getTriples(RDFNode subject, RDFNode predicate, RDFNode object, long limit, long offset) throws RDFServiceException {
+    public Model getTriples(RDFNode subject, RDFNode predicate, RDFNode object, long limit,
+                            long offset) throws RDFServiceException {
         return s.getTriples(subject, predicate, object, limit, offset);
     }
 
@@ -426,12 +422,41 @@ public class LanguageFilteringRDFService implements RDFService {
         s.close();
     }
 
-    private class RowIndexedLiteralSortByLang extends LangSort implements Comparator<RowIndexedLiteral> {
+    public VitroRequest getVitroRequest() {
+        return vitroRequest;
+    }
 
-        public RowIndexedLiteralSortByLang(List<String> langs) {            
+    public void setVitroRequest(VitroRequest vitroRequest) {
+        this.vitroRequest = vitroRequest;
+    }
+
+    private class RowIndexedLiteral {
+
+        private Literal literal;
+        private int index;
+
+        public RowIndexedLiteral(Literal literal, int index) {
+            this.literal = literal;
+            this.index = index;
+        }
+
+        public Literal getLiteral() {
+            return this.literal;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+    }
+
+    private class RowIndexedLiteralSortByLang extends LangSort
+        implements Comparator<RowIndexedLiteral> {
+
+        public RowIndexedLiteralSortByLang(List<String> langs) {
             super(langs);
         }
-        
+
         public int compare(RowIndexedLiteral rilit1, RowIndexedLiteral rilit2) {
             if (rilit1 == null || rilit2 == null) {
                 return 0;
@@ -443,21 +468,6 @@ public class LanguageFilteringRDFService implements RDFService {
             return compareLangs(t1lang, t2lang);
         }
     }
-
-	/*
-	 * UQAM-Linguistic-Management Useful among other things to transport the linguistic context in the service
-	 * (non-Javadoc)
-	 * @see edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService#setVitroRequest(edu.cornell.mannlib.vitro.webapp.controller.VitroRequest)
-	 */
-	private VitroRequest vitroRequest;
-
-	public void setVitroRequest(VitroRequest vitroRequest) {
-		this.vitroRequest = vitroRequest;
-	}
-
-	public VitroRequest getVitroRequest() {
-		return vitroRequest;
-	}
 
 }
 

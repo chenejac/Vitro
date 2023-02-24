@@ -11,43 +11,43 @@ import edu.cornell.mannlib.vitro.webapp.modules.ComponentStartupStatus;
  * built in.
  */
 public class ComponentStartupStatusImpl implements ComponentStartupStatus {
-	private final ServletContextListener listener;
-	private final StartupStatus ss;
+    private final ServletContextListener listener;
+    private final StartupStatus ss;
 
-	public ComponentStartupStatusImpl(ServletContextListener listener,
-			StartupStatus ss) {
-		this.listener = listener;
-		this.ss = ss;
-	}
+    public ComponentStartupStatusImpl(ServletContextListener listener,
+                                      StartupStatus ss) {
+        this.listener = listener;
+        this.ss = ss;
+    }
 
-	@Override
-	public void info(String message) {
-		ss.info(listener, message);
-	}
+    @Override
+    public void info(String message) {
+        ss.info(listener, message);
+    }
 
-	@Override
-	public void info(String message, Throwable cause) {
-		ss.info(listener, message, cause);
-	}
+    @Override
+    public void info(String message, Throwable cause) {
+        ss.info(listener, message, cause);
+    }
 
-	@Override
-	public void warning(String message) {
-		ss.warning(listener, message);
-	}
+    @Override
+    public void warning(String message) {
+        ss.warning(listener, message);
+    }
 
-	@Override
-	public void warning(String message, Throwable cause) {
-		ss.warning(listener, message, cause);
-	}
+    @Override
+    public void warning(String message, Throwable cause) {
+        ss.warning(listener, message, cause);
+    }
 
-	@Override
-	public void fatal(String message) {
-		ss.fatal(listener, message);
-	}
+    @Override
+    public void fatal(String message) {
+        ss.fatal(listener, message);
+    }
 
-	@Override
-	public void fatal(String message, Throwable cause) {
-		ss.fatal(listener, message, cause);
-	}
+    @Override
+    public void fatal(String message, Throwable cause) {
+        ss.fatal(listener, message, cause);
+    }
 
 }

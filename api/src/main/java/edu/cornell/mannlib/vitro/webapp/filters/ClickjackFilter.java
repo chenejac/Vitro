@@ -2,8 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.filters;
 
-import java.io.IOException;
-
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -13,35 +11,37 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * Add X-FRAME-OPTIONS response header to tell IE8 (and any other browsers who
  * decide to implement) not to display this content in a frame.
- *
+ * <p>
  * For details, refer to
  * http://blogs.msdn.com/sdl/archive/2009/02/05/clickjacking-defense-in-ie8.aspx,
  * https://www.owasp.org/index.php/ClickjackFilter_for_Java_EE
  */
-@WebFilter(filterName = "ClickjackFilter", urlPatterns = {"/*"}, dispatcherTypes = {DispatcherType.REQUEST, DispatcherType.FORWARD})
+@WebFilter(filterName = "ClickjackFilter", urlPatterns = {"/*"}, dispatcherTypes = {
+    DispatcherType.REQUEST, DispatcherType.FORWARD})
 public class ClickjackFilter implements Filter {
-	@Override
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain chain) throws IOException, ServletException {
-		if (response instanceof HttpServletResponse) {
-			((HttpServletResponse) response).setHeader("X-FRAME-OPTIONS",
-					"SAMEORIGIN");
-		}
-		chain.doFilter(request, response);
-	}
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response,
+                         FilterChain chain) throws IOException, ServletException {
+        if (response instanceof HttpServletResponse) {
+            ((HttpServletResponse) response).setHeader("X-FRAME-OPTIONS",
+                "SAMEORIGIN");
+        }
+        chain.doFilter(request, response);
+    }
 
-	@Override
-	public void init(FilterConfig fc) throws ServletException {
-		// Nothing to set up.
-	}
+    @Override
+    public void init(FilterConfig fc) throws ServletException {
+        // Nothing to set up.
+    }
 
-	@Override
-	public void destroy() {
-		// Nothing to tear down.
-	}
+    @Override
+    public void destroy() {
+        // Nothing to tear down.
+    }
 
 }

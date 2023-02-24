@@ -14,19 +14,19 @@ import edu.cornell.mannlib.vitro.webapp.beans.UserAccount;
  * Some fields and methods that are helpful to IdentifierBundleFactory classes.
  */
 public abstract class BaseUserBasedIdentifierBundleFactory extends
-		BaseIdentifierBundleFactory implements UserBasedIdentifierBundleFactory {
+    BaseIdentifierBundleFactory implements UserBasedIdentifierBundleFactory {
 
-	public BaseUserBasedIdentifierBundleFactory(ServletContext ctx) {
-		super(ctx);
-	}
+    public BaseUserBasedIdentifierBundleFactory(ServletContext ctx) {
+        super(ctx);
+    }
 
-	@Override
-	public final IdentifierBundle getIdentifierBundle(HttpServletRequest request) {
-		return getIdentifierBundleForUser(LoginStatusBean
-				.getCurrentUser(request));
-	}
+    @Override
+    public final IdentifierBundle getIdentifierBundle(HttpServletRequest request) {
+        return getIdentifierBundleForUser(LoginStatusBean
+            .getCurrentUser(request));
+    }
 
-	@Override
-	public abstract IdentifierBundle getIdentifierBundleForUser(UserAccount user);
+    @Override
+    public abstract IdentifierBundle getIdentifierBundleForUser(UserAccount user);
 
 }

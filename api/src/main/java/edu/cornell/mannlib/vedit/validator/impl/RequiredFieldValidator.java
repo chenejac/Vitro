@@ -2,16 +2,16 @@
 
 package edu.cornell.mannlib.vedit.validator.impl;
 
-import edu.cornell.mannlib.vedit.validator.Validator;
 import edu.cornell.mannlib.vedit.validator.ValidationObject;
+import edu.cornell.mannlib.vedit.validator.Validator;
 
 public class RequiredFieldValidator implements Validator {
 
-    public ValidationObject validate (Object obj) throws IllegalArgumentException {
+    public ValidationObject validate(Object obj) throws IllegalArgumentException {
 
         ValidationObject vo = new ValidationObject();
 
-        if (obj==null || (obj instanceof String && ((String)obj).length()==0)) {
+        if (obj == null || (obj instanceof String && ((String) obj).length() == 0)) {
             vo.setValid(false);
             vo.setMessage("Please enter a value");
         } else {

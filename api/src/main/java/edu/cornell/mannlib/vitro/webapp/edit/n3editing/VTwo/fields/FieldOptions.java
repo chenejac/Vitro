@@ -13,7 +13,6 @@ import edu.cornell.mannlib.vitro.webapp.i18n.I18nBundle;
  * for an HTML select list.
  *
  * @author bdc34
- *
  */
 public interface FieldOptions {
 
@@ -23,14 +22,13 @@ public interface FieldOptions {
      *
      * @return return a map of value-&gt;label for the options.
      * Should never return null.
-     *
      * @throws Exception
      */
-    public Map<String,String> getOptions(
-            EditConfigurationVTwo editConfig,
-            String fieldName,
-            WebappDaoFactory wDaoFact,
-            I18nBundle i18n) throws Exception;
+    public Map<String, String> getOptions(
+        EditConfigurationVTwo editConfig,
+        String fieldName,
+        WebappDaoFactory wDaoFact,
+        I18nBundle i18n) throws Exception;
 
     /*
      * Certain field options may have custom sorting requirements. If no sorting requirements exist,

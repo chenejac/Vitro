@@ -23,7 +23,7 @@ public class HelpDirective extends BaseDumpDirective {
 
     @Override
     public void execute(Environment env, Map params, TemplateModel[] loopVars,
-            TemplateDirectiveBody body) throws TemplateException, IOException {
+                        TemplateDirectiveBody body) throws TemplateException, IOException {
 
         if (loopVars.length != 0) {
             throw new TemplateModelException(
@@ -36,21 +36,22 @@ public class HelpDirective extends BaseDumpDirective {
 
         Object o = params.get("for");
 
-        if ( o == null) {
+        if (o == null) {
             throw new TemplateModelException(
                 "Must specify 'for' argument.");
         }
 
-        if ( !(o instanceof SimpleScalar)) {
+        if (!(o instanceof SimpleScalar)) {
             throw new TemplateModelException(
-               "Value of parameter 'for' must be a string.");
+                "Value of parameter 'for' must be a string.");
         }
 
         String varName = o.toString(); //((SimpleScalar)o).getAsString();
         TemplateHashModel dataModel = env.getDataModel();
         Object templateModel = dataModel.get(varName);
 
-        if (! (templateModel instanceof TemplateMethodModel || templateModel instanceof TemplateDirectiveModel)) {
+        if (!(templateModel instanceof TemplateMethodModel ||
+            templateModel instanceof TemplateDirectiveModel)) {
             throw new TemplateModelException(
                 "Value of parameter '" + varName + "' must be the name of a directive or method");
         }

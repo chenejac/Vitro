@@ -14,11 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.jena.rdf.model.Statement;
-
 import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
 import edu.cornell.mannlib.vitro.webapp.modules.searchIndexer.SearchIndexer.Event;
 import edu.cornell.mannlib.vitro.webapp.modules.searchIndexer.SearchIndexerStatus;
@@ -30,22 +25,25 @@ import edu.cornell.mannlib.vitro.webapp.searchindex.SearchIndexerImpl.WorkerThre
 import edu.cornell.mannlib.vitro.webapp.searchindex.documentBuilding.DocumentModifierList;
 import edu.cornell.mannlib.vitro.webapp.searchindex.exclusions.SearchIndexExcluderList;
 import edu.cornell.mannlib.vitro.webapp.searchindex.indexing.IndexingUriFinderList;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.jena.rdf.model.Statement;
 
 /**
  * Receive a collection of statements that have been added to the model, or
  * delete from it.
- *
+ * <p>
  * Find the URIs of search documents that may have been affected by these
  * changes, and update those documents.
- *
+ * <p>
  * -------------------
- *
+ * <p>
  * It would be nice to stream this whole thing, finding the URIs affected by
  * each statement and updating those documents before proceding. However, it is
  * very common for several statements within a group to affect the same
  * document, so that method would result in rebuilding the document several
  * times.
- *
+ * <p>
  * Instead, we final all of the URIs affected by all statements, store them in a
  * Set to remove duplicates, and then process the URIs in the set.
  */
@@ -67,6 +65,7 @@ public class UpdateStatementsTask implements Task {
         impl = new UpdateStatementsTaskImpl(config, changes);
         impl.run();
     }
+
     @Override
     public SearchIndexerStatus getStatus() {
         return impl == null ? SearchIndexerStatus.idle() : impl.getStatus();
@@ -203,14 +202,14 @@ public class UpdateStatementsTask implements Task {
             private void maybeFireProgressEvent() {
                 if (processed > 0 && processed % progressInterval == 0) {
                     listeners.fireEvent(new Event(PROGRESS,
-                            getSearchIndexerStatus()));
+                        getSearchIndexerStatus()));
                 }
             }
 
             public synchronized SearchIndexerStatus getSearchIndexerStatus() {
                 int remaining = total - processed;
                 return new SearchIndexerStatus(PROCESSING_STMTS, since,
-                        new StatementCounts(processed, remaining, total));
+                    new StatementCounts(processed, remaining, total));
             }
 
         }

@@ -2,15 +2,13 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit.listing;
 
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import edu.cornell.mannlib.vedit.beans.ButtonForm;
 import edu.cornell.mannlib.vedit.controller.BaseEditController;
@@ -24,14 +22,14 @@ import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
 
-@WebServlet(name = "IndividualsListingController", urlPatterns = {"/listIndividuals"} )
+@WebServlet(name = "IndividualsListingController", urlPatterns = {"/listIndividuals"})
 public class IndividualsListingController extends BaseEditController {
 
     //private static final int MAX_INDIVIDUALS = 50;
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) {
         if (!isAuthorizedToDisplayPage(request, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-        	return;
+            return;
         }
 
         VitroRequest vrequest = new VitroRequest(request);
@@ -43,10 +41,10 @@ public class IndividualsListingController extends BaseEditController {
         WebappDaoFactory wadf = null;
 
         if (assertedOnlyStr != null && assertedOnlyStr.equalsIgnoreCase("true")) {
-        	wadf = vrequest.getUnfilteredAssertionsWebappDaoFactory();
+            wadf = vrequest.getUnfilteredAssertionsWebappDaoFactory();
         }
         if (wadf == null) {
-        	wadf = vrequest.getUnfilteredWebappDaoFactory();
+            wadf = vrequest.getUnfilteredWebappDaoFactory();
         }
 
         IndividualDao dao = wadf.getIndividualDao();
@@ -63,14 +61,18 @@ public class IndividualsListingController extends BaseEditController {
         results.add("Individual");
         results.add("class");
 
-        if (inds != null && inds.size()>0) {
+        if (inds != null && inds.size() > 0) {
             for (Individual ind : inds) {
                 results.add("XX");
 
                 if (ind.getName() != null) {
                     try {
-                        String individualName = (ind.getName() == null || ind.getName().length() == 0) ? ind.getURI() : ind.getName();
-                        results.add("<a href=\"./entityEdit?uri=" + URLEncoder.encode(ind.getURI(), "UTF-8") + "\">" + individualName + "</a>");
+                        String individualName =
+                            (ind.getName() == null || ind.getName().length() == 0) ? ind.getURI() :
+                                ind.getName();
+                        results.add("<a href=\"./entityEdit?uri=" +
+                            URLEncoder.encode(ind.getURI(), "UTF-8") + "\">" + individualName +
+                            "</a>");
                     } catch (Exception e) {
                         results.add(ind.getName());
                     }
@@ -81,8 +83,11 @@ public class IndividualsListingController extends BaseEditController {
 
                 if (vc != null) {
                     try {
-                        String vclassName = (vc.getName() == null || vc.getName().length() == 0) ? vc.getURI() : vc.getName();
-                        results.add("<a href=\"./vclassEdit?uri=" + URLEncoder.encode(vc.getURI(), "UTF-8") + "\">" + vclassName + "</a>");
+                        String vclassName =
+                            (vc.getName() == null || vc.getName().length() == 0) ? vc.getURI() :
+                                vc.getName();
+                        results.add("<a href=\"./vclassEdit?uri=" +
+                            URLEncoder.encode(vc.getURI(), "UTF-8") + "\">" + vclassName + "</a>");
                     } catch (Exception e) {
                         results.add(vc.getName());
                     }
@@ -96,18 +101,21 @@ public class IndividualsListingController extends BaseEditController {
             results.add("No individuals to display");
         }
 
-        request.setAttribute("results",results);
+        request.setAttribute("results", results);
 
-        request.setAttribute("columncount",new Integer(3));
-        request.setAttribute("suppressquery","true");
-        request.setAttribute("title", "Individuals in Class "+ ( (vc != null) ? vc.getName() : vclassURI ) );
+        request.setAttribute("columncount", new Integer(3));
+        request.setAttribute("suppressquery", "true");
+        request.setAttribute("title",
+            "Individuals in Class " + ((vc != null) ? vc.getName() : vclassURI));
 
         // new individual button
-        List <ButtonForm> buttons = new ArrayList<ButtonForm>();
-        HashMap<String,String> newIndividualParams=new HashMap<String,String>();
-        newIndividualParams.put("VClassURI",vclassURI);
-        newIndividualParams.put("controller","Entity");
-        ButtonForm newIndividualButton = new ButtonForm(Controllers.RETRY_URL,"buttonForm","Add instance",newIndividualParams);
+        List<ButtonForm> buttons = new ArrayList<ButtonForm>();
+        HashMap<String, String> newIndividualParams = new HashMap<String, String>();
+        newIndividualParams.put("VClassURI", vclassURI);
+        newIndividualParams.put("controller", "Entity");
+        ButtonForm newIndividualButton =
+            new ButtonForm(Controllers.RETRY_URL, "buttonForm", "Add instance",
+                newIndividualParams);
         buttons.add(newIndividualButton);
         request.setAttribute("topButtons", buttons);
 
@@ -120,7 +128,7 @@ public class IndividualsListingController extends BaseEditController {
     }
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) {
-        doGet(request,response);
+        doGet(request, response);
     }
 
 }

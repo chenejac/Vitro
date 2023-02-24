@@ -14,21 +14,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.ResponseValues;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.TemplateResponseValues;
 import freemarker.ext.beans.BeansWrapper;
 import freemarker.template.SimpleCollection;
 import freemarker.template.TemplateModelException;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Test of dump directives
- * @author rjy7
  *
+ * @author rjy7
  */
 public class DumpTestController extends FreemarkerHttpServlet {
 
@@ -85,7 +84,7 @@ public class DumpTestController extends FreemarkerHttpServlet {
 
         // Collection (non-indexable)
         Set<Integer> odds = new HashSet<Integer>();
-        for (int i=0; i <= 10; i++) {
+        for (int i = 0; i <= 10; i++) {
             if (i % 2 == 1) {
                 odds.add(i);
             }
@@ -133,6 +132,26 @@ public class DumpTestController extends FreemarkerHttpServlet {
         return "Test";
     }
 
+    private Employee getEmployee() {
+
+        Calendar c = Calendar.getInstance();
+        c.set(1982, Calendar.MAY, 5);
+        c = DateUtils.truncate(c, Calendar.DATE);
+        Employee jdoe = new Employee("John", "Doe", 34523, c.getTime());
+        jdoe.setFavoriteColors("blue", "green");
+        jdoe.setSalary(65000);
+
+        c.clear();
+        c.set(1975, Calendar.OCTOBER, 25);
+        c = DateUtils.truncate(c, Calendar.DATE);
+        Employee jsmith = new Employee("Jane", "Smith", 78234, c.getTime());
+        jsmith.setFavoriteColors("red", "orange");
+
+        jdoe.setSupervisor(jsmith);
+
+        return jdoe;
+    }
+
     public static class Employee {
 
         private static int count = 0;
@@ -160,31 +179,17 @@ public class DumpTestController extends FreemarkerHttpServlet {
             count++;
         }
 
-        protected void setSupervisor(Employee supervisor) {
-            this.supervisor = supervisor;
-        }
-
-        void setSalary(float salary) {
-            this.salary = salary;
-        }
-
-        public void setNickname(String nickname) {
-            this.nickname = nickname;
-        }
-
-        public void setFavoriteColors(String...colors) {
-            Collections.addAll(favoriteColors, colors);
+        public static int getEmployeeCount() {
+            return count;
         }
 
         float getSalary() {
             return salary;
         }
 
-        public static int getEmployeeCount() {
-            return count;
+        void setSalary(float salary) {
+            this.salary = salary;
         }
-
-        /*  Public accessor methods for templates */
 
         public String getFullName() {
             return firstName + " " + lastName;
@@ -198,8 +203,14 @@ public class DumpTestController extends FreemarkerHttpServlet {
             return middleName;
         }
 
+        /*  Public accessor methods for templates */
+
         public String getNickname() {
             return nickname;
+        }
+
+        public void setNickname(String nickname) {
+            this.nickname = nickname;
         }
 
         public Date getBirthdate() {
@@ -223,29 +234,17 @@ public class DumpTestController extends FreemarkerHttpServlet {
             return supervisor;
         }
 
+        protected void setSupervisor(Employee supervisor) {
+            this.supervisor = supervisor;
+        }
+
         public List<String> getFavoriteColors() {
             return favoriteColors;
         }
-    }
 
-    private Employee getEmployee() {
-
-        Calendar c = Calendar.getInstance();
-        c.set(1982, Calendar.MAY, 5);
-        c = DateUtils.truncate(c, Calendar.DATE);
-        Employee jdoe = new Employee("John", "Doe", 34523, c.getTime());
-        jdoe.setFavoriteColors("blue", "green");
-        jdoe.setSalary(65000);
-
-        c.clear();
-        c.set(1975, Calendar.OCTOBER, 25);
-        c = DateUtils.truncate(c, Calendar.DATE);
-        Employee jsmith = new Employee("Jane", "Smith", 78234, c.getTime());
-        jsmith.setFavoriteColors("red", "orange");
-
-        jdoe.setSupervisor(jsmith);
-
-        return jdoe;
+        public void setFavoriteColors(String... colors) {
+            Collections.addAll(favoriteColors, colors);
+        }
     }
 }
 

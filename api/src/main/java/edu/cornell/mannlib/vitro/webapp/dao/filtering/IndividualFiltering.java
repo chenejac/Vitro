@@ -14,11 +14,6 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import net.sf.jga.algorithms.Filter;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.beans.BaseResourceBean;
 import edu.cornell.mannlib.vitro.webapp.beans.BaseResourceBean.RoleLevel;
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
@@ -27,9 +22,11 @@ import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatementImpl;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.beans.ObjectProperty;
 import edu.cornell.mannlib.vitro.webapp.beans.ObjectPropertyStatement;
-import edu.cornell.mannlib.vitro.webapp.beans.ObjectPropertyStatementImpl;
 import edu.cornell.mannlib.vitro.webapp.beans.VClass;
 import edu.cornell.mannlib.vitro.webapp.dao.filtering.filters.VitroFilters;
+import net.sf.jga.algorithms.Filter;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * A Individual object that will delegate to an inner Individual
@@ -37,13 +34,11 @@ import edu.cornell.mannlib.vitro.webapp.dao.filtering.filters.VitroFilters;
  * WebappDaoFactory to get filtered Statements.
  *
  * @author bdc34
- *
  */
 public class IndividualFiltering implements Individual {
+    private static final Log log = LogFactory.getLog(IndividualFiltering.class);
     private final Individual _innerIndividual;
     private final VitroFilters _filters;
-
-    private static final Log log = LogFactory.getLog(IndividualFiltering.class);
 
     public IndividualFiltering(Individual individual, VitroFilters filters) {
         super();
@@ -54,23 +49,24 @@ public class IndividualFiltering implements Individual {
 
     /* ******************** methods that need filtering ***************** */
     @Override
-	public List<DataProperty> getDataPropertyList() {
-        List<DataProperty> dprops =  _innerIndividual.getDataPropertyList();
+    public List<DataProperty> getDataPropertyList() {
+        List<DataProperty> dprops = _innerIndividual.getDataPropertyList();
         LinkedList<DataProperty> outdProps = new LinkedList<DataProperty>();
-        if( dprops == null )
+        if (dprops == null) {
             return outdProps;
-        Filter.filter(dprops,_filters.getDataPropertyFilter(), outdProps);
+        }
+        Filter.filter(dprops, _filters.getDataPropertyFilter(), outdProps);
 
         ListIterator<DataProperty> it = outdProps.listIterator();
-        while(it.hasNext()){
+        while (it.hasNext()) {
             DataProperty dp = it.next();
             List<DataPropertyStatement> filteredStmts =
                 new LinkedList<DataPropertyStatement>();
             Filter.filter(dp.getDataPropertyStatements(),
-                    _filters.getDataPropertyStatementFilter(),filteredStmts);
-            if( filteredStmts.size() == 0 ){
+                _filters.getDataPropertyStatementFilter(), filteredStmts);
+            if (filteredStmts.size() == 0) {
                 it.remove();
-            }else{
+            } else {
                 dp.setDataPropertyStatements(filteredStmts);
             }
         }
@@ -78,21 +74,28 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
-	public List<DataProperty> getPopulatedDataPropertyList() {
-		// I'd rather filter on the actual DataPropertyStatements here, but
-		// Individual.getPopulatedDataPropertyList doesn't actually populate
-		// the DataProperty with statements. - jblake
+    public List<DataProperty> getPopulatedDataPropertyList() {
+        // I'd rather filter on the actual DataPropertyStatements here, but
+        // Individual.getPopulatedDataPropertyList doesn't actually populate
+        // the DataProperty with statements. - jblake
         List<DataProperty> outdProps = new ArrayList<DataProperty>();
         List<DataProperty> dprops = _innerIndividual.getPopulatedDataPropertyList();
-        if( dprops == null )
+        if (dprops == null) {
             return outdProps;
-		for (DataProperty dp: dprops) {
-			if (_filters.getDataPropertyStatementFilter().fn(
-					new DataPropertyStatementImpl(this._innerIndividual.getURI(), dp.getURI(), SOME_LITERAL))) {
-				outdProps.add(dp);
-			}
+        }
+        for (DataProperty dp : dprops) {
+            if (_filters.getDataPropertyStatementFilter().fn(
+                new DataPropertyStatementImpl(this._innerIndividual.getURI(), dp.getURI(),
+                    SOME_LITERAL))) {
+                outdProps.add(dp);
+            }
         }
         return outdProps;
+    }
+
+    @Override
+    public void setPopulatedDataPropertyList(List<DataProperty> dataPropertyList) {
+        _innerIndividual.setPopulatedDataPropertyList(dataPropertyList);
     }
 
     @Override
@@ -102,36 +105,45 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
+    public void setDataPropertyStatements(List<DataPropertyStatement> list) {
+        _innerIndividual.setDataPropertyStatements(list);
+    }
+
+    @Override
     public List<DataPropertyStatement> getDataPropertyStatements(String propertyUri) {
-        List<DataPropertyStatement> dstmts = _innerIndividual.getDataPropertyStatements(propertyUri);
+        List<DataPropertyStatement> dstmts =
+            _innerIndividual.getDataPropertyStatements(propertyUri);
         return filterDataPropertyStatements(dstmts);
     }
 
-    private List<DataPropertyStatement> filterDataPropertyStatements(List<DataPropertyStatement> dStmts) {
+    private List<DataPropertyStatement> filterDataPropertyStatements(
+        List<DataPropertyStatement> dStmts) {
         List<DataPropertyStatement> outDstmts = new LinkedList<DataPropertyStatement>();
-        if( dStmts == null )
+        if (dStmts == null) {
             return outDstmts;
-        Filter.filter(dStmts,_filters.getDataPropertyStatementFilter(), outDstmts);
+        }
+        Filter.filter(dStmts, _filters.getDataPropertyStatementFilter(), outDstmts);
         return outDstmts;
     }
 
     @Override
     public Map<String, DataProperty> getDataPropertyMap() {
-        Map<String,DataProperty> innerMap = _innerIndividual.getDataPropertyMap();
-        if( innerMap == null )
+        Map<String, DataProperty> innerMap = _innerIndividual.getDataPropertyMap();
+        if (innerMap == null) {
             return Collections.emptyMap();
+        }
 
-        Map<String,DataProperty> returnMap = new HashMap<String,DataProperty>();
-        for( String key : innerMap.keySet() ){
+        Map<String, DataProperty> returnMap = new HashMap<String, DataProperty>();
+        for (String key : innerMap.keySet()) {
             DataProperty dp = innerMap.get(key);
-            if( _filters.getDataPropertyFilter().fn(dp) ){
+            if (_filters.getDataPropertyFilter().fn(dp)) {
                 List<DataPropertyStatement> filteredStmts =
                     new LinkedList<DataPropertyStatement>();
                 Filter.filter(dp.getDataPropertyStatements(),
-                        _filters.getDataPropertyStatementFilter(),filteredStmts);
-                if( filteredStmts.size() > 0 ){
+                    _filters.getDataPropertyStatementFilter(), filteredStmts);
+                if (filteredStmts.size() > 0) {
                     dp.setDataPropertyStatements(filteredStmts);
-                    returnMap.put(key,dp);
+                    returnMap.put(key, dp);
                 }
             }
         }
@@ -139,16 +151,21 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
+    public void setDataPropertyMap(Map<String, DataProperty> propertyMap) {
+        _innerIndividual.setDataPropertyMap(propertyMap);
+    }
+
+    @Override
     public List<ObjectProperty> getObjectPropertyList() {
-        List <ObjectProperty> oprops = _innerIndividual.getObjectPropertyList();
+        List<ObjectProperty> oprops = _innerIndividual.getObjectPropertyList();
         return ObjectPropertyDaoFiltering.filterAndWrap(oprops, _filters);
     }
 
     @Override
     public List<ObjectProperty> getPopulatedObjectPropertyList() {
-		// I'd rather filter on the actual ObjectPropertyStatements here, but
-		// Individual.getPopulatedObjectPropertyList doesn't actually populate
-		// the ObjectProperty with statements. - jblake
+        // I'd rather filter on the actual ObjectPropertyStatements here, but
+        // Individual.getPopulatedObjectPropertyList doesn't actually populate
+        // the ObjectProperty with statements. - jblake
 
         // bjl23:  disabling this filtering because the individual statements are
         // filtered later, and we need to allow for the possibility that a particular
@@ -171,6 +188,12 @@ public class IndividualFiltering implements Individual {
 */
     }
 
+    @Override
+    public void setPopulatedObjectPropertyList(List<ObjectProperty> propertyList) {
+        _innerIndividual.setPopulatedObjectPropertyList(propertyList);
+    }
+    /* ************** methods that don't need filtering *********** */
+
     /* ********************* methods that need delegated filtering *************** */
     @Override
     public List<ObjectPropertyStatement> getObjectPropertyStatements() {
@@ -178,36 +201,44 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
-    public List<ObjectPropertyStatement> getObjectPropertyStatements(String propertyUri) {
-        return filterObjectPropertyStatements(_innerIndividual.getObjectPropertyStatements(propertyUri));
+    public void setObjectPropertyStatements(List<ObjectPropertyStatement> list) {
+        _innerIndividual.setObjectPropertyStatements(list);
     }
 
-	private List<ObjectPropertyStatement> filterObjectPropertyStatements(List<ObjectPropertyStatement> opStmts) {
-		if (opStmts == null) {
-			return Collections.emptyList();
-		}
-        _innerIndividual.resolveAsFauxPropertyStatements(opStmts);
-		ArrayList<ObjectPropertyStatement> filtered = new ArrayList<ObjectPropertyStatement>();
-		Filter.filter(opStmts, _filters.getObjectPropertyStatementFilter(),	filtered);
-		return filtered;
-	}
+    @Override
+    public List<ObjectPropertyStatement> getObjectPropertyStatements(String propertyUri) {
+        return filterObjectPropertyStatements(
+            _innerIndividual.getObjectPropertyStatements(propertyUri));
+    }
 
+    private List<ObjectPropertyStatement> filterObjectPropertyStatements(
+        List<ObjectPropertyStatement> opStmts) {
+        if (opStmts == null) {
+            return Collections.emptyList();
+        }
+        _innerIndividual.resolveAsFauxPropertyStatements(opStmts);
+        ArrayList<ObjectPropertyStatement> filtered = new ArrayList<ObjectPropertyStatement>();
+        Filter.filter(opStmts, _filters.getObjectPropertyStatementFilter(), filtered);
+        return filtered;
+    }
 
     //TODO: may cause problems since one can get ObjectPropertyStatement list from
     // the ObjectProperty, and that won't be filtered.
     //might need to make a ObjectPropertyFiltering and a ObjectPropertyStatementFiltering
     @Override
     public Map<String, ObjectProperty> getObjectPropertyMap() {
-        Map<String,ObjectProperty> innerMap = _innerIndividual.getObjectPropertyMap();
-        if( innerMap == null )
+        Map<String, ObjectProperty> innerMap = _innerIndividual.getObjectPropertyMap();
+        if (innerMap == null) {
             return null;
+        }
 
 
-        Map<String,ObjectProperty> returnMap = new HashMap<String,ObjectProperty>();
-        for( String key : innerMap.keySet() ){
+        Map<String, ObjectProperty> returnMap = new HashMap<String, ObjectProperty>();
+        for (String key : innerMap.keySet()) {
             ObjectProperty innerProp = innerMap.get(key);
-            if( innerProp != null && _filters.getObjectPropertyFilter().fn( innerProp ) )
-                returnMap.put(key, new ObjectPropertyFiltering(innerProp,_filters));
+            if (innerProp != null && _filters.getObjectPropertyFilter().fn(innerProp)) {
+                returnMap.put(key, new ObjectPropertyFiltering(innerProp, _filters));
+            }
         }
 
 //        Map<String,ObjectProperty> returnMap = new HashMap<String,ObjectProperty>(innerMap);
@@ -219,7 +250,11 @@ public class IndividualFiltering implements Individual {
 
         return returnMap;
     }
-    /* ************** methods that don't need filtering *********** */
+
+    @Override
+    public void setObjectPropertyMap(Map<String, ObjectProperty> propertyMap) {
+        _innerIndividual.setObjectPropertyMap(propertyMap);
+    }
 
     @Override
     public boolean equals(Object obj) {
@@ -231,25 +266,39 @@ public class IndividualFiltering implements Individual {
         return _innerIndividual.getExternalIds();
     }
 
-	@Override
-	public String getMainImageUri() {
-		return _innerIndividual.getMainImageUri();
-	}
+    @Override
+    public void setExternalIds(List<DataPropertyStatement> externalIds) {
+        _innerIndividual.setExternalIds(externalIds);
+    }
 
     @Override
-	public String getImageUrl() {
-    	return _innerIndividual.getImageUrl();
-	}
+    public String getMainImageUri() {
+        return _innerIndividual.getMainImageUri();
+    }
 
+    @Override
+    public void setMainImageUri(String mainImageUri) {
+        _innerIndividual.setMainImageUri(mainImageUri);
+    }
 
-	@Override
-	public String getThumbUrl() {
-		return _innerIndividual.getThumbUrl();
-	}
+    @Override
+    public String getImageUrl() {
+        return _innerIndividual.getImageUrl();
+    }
+
+    @Override
+    public String getThumbUrl() {
+        return _innerIndividual.getThumbUrl();
+    }
 
     @Override
     public String getLocalName() {
         return _innerIndividual.getLocalName();
+    }
+
+    @Override
+    public void setLocalName(String localName) {
+        _innerIndividual.setLocalName(localName);
     }
 
     @Override
@@ -258,8 +307,18 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
+    public void setModTime(Timestamp in) {
+        _innerIndividual.setModTime(in);
+    }
+
+    @Override
     public String getName() {
         return _innerIndividual.getName();
+    }
+
+    @Override
+    public void setName(String in) {
+        _innerIndividual.setName(in);
     }
 
     @Override
@@ -273,8 +332,13 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
-    public String getRdfsLabel(){
-    	return _innerIndividual.getRdfsLabel();
+    public String getRdfsLabel() {
+        return _innerIndividual.getRdfsLabel();
+    }
+
+    @Override
+    public void setRdfsLabel(String in) {
+        _innerIndividual.setRdfsLabel(in);
     }
 
     @Override
@@ -283,8 +347,18 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
+    public void setNamespace(String namespace) {
+        _innerIndividual.setNamespace(namespace);
+    }
+
+    @Override
     public String getURI() {
         return _innerIndividual.getURI();
+    }
+
+    @Override
+    public void setURI(String URI) {
+        _innerIndividual.setURI(URI);
     }
 
     @Override
@@ -293,8 +367,18 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
+    public void setVClass(VClass class1) {
+        _innerIndividual.setVClass(class1);
+    }
+
+    @Override
     public String getVClassURI() {
         return _innerIndividual.getVClassURI();
+    }
+
+    @Override
+    public void setVClassURI(String in) {
+        _innerIndividual.setVClassURI(in);
     }
 
     @Override
@@ -308,78 +392,8 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
-    public void setPopulatedDataPropertyList(List<DataProperty> dataPropertyList) {
-        _innerIndividual.setPopulatedDataPropertyList(dataPropertyList);
-    }
-
-    @Override
-    public void setObjectPropertyStatements(List<ObjectPropertyStatement> list) {
-        _innerIndividual.setObjectPropertyStatements(list);
-    }
-
-    @Override
-    public void setDataPropertyStatements(List<DataPropertyStatement> list) {
-        _innerIndividual.setDataPropertyStatements(list);
-    }
-
-    @Override
-    public void setExternalIds(List<DataPropertyStatement> externalIds) {
-        _innerIndividual.setExternalIds(externalIds);
-    }
-
-    @Override
-	public void setMainImageUri(String mainImageUri) {
-    	_innerIndividual.setMainImageUri(mainImageUri);
-	}
-
-    @Override
-    public void setLocalName(String localName) {
-        _innerIndividual.setLocalName(localName);
-    }
-
-    @Override
-    public void setModTime(Timestamp in) {
-        _innerIndividual.setModTime(in);
-    }
-
-    @Override
-    public void setName(String in) {
-        _innerIndividual.setName(in);
-    }
-
-    @Override
-    public void setRdfsLabel(String in) {
-        _innerIndividual.setRdfsLabel(in);
-    }
-
-    @Override
-    public void setNamespace(String namespace) {
-        _innerIndividual.setNamespace(namespace);
-    }
-
-    @Override
     public void setPropertyList(List<ObjectProperty> propertyList) {
         _innerIndividual.setPropertyList(propertyList);
-    }
-
-    @Override
-    public void setPopulatedObjectPropertyList(List<ObjectProperty> propertyList) {
-        _innerIndividual.setPopulatedObjectPropertyList(propertyList);
-    }
-
-    @Override
-    public void setURI(String URI) {
-        _innerIndividual.setURI(URI);
-    }
-
-    @Override
-    public void setVClass(VClass class1) {
-        _innerIndividual.setVClass(class1);
-    }
-
-    @Override
-    public void setVClassURI(String in) {
-        _innerIndividual.setVClassURI(in);
     }
 
     @Override
@@ -398,9 +412,9 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
-	public boolean isVClass(String uri) {
-    	return _innerIndividual.isVClass(uri);
-	}
+    public boolean isVClass(String uri) {
+        return _innerIndividual.isVClass(uri);
+    }
 
     @Override
     public List<String> getMostSpecificTypeURIs() {
@@ -408,18 +422,8 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
-	public void setDataPropertyMap(Map<String, DataProperty> propertyMap) {
-        _innerIndividual.setDataPropertyMap(propertyMap);
-    }
-
-    @Override
-    public void setObjectPropertyMap(Map<String, ObjectProperty> propertyMap) {
-        _innerIndividual.setObjectPropertyMap(propertyMap);
-    }
-
-    @Override
     public void setVClasses(List<VClass> classList, boolean direct) {
-        _innerIndividual.setVClasses(classList,direct);
+        _innerIndividual.setVClasses(classList, direct);
     }
 
     @Override
@@ -439,7 +443,8 @@ public class IndividualFiltering implements Individual {
 
     @Override
     public void setHiddenFromDisplayBelowRoleLevelUsingRoleUri(String roleUri) {
-        _innerIndividual.setHiddenFromDisplayBelowRoleLevel(BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
+        _innerIndividual
+            .setHiddenFromDisplayBelowRoleLevel(BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
     }
 
     @Override
@@ -454,7 +459,8 @@ public class IndividualFiltering implements Individual {
 
     @Override
     public void setProhibitedFromUpdateBelowRoleLevelUsingRoleUri(String roleUri) {
-        _innerIndividual.setProhibitedFromUpdateBelowRoleLevel(BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
+        _innerIndividual.setProhibitedFromUpdateBelowRoleLevel(
+            BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
     }
 
     @Override
@@ -469,7 +475,8 @@ public class IndividualFiltering implements Individual {
 
     @Override
     public void setHiddenFromPublishBelowRoleLevelUsingRoleUri(String roleUri) {
-        _innerIndividual.setHiddenFromPublishBelowRoleLevel(BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
+        _innerIndividual
+            .setHiddenFromPublishBelowRoleLevel(BaseResourceBean.RoleLevel.getRoleByUri(roleUri));
     }
 
     @Override
@@ -478,8 +485,8 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
-    public int compareTo( Individual ind2 ) {
-    	return _innerIndividual.compareTo( ind2 );
+    public int compareTo(Individual ind2) {
+        return _innerIndividual.compareTo(ind2);
     }
 
     @Override
@@ -488,20 +495,31 @@ public class IndividualFiltering implements Individual {
     }
 
     @Override
-    public void setSearchBoost(Float boost) { _innerIndividual.setSearchBoost( boost ); }
-    @Override
-    public Float getSearchBoost() {return _innerIndividual.getSearchBoost(); }
+    public Float getSearchBoost() {
+        return _innerIndividual.getSearchBoost();
+    }
 
     @Override
-    public void setSearchSnippet(String snippet) { _innerIndividual.setSearchSnippet( snippet ); }
+    public void setSearchBoost(Float boost) {
+        _innerIndividual.setSearchBoost(boost);
+    }
+
     @Override
-    public String getSearchSnippet() {return _innerIndividual.getSearchSnippet(); }
+    public String getSearchSnippet() {
+        return _innerIndividual.getSearchSnippet();
+    }
+
+    @Override
+    public void setSearchSnippet(String snippet) {
+        _innerIndividual.setSearchSnippet(snippet);
+    }
 
     @Override
     public List<String> getDataValues(String propertyUri) {
         List<DataPropertyStatement> stmts = getDataPropertyStatements(propertyUri);
-        if( stmts == null )
+        if (stmts == null) {
             return Collections.emptyList();
+        }
 
         // Since the statements have been filtered, we can just take the data values without filtering.
         List<String> dataValues = new ArrayList<String>(stmts.size());
@@ -514,8 +532,9 @@ public class IndividualFiltering implements Individual {
     @Override
     public String getDataValue(String propertyUri) {
         List<DataPropertyStatement> stmts = getDataPropertyStatements(propertyUri);
-        if( stmts == null)
+        if (stmts == null) {
             return null;
+        }
 
         // Since the statements have been filtered, we can just take the first data value without filtering.
         return stmts.isEmpty() ? null : stmts.get(0).getData();
@@ -524,8 +543,9 @@ public class IndividualFiltering implements Individual {
     @Override
     public DataPropertyStatement getDataPropertyStatement(String propertyUri) {
         List<DataPropertyStatement> stmts = getDataPropertyStatements(propertyUri);
-        if( stmts == null )
+        if (stmts == null) {
             return null;
+        }
 
         // Since the statements have been filtered, we can just take the first data value without filtering.
         return stmts.isEmpty() ? null : stmts.get(0);
@@ -534,8 +554,9 @@ public class IndividualFiltering implements Individual {
     @Override
     public List<Individual> getRelatedIndividuals(String propertyUri) {
         List<ObjectPropertyStatement> stmts = getObjectPropertyStatements(propertyUri);
-        if( stmts == null)
+        if (stmts == null) {
             return Collections.emptyList();
+        }
 
         // Since the statements have been filtered, we can just take the individuals without filtering.
         List<Individual> relatedIndividuals = new ArrayList<Individual>(stmts.size());
@@ -548,8 +569,9 @@ public class IndividualFiltering implements Individual {
     @Override
     public Individual getRelatedIndividual(String propertyUri) {
         List<ObjectPropertyStatement> stmts = getObjectPropertyStatements(propertyUri);
-        if( stmts == null )
+        if (stmts == null) {
             return null;
+        }
 
         // Since the statements have been filtered, we can just take the first individual without filtering.
         return stmts.isEmpty() ? null : stmts.get(0).getObject();
@@ -561,9 +583,9 @@ public class IndividualFiltering implements Individual {
     }
 
 
-	@Override
-	public void resolveAsFauxPropertyStatements(List<ObjectPropertyStatement> list) {
-		_innerIndividual.resolveAsFauxPropertyStatements(list);
-	}
+    @Override
+    public void resolveAsFauxPropertyStatements(List<ObjectPropertyStatement> list) {
+        _innerIndividual.resolveAsFauxPropertyStatements(list);
+    }
 
 }

@@ -7,10 +7,10 @@ import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchInputDocument
 
 /**
  * An ordered list of DocumentModifier objects, in a handy package.
- *
+ * <p>
  * Implementations should make a protective copy of the list of
  * DocumentModifiers. Implementations must be thread-safe.
- *
+ * <p>
  * The life-cycle is:
  *
  * <pre>
@@ -21,20 +21,20 @@ import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchInputDocument
  */
 public interface DocumentModifierList {
 
-	/**
-	 * Do any required setup on the individual modifiers.
-	 */
-	void startIndexing();
+    /**
+     * Do any required setup on the individual modifiers.
+     */
+    void startIndexing();
 
-	/**
-	 * Do any required teardown on the individual modifiers.
-	 */
-	void stopIndexing();
+    /**
+     * Do any required teardown on the individual modifiers.
+     */
+    void stopIndexing();
 
-	/**
-	 * Exercise the list of modifiers, making changes to this document based on
-	 * this individual.
-	 */
-	void modifyDocument(Individual ind, SearchInputDocument doc);
+    /**
+     * Exercise the list of modifiers, making changes to this document based on
+     * this individual.
+     */
+    void modifyDocument(Individual ind, SearchInputDocument doc);
 
 }

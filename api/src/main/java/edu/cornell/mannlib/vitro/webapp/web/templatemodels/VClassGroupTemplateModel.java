@@ -5,16 +5,15 @@ package edu.cornell.mannlib.vitro.webapp.web.templatemodels;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.cornell.mannlib.vitro.webapp.beans.VClass;
+import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import edu.cornell.mannlib.vitro.webapp.beans.VClass;
-import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
-
 public class VClassGroupTemplateModel extends BaseTemplateModel {
 
-	private static final Log log = LogFactory.getLog(VClassGroupTemplateModel.class.getName());
+    private static final Log log = LogFactory.getLog(VClassGroupTemplateModel.class.getName());
 
     private final VClassGroup vClassGroup;
     private List<VClassTemplateModel> classes;
@@ -28,19 +27,19 @@ public class VClassGroupTemplateModel extends BaseTemplateModel {
     }
 
     public String getUri() {
-    	return vClassGroup.getURI();
+        return vClassGroup.getURI();
     }
 
     public String getNamespace() {
-    	return vClassGroup.getNamespace();
+        return vClassGroup.getNamespace();
     }
 
     public String getLocalName() {
-    	return vClassGroup.getLocalName();
+        return vClassGroup.getLocalName();
     }
 
     public String getPublicName() {
-    	return vClassGroup.getPublicName();
+        return vClassGroup.getPublicName();
     }
 
     // Protect the template against a group without a name.
@@ -64,14 +63,15 @@ public class VClassGroupTemplateModel extends BaseTemplateModel {
         return classes;
     }
 
-    public int getIndividualCount(){
-        if( vClassGroup.isIndividualCountSet() )
+    public int getIndividualCount() {
+        if (vClassGroup.isIndividualCountSet()) {
             return vClassGroup.getIndividualCount();
-        else
+        } else {
             return 0;
+        }
     }
 
-    public boolean isIndividualCountSet(){
+    public boolean isIndividualCountSet() {
         return vClassGroup.isIndividualCountSet();
     }
 

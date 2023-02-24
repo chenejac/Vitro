@@ -11,15 +11,14 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 
-import org.apache.log4j.Level;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import edu.cornell.mannlib.vitro.testing.AbstractTestClass;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.Tags.TagVersionInfo;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.Tags.TagVersionInfo.MatchResult;
+import org.apache.log4j.Level;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import stubs.edu.cornell.mannlib.vitro.webapp.modules.ApplicationStub;
 import stubs.javax.servlet.ServletContextStub;
 
@@ -65,7 +64,7 @@ public class TagsTest extends AbstractTestClass {
     @Test
     public void singleQuotes_embeddedDoubleQuote_success() {
         assertMatch("<script src='value\"noproblem'></script",
-                "value\"noproblem");
+            "value\"noproblem");
     }
 
     @Test
@@ -81,7 +80,7 @@ public class TagsTest extends AbstractTestClass {
     @Test
     public void doubleQuotes_embeddedSingleQuote_success() {
         assertMatch("<link href=\"value'noproblem\"></link>",
-                "value'noproblem");
+            "value'noproblem");
     }
 
     @Test
@@ -136,29 +135,29 @@ public class TagsTest extends AbstractTestClass {
     @Test
     public void noMatch_noChange() {
         assertVersionNotAdded(
-                "<script junk='/context/base/sub/file.js' ></script>",
-                "no match");
+            "<script junk='/context/base/sub/file.js' ></script>",
+            "no match");
     }
 
     @Test
     public void alreadyHasQueryString_noChange() {
         assertVersionNotAdded(
-                "<script src='/context/base/sub/file.js?why' ></script>",
-                "has query");
+            "<script src='/context/base/sub/file.js?why' ></script>",
+            "has query");
     }
 
     @Test
     public void doesntStartWithContextPath_noChange() {
         assertVersionNotAdded(
-                "<script src='/notContext/base/sub/file.js' ></script>",
-                "context path");
+            "<script src='/notContext/base/sub/file.js' ></script>",
+            "context path");
     }
 
     @Test
     public void noRealPath_noChange() {
         assertVersionNotAdded(
-                "<script src='/context/base/sub/nofile.js' ></script>",
-                "real path");
+            "<script src='/context/base/sub/nofile.js' ></script>",
+            "real path");
     }
 
     @Test
@@ -170,22 +169,22 @@ public class TagsTest extends AbstractTestClass {
     @Test
     public void doubleQuotes_substitution() {
         assertVersionAdded( //
-                "<link href=\"/context/base/sub/file.css\" rel=stylesheet></link>", //
-                "<link href=\"/context/base/sub/file.css?version=9999\" rel=stylesheet></link>");
+            "<link href=\"/context/base/sub/file.css\" rel=stylesheet></link>", //
+            "<link href=\"/context/base/sub/file.css?version=9999\" rel=stylesheet></link>");
     }
 
     @Test
     public void singleQuotes_substitution() {
         assertVersionAdded( //
-                "<script src='/context/base/sub/file.js' ></script>", //
-                "<script src='/context/base/sub/file.js?version=9999' ></script>");
+            "<script src='/context/base/sub/file.js' ></script>", //
+            "<script src='/context/base/sub/file.js?version=9999' ></script>");
     }
 
     @Test
     public void unquoted_substitution() {
         assertVersionAdded( //
-                "<script type=text/javascript src=/context/base/sub/file.js ></script>", //
-                "<script type=text/javascript src=/context/base/sub/file.js?version&eq;9999 ></script>");
+            "<script type=text/javascript src=/context/base/sub/file.js ></script>", //
+            "<script type=text/javascript src=/context/base/sub/file.js?version&eq;9999 ></script>");
     }
 
     // ----------------------------------------------------------------------
@@ -225,7 +224,7 @@ public class TagsTest extends AbstractTestClass {
     private void assertVersionAdded(String rawTag, String expected) {
         String actual = createTag(rawTag);
         String canonicalActual = actual.replaceAll("=[0-9a-f]{4}", "=9999")
-                .replaceAll("&eq;[0-9a-f]{4}", "&eq;9999");
+            .replaceAll("&eq;[0-9a-f]{4}", "&eq;9999");
         assertEquals(expected, canonicalActual);
     }
 

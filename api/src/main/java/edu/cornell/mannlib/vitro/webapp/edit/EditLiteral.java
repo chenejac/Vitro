@@ -2,33 +2,89 @@
 
 package edu.cornell.mannlib.vitro.webapp.edit;
 
-import org.apache.jena.rdf.model.*;
 import org.apache.jena.datatypes.RDFDatatype;
-import org.apache.jena.graph.Node;/**
+import org.apache.jena.graph.Node;
+import org.apache.jena.rdf.model.Literal;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.RDFVisitor;
+import org.apache.jena.rdf.model.Resource;
+
+/**
  * bdc34: I needed to have a representation of a RDF literal for
  * editing.  Jena seems to have a Model associated with the literals and
  * has depreciated the creation of simple Literals as if they were data
  * structures.  So this code was written.
- *
+ * <p>
  * THESE MAY NOT BE USED AS LITERALS WITH THE JENA LIBRARY
  */
 public class EditLiteral implements Literal {
 
     String value = null;
-    String datatype =null;
-    String lang =null;
+    String datatype = null;
+    String lang = null;
 
-    public EditLiteral(String value, String datatype, String lang){
+    public EditLiteral(String value, String datatype, String lang) {
         //both datatype and lang set is not suppored in jena2
 //        if( lang != null && datatype != null)
 //            throw new IllegalArgumentException("a literal cannot have a lang and a datatype");
 
-        this.value= value;
+        this.value = value;
         this.datatype = datatype;
         this.lang = lang;
     }
 
-     public Object getValue() {
+    public static boolean equalLiterals(Literal a, Literal b) {
+        if (a == null && b == null) {
+            return true; //?
+        }
+        if ((a == null && b != null) || (b == null && a != null)) {
+            return false;
+        }
+
+        if ((a.getDatatypeURI() != null && b.getDatatypeURI() == null)
+            || (a.getDatatypeURI() == null && b.getDatatypeURI() != null)) {
+            return false;
+        }
+
+        //in Jena2, typed literals with languages are not supported, ignore lang
+        if (a.getDatatypeURI() != null && b.getDatatypeURI() != null) {
+            if (!a.getDatatypeURI().equals(b.getDatatypeURI())) {
+                return false;
+            } else {
+                return compareValues(a, b);
+            }
+        }
+
+        if (a.getLanguage() == null && b.getLanguage() == null) {
+            return compareValues(a, b);
+        }
+
+        if ((a.getLanguage() == null && b.getLanguage() != null) ||
+            (a.getLanguage() != null && b.getLanguage() == null)) {
+            return false;
+        }
+
+        if (a.getLanguage() != null && b.getLanguage() != null &&
+            a.getLanguage().equals(b.getLanguage())) {
+            return compareValues(a, b);
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean compareValues(Literal a, Literal b) {
+        if (a.getValue() == null && b.getValue() == null) {
+            return true; //?
+        } else if (a.getValue() == null && b.getValue() != null
+            || a.getValue() != null && b.getValue() == null) {
+            return false;
+        } else {
+            return a.getValue().equals(b.getValue());
+        }
+    }
+
+    public Object getValue() {
         return value;
     }
 
@@ -54,13 +110,12 @@ public class EditLiteral implements Literal {
         return lang;
     }
 
-
-    public String getString(){
+    public String getString() {
         return value;
     }
 
-    public String toString(){
-        return "value: "+value+"\ndatatype: "+datatype+"\nlanguage: "+lang;
+    public String toString() {
+        return "value: " + value + "\ndatatype: " + datatype + "\nlanguage: " + lang;
     }
 
     public RDFDatatype getDatatype() {
@@ -91,6 +146,11 @@ public class EditLiteral implements Literal {
         throw new UnsupportedOperationException();
     }
 
+//    @Deprecated
+//    public Object getObject(ObjectF objectF) {
+//        throw new UnsupportedOperationException();
+//    }
+
     public float getFloat() {
         throw new UnsupportedOperationException();
     }
@@ -98,12 +158,6 @@ public class EditLiteral implements Literal {
     public double getDouble() {
         throw new UnsupportedOperationException();
     }
-
-//    @Deprecated
-//    public Object getObject(ObjectF objectF) {
-//        throw new UnsupportedOperationException();
-//    }
-
 
     @Deprecated
     public boolean getWellFormed() {
@@ -115,14 +169,12 @@ public class EditLiteral implements Literal {
     }
 
     public boolean sameValueAs(Literal literal) {
-        return equalLiterals( this, literal);
+        return equalLiterals(this, literal);
     }
 
     public boolean isAnon() {
         throw new UnsupportedOperationException();
     }
-
-
 
     public boolean isURIResource() {
         throw new UnsupportedOperationException();
@@ -149,74 +201,28 @@ public class EditLiteral implements Literal {
         throw new UnsupportedOperationException();
     }
 
-
-    public static  boolean equalLiterals( Literal a, Literal b){
-        if( a == null && b == null )
-            return true; //?
-        if((a == null && b != null) || ( b == null && a != null))
-            return false;
-
-        if( ( a.getDatatypeURI() != null && b.getDatatypeURI() == null )
-            || ( a.getDatatypeURI() == null && b.getDatatypeURI() != null ))
-            return false;
-
-        //in Jena2, typed literals with languages are not supported, ignore lang
-        if( a.getDatatypeURI() != null && b.getDatatypeURI() != null ){
-            if( ! a.getDatatypeURI().equals( b.getDatatypeURI() ) ){
-                return false;
-            }else{
-                return compareValues( a, b );
-            }
-        }
-
-        if( a.getLanguage() == null && b.getLanguage() == null ){
-            return compareValues( a, b );
-        }
-
-        if(( a.getLanguage() == null && b.getLanguage() != null ) ||
-            (a.getLanguage() != null && b.getLanguage() == null ) )
-            return false;
-
-        if( a.getLanguage() != null && b.getLanguage() != null &&
-            a.getLanguage().equals( b.getLanguage() ) ){
-            return compareValues( a, b );
-        }else{
-            return false;
-        }
-    }
-
-    private static boolean compareValues( Literal a, Literal b){
-        if( a.getValue() == null && b.getValue() == null )
-            return true; //?
-        else  if( a.getValue() == null && b.getValue() != null
-                  || a.getValue() != null && b.getValue() == null )
-            return false;
-        else
-            return a.getValue().equals( b.getValue() ) ;
-    }
-
     @Deprecated
-	//public Object getObject(ObjectF arg0) {
-	//	throw new UnsupportedOperationException();
-	//}
+    //public Object getObject(ObjectF arg0) {
+    //	throw new UnsupportedOperationException();
+    //}
 
-	public <T extends RDFNode> T as(Class<T> arg0) {
+    public <T extends RDFNode> T as(Class<T> arg0) {
         throw new UnsupportedOperationException();
-	}
+    }
 
-	public <T extends RDFNode> boolean canAs(Class<T> arg0) {
+    public <T extends RDFNode> boolean canAs(Class<T> arg0) {
         throw new UnsupportedOperationException();
-	}
+    }
 
-	public Literal asLiteral() {
-		throw new UnsupportedOperationException();
-	}
+    public Literal asLiteral() {
+        throw new UnsupportedOperationException();
+    }
 
-	public Resource asResource() {
-		throw new UnsupportedOperationException();
-	}
+    public Resource asResource() {
+        throw new UnsupportedOperationException();
+    }
 
-	public Model getModel() {
-		throw new UnsupportedOperationException();
-	}
+    public Model getModel() {
+        throw new UnsupportedOperationException();
+    }
 }

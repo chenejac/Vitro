@@ -2,16 +2,12 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit.listing;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.lang3.StringUtils;
 
 import edu.cornell.mannlib.vedit.controller.BaseEditController;
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
@@ -20,16 +16,18 @@ import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
 import edu.cornell.mannlib.vitro.webapp.controller.Controllers;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassGroupDao;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.lang3.StringUtils;
 
 public class AllClassGroupsListingController extends BaseEditController {
 
     private static final long serialVersionUID = 1L;
 
     @Override
-	public void doGet(HttpServletRequest request, HttpServletResponse response) {
-    	if (!isAuthorizedToDisplayPage(request, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-    		return;
-    	}
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
+        if (!isAuthorizedToDisplayPage(request, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
+            return;
+        }
 
         VitroRequest vreq = new VitroRequest(request);
 
@@ -46,23 +44,26 @@ public class AllClassGroupsListingController extends BaseEditController {
         results.add("XX");
 
         if (groups != null) {
-        	for(VClassGroup vcg: groups) {
+            for (VClassGroup vcg : groups) {
                 results.add("XX");
                 String publicName = vcg.getPublicName();
-                if ( StringUtils.isBlank(publicName) ) {
+                if (StringUtils.isBlank(publicName)) {
                     publicName = "(unnamed group)";
                 }
                 try {
-                    results.add("<a href=\"./editForm?uri="+URLEncoder.encode(vcg.getURI(),"UTF-8")+"&amp;controller=Classgroup\">"+publicName+"</a>");
+                    results.add(
+                        "<a href=\"./editForm?uri=" + URLEncoder.encode(vcg.getURI(), "UTF-8") +
+                            "&amp;controller=Classgroup\">" + publicName + "</a>");
                 } catch (Exception e) {
                     results.add(publicName);
                 }
                 Integer t;
-                results.add(((t = Integer.valueOf(vcg.getDisplayRank())) != -1) ? t.toString() : "");
+                results
+                    .add(((t = Integer.valueOf(vcg.getDisplayRank())) != -1) ? t.toString() : "");
                 results.add(""); // VClassGroup doesn't yet supprt getModTime()
                 results.add("XX");
                 List<VClass> classList = vcg.getVitroClassList();
-                if (classList != null && classList.size()>0) {
+                if (classList != null && classList.size() > 0) {
                     results.add("+");
                     results.add("XX");
                     results.add("Class");
@@ -75,7 +76,9 @@ public class AllClassGroupsListingController extends BaseEditController {
                         results.add("XX");
                         if (vcw.getName() != null && vcw.getURI() != null) {
                             try {
-                                results.add("<a href=\"vclassEdit?uri="+URLEncoder.encode(vcw.getURI(),"UTF-8")+"\">"+vcw.getName()+"</a>");
+                                results.add("<a href=\"vclassEdit?uri=" +
+                                    URLEncoder.encode(vcw.getURI(), "UTF-8") + "\">" +
+                                    vcw.getName() + "</a>");
                             } catch (Exception e) {
                                 results.add(vcw.getName());
                             }
@@ -84,19 +87,21 @@ public class AllClassGroupsListingController extends BaseEditController {
                         }
                         String exampleStr = (vcw.getExample() == null) ? "" : vcw.getName();
                         results.add(exampleStr);
-                        String descriptionStr = (vcw.getDescription() == null) ? "" : vcw.getDescription();
+                        String descriptionStr =
+                            (vcw.getDescription() == null) ? "" : vcw.getDescription();
                         results.add(descriptionStr);
-                        if (classIt.hasNext())
+                        if (classIt.hasNext()) {
                             results.add("@@entities");
+                        }
                     }
                 }
             }
-            request.setAttribute("results",results);
+            request.setAttribute("results", results);
         }
 
-        request.setAttribute("columncount",new Integer(5));
-        request.setAttribute("suppressquery","true");
-        request.setAttribute("title","Class Groups");
+        request.setAttribute("columncount", new Integer(5));
+        request.setAttribute("suppressquery", "true");
+        request.setAttribute("title", "Class Groups");
         request.setAttribute("horizontalJspAddButtonUrl", Controllers.RETRY_URL);
         request.setAttribute("horizontalJspAddButtonText", "Add new class group");
         request.setAttribute("horizontalJspAddButtonControllerParam", "Classgroup");

@@ -12,104 +12,100 @@ import java.util.Map;
  * SELECT and ASK).
  */
 public enum ResultSetMediaType {
-	TEXT("text/plain", true, "TEXT", null, "txt"),
+    TEXT("text/plain", true, "TEXT", null, "txt"),
 
-	CSV("text/csv", true, "CSV", null, "csv"),
+    CSV("text/csv", true, "CSV", null, "csv"),
 
-	TSV("text/tab-separated-values", false, "CSV", "tsv", "tsv"),
+    TSV("text/tab-separated-values", false, "CSV", "tsv", "tsv"),
 
-	XML("application/sparql-results+xml", true, "XML", null, "xml"),
+    XML("application/sparql-results+xml", true, "XML", null, "xml"),
 
-	JSON("application/sparql-results+json", true, "JSON", null, "json");
+    JSON("application/sparql-results+json", true, "JSON", null, "json");
 
-	// ----------------------------------------------------------------------
-	// Keep a map of content types, for easy conversion back and forth
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // Keep a map of content types, for easy conversion back and forth
+    // ----------------------------------------------------------------------
 
-	private final static Map<String, ResultSetMediaType> contentTypesMap = buildMap();
+    private final static Map<String, ResultSetMediaType> contentTypesMap = buildMap();
+    /**
+     * The MIME type as it would appear in an HTTP Accept or Content-Type
+     * header.
+     */
+    private final String contentType;
+    /**
+     * Is this a format that is supported directly by the RDFService?
+     */
+    private final boolean nativeFormat;
+    /**
+     * What format shall we ask the RDFService to supply?
+     */
+    private final String rdfServiceFormat;
 
-	private static Map<String, ResultSetMediaType> buildMap() {
-		Map<String, ResultSetMediaType> map = new LinkedHashMap<>();
-		for (ResultSetMediaType value : values()) {
-			map.put(value.contentType, value);
-		}
-		return Collections.unmodifiableMap(map);
-	}
+    // ----------------------------------------------------------------------
+    // The instance
+    // ----------------------------------------------------------------------
+    /**
+     * What format shall we ask the ResultSetFormatter to output? (Applies only
+     * to non-native formats)
+     */
+    private final String jenaResponseFormat;
+    /**
+     * What extension should be used if file is downloaded?
+     */
+    private final String extension;
 
-	public static Collection<String> contentTypes() {
-		return contentTypesMap.keySet();
-	}
+    private ResultSetMediaType(String contentType, boolean nativeFormat,
+                               String rdfServiceFormat, String jenaResponseFormat,
+                               String extension) {
+        this.contentType = contentType;
+        this.nativeFormat = nativeFormat;
+        this.rdfServiceFormat = rdfServiceFormat;
+        this.jenaResponseFormat = jenaResponseFormat;
+        this.extension = extension;
+    }
 
-	public static ResultSetMediaType fromContentType(String contentType)
-			throws IllegalArgumentException {
-		ResultSetMediaType type = contentTypesMap.get(contentType);
-		if (type == null) {
-			throw new IllegalArgumentException(
-					"No ResultSetMediaType has contentType='" + contentType
-							+ "'");
-		} else {
-			return type;
-		}
-	}
+    private static Map<String, ResultSetMediaType> buildMap() {
+        Map<String, ResultSetMediaType> map = new LinkedHashMap<>();
+        for (ResultSetMediaType value : values()) {
+            map.put(value.contentType, value);
+        }
+        return Collections.unmodifiableMap(map);
+    }
 
-	// ----------------------------------------------------------------------
-	// The instance
-	// ----------------------------------------------------------------------
+    public static Collection<String> contentTypes() {
+        return contentTypesMap.keySet();
+    }
 
-	/**
-	 * The MIME type as it would appear in an HTTP Accept or Content-Type
-	 * header.
-	 */
-	private final String contentType;
+    public static ResultSetMediaType fromContentType(String contentType)
+        throws IllegalArgumentException {
+        ResultSetMediaType type = contentTypesMap.get(contentType);
+        if (type == null) {
+            throw new IllegalArgumentException(
+                "No ResultSetMediaType has contentType='" + contentType
+                    + "'");
+        } else {
+            return type;
+        }
+    }
 
-	/**
-	 * Is this a format that is supported directly by the RDFService?
-	 */
-	private final boolean nativeFormat;
+    public String getContentType() {
+        return contentType;
+    }
 
-	/**
-	 * What format shall we ask the RDFService to supply?
-	 */
-	private final String rdfServiceFormat;
+    public boolean isNativeFormat() {
+        return nativeFormat;
+    }
 
-	/**
-	 * What format shall we ask the ResultSetFormatter to output? (Applies only
-	 * to non-native formats)
-	 */
-	private final String jenaResponseFormat;
+    public String getRdfServiceFormat() {
+        return rdfServiceFormat;
+    }
 
-	/**
-	 * What extension should be used if file is downloaded?
-	 */
-	private final String extension;
+    public String getJenaResponseFormat() {
+        return jenaResponseFormat;
+    }
 
-	private ResultSetMediaType(String contentType, boolean nativeFormat,
-			String rdfServiceFormat, String jenaResponseFormat, String extension) {
-		this.contentType = contentType;
-		this.nativeFormat = nativeFormat;
-		this.rdfServiceFormat = rdfServiceFormat;
-		this.jenaResponseFormat = jenaResponseFormat;
-		this.extension = extension;
-	}
-
-	public String getContentType() {
-		return contentType;
-	}
-
-	public boolean isNativeFormat() {
-		return nativeFormat;
-	}
-
-	public String getRdfServiceFormat() {
-		return rdfServiceFormat;
-	}
-
-	public String getJenaResponseFormat() {
-		return jenaResponseFormat;
-	}
-
-	public String getExtension() {
-		return extension;
-	}
+    public String getExtension() {
+        return extension;
+    }
 
 }

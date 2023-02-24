@@ -8,7 +8,7 @@ import org.apache.log4j.spi.LoggingEvent;
 /**
  * This is a nasty Layout that prints a full stack trace for every logging
  * event.
- *
+ * <p>
  * Here is an example of how to use this to show full stack traces every time we
  * get a log message from org.apache.jena.riot.
  *
@@ -23,36 +23,36 @@ import org.apache.log4j.spi.LoggingEvent;
  */
 public class StackTraceLayout extends Layout {
 
-	public StackTraceLayout() {
-	}
+    public StackTraceLayout() {
+    }
 
-	@Override
-	public void activateOptions() {
-	}
+    @Override
+    public void activateOptions() {
+    }
 
-	/**
-	 * Print the level, the message, and the full stack trace.
-	 */
-	@Override
-	public String format(LoggingEvent event) {
-		StringBuilder buffer = new StringBuilder();
-		buffer.append(event.getLevel().toString()).append(" - ")
-				.append(event.getRenderedMessage()).append(LINE_SEP);
-		for (StackTraceElement traceElement : Thread.currentThread()
-				.getStackTrace()) {
-			buffer.append("    ").append(traceElement.toString())
-					.append(LINE_SEP);
-		}
-		return buffer.toString();
-	}
+    /**
+     * Print the level, the message, and the full stack trace.
+     */
+    @Override
+    public String format(LoggingEvent event) {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(event.getLevel().toString()).append(" - ")
+            .append(event.getRenderedMessage()).append(LINE_SEP);
+        for (StackTraceElement traceElement : Thread.currentThread()
+            .getStackTrace()) {
+            buffer.append("    ").append(traceElement.toString())
+                .append(LINE_SEP);
+        }
+        return buffer.toString();
+    }
 
-	/**
-	 * The StackTraceLayout does not handle the throwable contained within
-	 * LoggingEvents. Thus, it returns {@code true}.
-	 */
-	@Override
-	public boolean ignoresThrowable() {
-		return true;
-	}
+    /**
+     * The StackTraceLayout does not handle the throwable contained within
+     * LoggingEvents. Thus, it returns {@code true}.
+     */
+    @Override
+    public boolean ignoresThrowable() {
+        return true;
+    }
 
 }

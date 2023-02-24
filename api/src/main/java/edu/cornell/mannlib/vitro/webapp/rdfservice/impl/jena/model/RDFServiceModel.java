@@ -3,15 +3,6 @@
 package edu.cornell.mannlib.vitro.webapp.rdfservice.impl.jena.model;
 
 import java.io.ByteArrayInputStream;
-import java.util.Iterator;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.jena.query.Dataset;
-import org.apache.jena.query.DatasetFactory;
-import org.apache.jena.rdf.model.Model;
 
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.jena.DatasetWrapper;
@@ -20,6 +11,12 @@ import edu.cornell.mannlib.vitro.webapp.rdfservice.ModelChange;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.jena.RDFServiceJena;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.query.DatasetFactory;
+import org.apache.jena.rdf.model.Model;
 
 public class RDFServiceModel extends RDFServiceJena implements RDFService {
 
@@ -28,9 +25,16 @@ public class RDFServiceModel extends RDFServiceJena implements RDFService {
     private Model model;
     private Dataset dataset;
     private String modelName;
+    /*
+     * UQAM-Linguistic-Management Useful among other things to transport the linguistic context in the service
+     * (non-Javadoc)
+     * @see edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService#setVitroRequest(edu.cornell.mannlib.vitro.webapp.controller.VitroRequest)
+     */
+    private VitroRequest vitroRequest;
 
     /**
      * Create an RDFService to access a single default graph
+     *
      * @param model Jena Model
      */
     public RDFServiceModel(Model model) {
@@ -39,6 +43,7 @@ public class RDFServiceModel extends RDFServiceJena implements RDFService {
 
     /**
      * Create an RDFService to access a Jena Dataset
+     *
      * @param dataset Jena Dataset
      */
     public RDFServiceModel(Dataset dataset) {
@@ -47,29 +52,29 @@ public class RDFServiceModel extends RDFServiceJena implements RDFService {
 
     @Override
     protected DatasetWrapper getDatasetWrapper() {
-      Dataset d = null;
-      if (dataset != null)  {
-          d = dataset;
-      } else {
-          d = DatasetFactory.createMem();
-          if (modelName == null) {
-              d.setDefaultModel(this.model);
-          } else {
-              d.addNamedModel(this.modelName, model);
-          }
-      }
-      DatasetWrapper datasetWrapper = new DatasetWrapper(d);
-      return datasetWrapper;
+        Dataset d = null;
+        if (dataset != null) {
+            d = dataset;
+        } else {
+            d = DatasetFactory.createMem();
+            if (modelName == null) {
+                d.setDefaultModel(this.model);
+            } else {
+                d.addNamedModel(this.modelName, model);
+            }
+        }
+        DatasetWrapper datasetWrapper = new DatasetWrapper(d);
+        return datasetWrapper;
     }
 
     @Override
     public boolean changeSetUpdate(ChangeSet changeSet)
-            throws RDFServiceException {
+        throws RDFServiceException {
 
         if (changeSet.getPreconditionQuery() != null
-                && !isPreconditionSatisfied(
-                        changeSet.getPreconditionQuery(),
-                                changeSet.getPreconditionQueryType())) {
+            && !isPreconditionSatisfied(
+            changeSet.getPreconditionQuery(),
+            changeSet.getPreconditionQueryType())) {
             return false;
         }
 
@@ -120,18 +125,12 @@ public class RDFServiceModel extends RDFServiceJena implements RDFService {
 
         return true;
     }
-	/*
-	 * UQAM-Linguistic-Management Useful among other things to transport the linguistic context in the service
-	 * (non-Javadoc)
-	 * @see edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService#setVitroRequest(edu.cornell.mannlib.vitro.webapp.controller.VitroRequest)
-	 */
-	private VitroRequest vitroRequest;
 
-	public void setVitroRequest(VitroRequest vitroRequest) {
-		this.vitroRequest = vitroRequest;
-	}
+    public VitroRequest getVitroRequest() {
+        return vitroRequest;
+    }
 
-	public VitroRequest getVitroRequest() {
-		return vitroRequest;
-	}
+    public void setVitroRequest(VitroRequest vitroRequest) {
+        this.vitroRequest = vitroRequest;
+    }
 }

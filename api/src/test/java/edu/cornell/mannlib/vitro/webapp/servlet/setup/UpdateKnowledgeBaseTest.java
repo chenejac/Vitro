@@ -6,8 +6,8 @@ import edu.cornell.mannlib.vitro.testing.AbstractTestClass;
 
 public class UpdateKnowledgeBaseTest extends AbstractTestClass {
 
-	@org.junit.Test
-	public void testMigrateDisplayModel14() {
+    @org.junit.Test
+    public void testMigrateDisplayModel14() {
 
     }
 

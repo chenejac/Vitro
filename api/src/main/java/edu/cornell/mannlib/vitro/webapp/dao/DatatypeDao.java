@@ -2,18 +2,22 @@
 
 package edu.cornell.mannlib.vitro.webapp.dao;
 
-import edu.cornell.mannlib.vitro.webapp.beans.Datatype;
-
 import java.util.List;
+
+import edu.cornell.mannlib.vitro.webapp.beans.Datatype;
 
 public interface DatatypeDao {
 
     public abstract void updateDatatype(Datatype dtp);
 
-    /** deletes a datatype row by getting the id from a Datatype bean **/
+    /**
+     * deletes a datatype row by getting the id from a Datatype bean
+     **/
     public abstract void deleteDatatype(Datatype dtp);
 
-    /** deletes a datatype row **/
+    /**
+     * deletes a datatype row
+     **/
     public abstract void deleteDatatype(int id);
 
     public abstract Datatype getDatatypeById(int id);

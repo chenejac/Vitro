@@ -2,15 +2,12 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 
+import javax.servlet.annotation.WebServlet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.AuthorizationRequest;
@@ -26,10 +23,11 @@ import edu.cornell.mannlib.vitro.webapp.dao.DataPropertyDao;
 import edu.cornell.mannlib.vitro.webapp.dao.FauxPropertyDao;
 import edu.cornell.mannlib.vitro.webapp.dao.ObjectPropertyDao;
 import edu.cornell.mannlib.vitro.webapp.dao.PropertyGroupDao;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import javax.servlet.annotation.WebServlet;
-
-@WebServlet(name = "ListFauxPropertiesController", urlPatterns = { "/listFauxProperties" })
+@WebServlet(name = "ListFauxPropertiesController", urlPatterns = {"/listFauxProperties"})
 public class ListFauxPropertiesController extends FreemarkerHttpServlet {
 
     private static final Log log = LogFactory.getLog(ListFauxPropertiesController.class.getName());
@@ -107,7 +105,8 @@ public class ListFauxPropertiesController extends FreemarkerHttpServlet {
         return vreq.getUnfilteredAssertionsWebappDaoFactory().getObjectPropertyDao();
     }
 
-    private TreeMap<String, Object> getFauxPropertyList(List<ObjectProperty> objectProps, VitroRequest vreq) {
+    private TreeMap<String, Object> getFauxPropertyList(List<ObjectProperty> objectProps,
+                                                        VitroRequest vreq) {
         List<FauxProperty> fauxProps = null;
         TreeMap<String, Object> theFauxProps = new TreeMap<String, Object>();
         if (objectProps != null) {
@@ -140,7 +139,8 @@ public class ListFauxPropertiesController extends FreemarkerHttpServlet {
                                 // FauxProperty only gets groupURI but we want
                                 // the label
                                 PropertyGroup pGroup = getPGDao(vreq).getGroupByURI(groupURI);
-                                String groupLabel = (pGroup == null) ? "unspecified" : pGroup.getName();
+                                String groupLabel =
+                                    (pGroup == null) ? "unspecified" : pGroup.getName();
                                 // store all the strings in a hash with the faux
                                 // property label as the key
                                 Map<String, Object> tmpHash = new HashMap<String, Object>();
@@ -164,7 +164,8 @@ public class ListFauxPropertiesController extends FreemarkerHttpServlet {
         return theFauxProps;
     }
 
-    private TreeMap<String, Object> getFauxByBaseList(List<ObjectProperty> objectProps, VitroRequest vreq) {
+    private TreeMap<String, Object> getFauxByBaseList(List<ObjectProperty> objectProps,
+                                                      VitroRequest vreq) {
         List<FauxProperty> fauxProps = null;
         TreeMap<String, Object> fauxByBaseProps = new TreeMap<String, Object>();
         if (objectProps != null) {
@@ -196,7 +197,8 @@ public class ListFauxPropertiesController extends FreemarkerHttpServlet {
                                 // FauxProperty only gets groupURI but we want
                                 // the label
                                 PropertyGroup pGroup = getPGDao(vreq).getGroupByURI(groupURI);
-                                String groupLabel = (pGroup == null) ? "unspecified" : pGroup.getName();
+                                String groupLabel =
+                                    (pGroup == null) ? "unspecified" : pGroup.getName();
                                 // store all the strings in a hash with the faux
                                 // property label as the key
                                 Map<String, Object> tmpHash = new HashMap<String, Object>();
@@ -220,7 +222,8 @@ public class ListFauxPropertiesController extends FreemarkerHttpServlet {
         return fauxByBaseProps;
     }
 
-    private TreeMap<String, Object> getFauxDataPropertyList(List<DataProperty> dataProps, VitroRequest vreq) {
+    private TreeMap<String, Object> getFauxDataPropertyList(List<DataProperty> dataProps,
+                                                            VitroRequest vreq) {
         List<FauxProperty> fauxProps = null;
         TreeMap<String, Object> theFauxProps = new TreeMap<String, Object>();
         if (dataProps != null) {
@@ -252,7 +255,8 @@ public class ListFauxPropertiesController extends FreemarkerHttpServlet {
                                 // FauxProperty only gets groupURI but we want
                                 // the label
                                 PropertyGroup pGroup = getPGDao(vreq).getGroupByURI(groupURI);
-                                String groupLabel = (pGroup == null) ? "unspecified" : pGroup.getName();
+                                String groupLabel =
+                                    (pGroup == null) ? "unspecified" : pGroup.getName();
                                 // store all the strings in a hash with the faux
                                 // property label as the key
                                 Map<String, Object> tmpHash = new HashMap<String, Object>();
@@ -275,7 +279,8 @@ public class ListFauxPropertiesController extends FreemarkerHttpServlet {
         return theFauxProps;
     }
 
-    private TreeMap<String, Object> getFauxDataPropsByBaseList(List<DataProperty> dataProps, VitroRequest vreq) {
+    private TreeMap<String, Object> getFauxDataPropsByBaseList(List<DataProperty> dataProps,
+                                                               VitroRequest vreq) {
         List<FauxProperty> fauxProps = null;
         TreeMap<String, Object> fauxByBaseProps = new TreeMap<String, Object>();
         if (dataProps != null) {
@@ -307,7 +312,8 @@ public class ListFauxPropertiesController extends FreemarkerHttpServlet {
                                 // FauxProperty only gets groupURI but we want
                                 // the label
                                 PropertyGroup pGroup = getPGDao(vreq).getGroupByURI(groupURI);
-                                String groupLabel = (pGroup == null) ? "unspecified" : pGroup.getName();
+                                String groupLabel =
+                                    (pGroup == null) ? "unspecified" : pGroup.getName();
                                 // store all the strings in a hash with the faux
                                 // property label as the key
                                 Map<String, Object> tmpHash = new HashMap<String, Object>();

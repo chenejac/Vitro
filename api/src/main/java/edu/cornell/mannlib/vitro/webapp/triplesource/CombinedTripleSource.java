@@ -4,32 +4,31 @@ package edu.cornell.mannlib.vitro.webapp.triplesource;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.jena.query.Dataset;
-import org.apache.jena.rdf.model.ModelMaker;
-
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess.WhichService;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ontmodels.OntModelCache;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.rdf.model.ModelMaker;
 
 /**
  * Provides the long-term data structures, and a way to obtain the short-term
  * data structures.
- *
+ * <p>
  * Repeated calls for the same data structure should yield the same instance.
- *
+ * <p>
  * Repeated calls for the ShortTermCombinedTripleSource need not yield the
  * same instance, but must yield an instance that will return the same
  * structures as any other instance for the same request.
  */
 public interface CombinedTripleSource {
-	RDFService getRDFService(WhichService whichService);
+    RDFService getRDFService(WhichService whichService);
 
-	Dataset getDataset(WhichService whichService);
+    Dataset getDataset(WhichService whichService);
 
-	ModelMaker getModelMaker(WhichService whichService);
+    ModelMaker getModelMaker(WhichService whichService);
 
-	OntModelCache getOntModelCache();
+    OntModelCache getOntModelCache();
 
-	ShortTermCombinedTripleSource getShortTermCombinedTripleSource(
-			HttpServletRequest req);
+    ShortTermCombinedTripleSource getShortTermCombinedTripleSource(
+        HttpServletRequest req);
 }

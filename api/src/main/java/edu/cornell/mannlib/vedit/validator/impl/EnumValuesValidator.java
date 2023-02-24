@@ -2,44 +2,45 @@
 
 package edu.cornell.mannlib.vedit.validator.impl;
 
-import edu.cornell.mannlib.vedit.validator.*;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+
+import edu.cornell.mannlib.vedit.validator.ValidationObject;
+import edu.cornell.mannlib.vedit.validator.Validator;
 
 public class EnumValuesValidator implements Validator {
 
     private HashSet legalValues = new HashSet();
 
-    public ValidationObject validate(Object obj){
+    public EnumValuesValidator(String[] legalValues) {
+        Collections.addAll(this.legalValues, legalValues);
+    }
+
+    public ValidationObject validate(Object obj) {
         ValidationObject vo = new ValidationObject();
-        if (legalValues.contains((String)obj)){
+        if (legalValues.contains((String) obj)) {
             vo.setValid(true);
         } else {
             vo.setValid(false);
-            if (legalValues.size()<7){
+            if (legalValues.size() < 7) {
                 StringBuilder msgString = new StringBuilder("Please enter one of ");
                 Iterator valuesIt = legalValues.iterator();
                 while (valuesIt.hasNext()) {
                     String legalValue = (String) valuesIt.next();
                     msgString.append("'").append(legalValue).append("'");
-                    if (valuesIt.hasNext())
+                    if (valuesIt.hasNext()) {
                         msgString.append(", ");
-                    else
+                    } else {
                         msgString.append(".");
+                    }
                 }
                 vo.setMessage(msgString.toString());
-            }
-            else {
+            } else {
                 vo.setMessage("Please enter a legal value.");
             }
         }
         vo.setValidatedObject(obj);
         return vo;
-    }
-
-    public EnumValuesValidator (String[] legalValues){
-        Collections.addAll(this.legalValues, legalValues);
     }
 }

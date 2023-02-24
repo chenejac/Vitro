@@ -5,9 +5,7 @@ package edu.cornell.mannlib.vitro.webapp.beans;
 import java.sql.Timestamp;
 import java.text.Collator;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -19,41 +17,43 @@ import edu.cornell.mannlib.vitro.webapp.filestorage.model.ImageInfo;
 
 /**
  * Represents a single entity record.
-*/
+ */
 @SuppressWarnings("ComparableType")
 public class IndividualImpl extends BaseResourceBean implements Individual, Comparable<Individual> {
-	/**
-	 * This can be used as a "not initialized" indicator for a property that
-	 * could validly be set to {@code null}. If {@code get()} is
-	 * called on such a property, and the property has this value, the correct
-	 * value can be fetched and cached.
-	 */
-	protected static final String NOT_INITIALIZED = "__%NOT_INITIALIZED%__";
+    /**
+     * This can be used as a "not initialized" indicator for a property that
+     * could validly be set to {@code null}. If {@code get()} is
+     * called on such a property, and the property has this value, the correct
+     * value can be fetched and cached.
+     */
+    protected static final String NOT_INITIALIZED = "__%NOT_INITIALIZED%__";
 
-	public String name = null;
-	protected String rdfsLabel = null;
+    public String name = null;
     public String vClassURI = null;
+    protected String rdfsLabel = null;
     protected VClass vClass = null;
     protected List<VClass> directVClasses = null;
     protected List<VClass> allVClasses = null;
     protected Timestamp modTime = null;
-    protected List <ObjectProperty>propertyList = null;
+    protected List<ObjectProperty> propertyList = null;
     protected List<ObjectProperty> populatedObjectPropertyList = null;
-    protected Map <String,ObjectProperty> objectPropertyMap = null;
-    protected List <DataProperty>datatypePropertyList = null;
+    protected Map<String, ObjectProperty> objectPropertyMap = null;
+    protected List<DataProperty> datatypePropertyList = null;
     protected List<DataProperty> populatedDataPropertyList = null;
-    protected Map <String,DataProperty> dataPropertyMap = null;
-    protected List <DataPropertyStatement>dataPropertyStatements = null;
-    protected List <ObjectPropertyStatement>objectPropertyStatements = null;
-    protected List <ObjectPropertyStatement>rangeEnts2Ents = null;
-    protected List <DataPropertyStatement>externalIds = null;
+    protected Map<String, DataProperty> dataPropertyMap = null;
+    protected List<DataPropertyStatement> dataPropertyStatements = null;
+    protected List<ObjectPropertyStatement> objectPropertyStatements = null;
+    protected List<ObjectPropertyStatement> rangeEnts2Ents = null;
+    protected List<DataPropertyStatement> externalIds = null;
 
     protected String mainImageUri = NOT_INITIALIZED;
     protected ImageInfo imageInfo = null;
     protected Float searchBoost;
     protected String searchSnippet;
 
-    /** indicates if sortForDisplay has been called  */
+    /**
+     * indicates if sortForDisplay has been called
+     */
     protected boolean sorted = false;
     protected boolean DIRECT = true;
     protected boolean ALL = false;
@@ -73,14 +73,29 @@ public class IndividualImpl extends BaseResourceBean implements Individual, Comp
         this.setDatatypePropertyList(new ArrayList<DataProperty>());
     }
 
-    public String getName(){return name;}
-    public void setName(String in){name=in;}
+    public String getName() {
+        return name;
+    }
 
-    public String getRdfsLabel(){ return rdfsLabel; }
-    public void setRdfsLabel(String s){ rdfsLabel = s; }
+    public void setName(String in) {
+        name = in;
+    }
 
-    public String getVClassURI(){return vClassURI;}
-    public void setVClassURI(String in){vClassURI=in;}
+    public String getRdfsLabel() {
+        return rdfsLabel;
+    }
+
+    public void setRdfsLabel(String s) {
+        rdfsLabel = s;
+    }
+
+    public String getVClassURI() {
+        return vClassURI;
+    }
+
+    public void setVClassURI(String in) {
+        vClassURI = in;
+    }
 
     /**
      * Returns the last time this object was changed in the model.
@@ -90,50 +105,68 @@ public class IndividualImpl extends BaseResourceBean implements Individual, Comp
      * Timestamp.equals(Date) will never return true because of
      * the 'nanos.'
      */
-    public Timestamp getModTime(){return modTime;}
-    public void setModTime(Timestamp in){modTime=in;}
+    public Timestamp getModTime() {
+        return modTime;
+    }
+
+    public void setModTime(Timestamp in) {
+        modTime = in;
+    }
 
     public List<ObjectProperty> getObjectPropertyList() {
         return propertyList;
     }
-    public void setPropertyList(List <ObjectProperty>propertyList) {
+
+    public void setPropertyList(List<ObjectProperty> propertyList) {
         this.propertyList = propertyList;
     }
+
     public List<ObjectProperty> getPopulatedObjectPropertyList() {
         return populatedObjectPropertyList;
     }
+
     public void setPopulatedObjectPropertyList(List<ObjectProperty> propertyList) {
         populatedObjectPropertyList = propertyList;
     }
-    public Map<String,ObjectProperty> getObjectPropertyMap() {
-    	return this.objectPropertyMap;
+
+    public Map<String, ObjectProperty> getObjectPropertyMap() {
+        return this.objectPropertyMap;
     }
-    public void setObjectPropertyMap( Map<String,ObjectProperty> propertyMap ) {
-    	this.objectPropertyMap = propertyMap;
+
+    public void setObjectPropertyMap(Map<String, ObjectProperty> propertyMap) {
+        this.objectPropertyMap = propertyMap;
     }
-    public List <DataProperty>getDataPropertyList() {
+
+    public List<DataProperty> getDataPropertyList() {
         return datatypePropertyList;
     }
-    public void setDatatypePropertyList(List <DataProperty>datatypePropertyList) {
+
+    public void setDatatypePropertyList(List<DataProperty> datatypePropertyList) {
         this.datatypePropertyList = datatypePropertyList;
     }
+
     public List<DataProperty> getPopulatedDataPropertyList() {
         return populatedDataPropertyList;
     }
+
     public void setPopulatedDataPropertyList(List<DataProperty> propertyList) {
         populatedDataPropertyList = propertyList;
     }
-    public Map<String,DataProperty> getDataPropertyMap() {
-    	return this.dataPropertyMap;
+
+    public Map<String, DataProperty> getDataPropertyMap() {
+        return this.dataPropertyMap;
     }
-    public void setDataPropertyMap( Map<String,DataProperty> propertyMap ) {
-    	this.dataPropertyMap = propertyMap;
+
+    public void setDataPropertyMap(Map<String, DataProperty> propertyMap) {
+        this.dataPropertyMap = propertyMap;
     }
-    public void setDataPropertyStatements(List <DataPropertyStatement>list) {
-         dataPropertyStatements = list;
-    }
-    public List<DataPropertyStatement> getDataPropertyStatements(){
+
+    public List<DataPropertyStatement> getDataPropertyStatements() {
         return dataPropertyStatements;
+    }
+
+    public void setDataPropertyStatements(List<DataPropertyStatement> list) {
+        dataPropertyStatements = list;
     }
 
     public List<DataPropertyStatement> getDataPropertyStatements(String propertyUri) {
@@ -169,48 +202,49 @@ public class IndividualImpl extends BaseResourceBean implements Individual, Comp
     public VClass getVClass() {
         return vClass;
     }
+
     public void setVClass(VClass class1) {
         vClass = class1;
     }
 
     public List<VClass> getVClasses() {
-    	return allVClasses;
+        return allVClasses;
     }
 
     @Override
-	public boolean isVClass(String uri) {
-    	if (uri == null) {
-    		return false;
-    	}
-		for (VClass vClass : getVClasses()) {
-			if (uri.equals(vClass.getURI())) {
-				return true;
-			}
-		}
-		return false;
-	}
+    public boolean isVClass(String uri) {
+        if (uri == null) {
+            return false;
+        }
+        for (VClass vClass : getVClasses()) {
+            if (uri.equals(vClass.getURI())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	public List<VClass> getVClasses(boolean direct) {
-    	if (direct) {
-    		return directVClasses;
-    	} else {
-    		return allVClasses;
-    	}
+    public List<VClass> getVClasses(boolean direct) {
+        if (direct) {
+            return directVClasses;
+        } else {
+            return allVClasses;
+        }
     }
 
     public void setVClasses(List<VClass> vClassList, boolean direct) {
-    	if (direct) {
-    		this.directVClasses = vClassList;
-    	} else {
-    		this.allVClasses = vClassList;
-    	}
+        if (direct) {
+            this.directVClasses = vClassList;
+        } else {
+            this.allVClasses = vClassList;
+        }
     }
 
     @Override
     public List<String> getMostSpecificTypeURIs() {
         List<String> typeURIs = new ArrayList<String>();
         List<ObjectPropertyStatement> stmts = getObjectPropertyStatements(
-                VitroVocabulary.MOST_SPECIFIC_TYPE);
+            VitroVocabulary.MOST_SPECIFIC_TYPE);
         for (ObjectPropertyStatement stmt : stmts) {
             String objURI = stmt.getObjectURI();
             if (objURI != null) {
@@ -220,12 +254,12 @@ public class IndividualImpl extends BaseResourceBean implements Individual, Comp
         return typeURIs;
     }
 
-    public void setObjectPropertyStatements(List<ObjectPropertyStatement> list) {
-         objectPropertyStatements = list;
+    public List<ObjectPropertyStatement> getObjectPropertyStatements() {
+        return objectPropertyStatements;
     }
 
-    public List <ObjectPropertyStatement> getObjectPropertyStatements(){
-        return objectPropertyStatements;
+    public void setObjectPropertyStatements(List<ObjectPropertyStatement> list) {
+        objectPropertyStatements = list;
     }
 
     public List<ObjectPropertyStatement> getObjectPropertyStatements(String propertyUri) {
@@ -253,61 +287,77 @@ public class IndividualImpl extends BaseResourceBean implements Individual, Comp
         return stmts.isEmpty() ? null : stmts.get(0).getObject();
     }
 
-    public List<DataPropertyStatement> getExternalIds(){
+    public List<DataPropertyStatement> getExternalIds() {
         return externalIds;
     }
-    public void setExternalIds(List<DataPropertyStatement> externalIds){
+
+    public void setExternalIds(List<DataPropertyStatement> externalIds) {
         this.externalIds = externalIds;
     }
 
-	@Override
-	public String getMainImageUri() {
-		return (mainImageUri == NOT_INITIALIZED) ? null : mainImageUri;
-	}
+    @Override
+    public String getMainImageUri() {
+        return (mainImageUri == NOT_INITIALIZED) ? null : mainImageUri;
+    }
 
-	@Override
-	public void setMainImageUri(String mainImageUri) {
-		this.mainImageUri = mainImageUri;
-		this.imageInfo = null;
-	}
+    @Override
+    public void setMainImageUri(String mainImageUri) {
+        this.mainImageUri = mainImageUri;
+        this.imageInfo = null;
+    }
 
-	@Override
-	public String getImageUrl() {
-		return "imageUrl";
-	}
+    @Override
+    public String getImageUrl() {
+        return "imageUrl";
+    }
 
-	@Override
-	public String getThumbUrl() {
-		return "thumbUrl";
-	}
+    @Override
+    public String getThumbUrl() {
+        return "thumbUrl";
+    }
 
-    public Float getSearchBoost() { return searchBoost;  }
-    public void setSearchBoost(Float boost) { searchBoost = boost; }
+    public Float getSearchBoost() {
+        return searchBoost;
+    }
 
-    public String getSearchSnippet() { return searchSnippet; }
-    public void setSearchSnippet(String snippet) { searchSnippet = snippet; }
+    public void setSearchBoost(Float boost) {
+        searchBoost = boost;
+    }
+
+    public String getSearchSnippet() {
+        return searchSnippet;
+    }
+
+    public void setSearchSnippet(String snippet) {
+        searchSnippet = snippet;
+    }
 
     /**
      * Sorts the ents2ents records into the proper order for display.
-     *
      */
-    public void sortForDisplay(){
-        if( sorted ) return;
-        if( getObjectPropertyList() == null ) return;
+    public void sortForDisplay() {
+        if (sorted) {
+            return;
+        }
+        if (getObjectPropertyList() == null) {
+            return;
+        }
         sortPropertiesForDisplay();
         sortEnts2EntsForDisplay();
         sorted = true;
     }
 
-    protected void sortEnts2EntsForDisplay(){
-        if( getObjectPropertyList() == null ) return;
+    protected void sortEnts2EntsForDisplay() {
+        if (getObjectPropertyList() == null) {
+            return;
+        }
 
         for (ObjectProperty prop : getObjectPropertyList()) {
             prop.sortObjectPropertyStatementsForDisplay(prop, prop.getObjectPropertyStatements());
         }
     }
 
-    protected void sortPropertiesForDisplay( ){
+    protected void sortPropertiesForDisplay() {
         //here we sort the Property objects
         getObjectPropertyList().sort(new ObjectProperty.DisplayComparator());
     }
@@ -320,30 +370,30 @@ public class IndividualImpl extends BaseResourceBean implements Individual, Comp
         return jsonObj;
     }
 
-   public int compareTo(Individual o2) {
-       Collator collator = Collator.getInstance();
-       if (o2 == null) {
-       	   return 1;
-       } else {
-       	   return collator.compare(this.getName(),o2.getName());
-       }
-   }
-
-   public String toString(){
-       if( getURI() == null ){
-           return "uninitialized, null URI";
-       }else{
-           return getURI() + " " + getName();
-       }
-   }
-
-    public boolean hasThumb() {
-        return getThumbUrl() != null && ! getThumbUrl().isEmpty();
+    public int compareTo(Individual o2) {
+        Collator collator = Collator.getInstance();
+        if (o2 == null) {
+            return 1;
+        } else {
+            return collator.compare(this.getName(), o2.getName());
+        }
     }
 
-	@Override
-	public void resolveAsFauxPropertyStatements(List<ObjectPropertyStatement> list) {
-		// No webappDaoFactory, so nothing to do.
-	}
+    public String toString() {
+        if (getURI() == null) {
+            return "uninitialized, null URI";
+        } else {
+            return getURI() + " " + getName();
+        }
+    }
+
+    public boolean hasThumb() {
+        return getThumbUrl() != null && !getThumbUrl().isEmpty();
+    }
+
+    @Override
+    public void resolveAsFauxPropertyStatements(List<ObjectPropertyStatement> list) {
+        // No webappDaoFactory, so nothing to do.
+    }
 
 }

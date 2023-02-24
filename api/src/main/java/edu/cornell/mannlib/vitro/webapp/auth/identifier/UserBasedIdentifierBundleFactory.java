@@ -9,10 +9,10 @@ import edu.cornell.mannlib.vitro.webapp.beans.UserAccount;
  * user, without considering other aspects of the current request.
  */
 public interface UserBasedIdentifierBundleFactory extends
-		IdentifierBundleFactory {
-	/**
-	 * Get the IdentifierBundle for this user. If user is null, return an empty
-	 * bundle. Never returns null.
-	 */
-	public IdentifierBundle getIdentifierBundleForUser(UserAccount user);
+    IdentifierBundleFactory {
+    /**
+     * Get the IdentifierBundle for this user. If user is null, return an empty
+     * bundle. Never returns null.
+     */
+    public IdentifierBundle getIdentifierBundleForUser(UserAccount user);
 }

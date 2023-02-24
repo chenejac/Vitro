@@ -9,20 +9,20 @@ package edu.cornell.mannlib.vitro.webapp.web.templatemodels.customlistview;
  */
 public class InvalidConfigurationException extends Exception {
 
-	public InvalidConfigurationException() {
-		super();
-	}
+    public InvalidConfigurationException() {
+        super();
+    }
 
-	public InvalidConfigurationException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public InvalidConfigurationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-	public InvalidConfigurationException(String message) {
-		super(message);
-	}
+    public InvalidConfigurationException(String message) {
+        super(message);
+    }
 
-	public InvalidConfigurationException(Throwable cause) {
-		super(cause);
-	}
+    public InvalidConfigurationException(Throwable cause) {
+        super(cause);
+    }
 
 }

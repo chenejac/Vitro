@@ -6,8 +6,8 @@ import org.apache.jena.graph.Graph;
 
 public interface GraphGenerator {
 
-	public Graph generateGraph();
+    public Graph generateGraph();
 
-	public boolean isGraphClosed();
+    public boolean isGraphClosed();
 
 }

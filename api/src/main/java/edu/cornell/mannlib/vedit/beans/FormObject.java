@@ -16,15 +16,15 @@ public class FormObject implements Serializable {
     private Map<String, String> errorMap = new HashMap<String, String>();
     private List<DynamicField> dynamicFields = new ArrayList<DynamicField>();
 
-    public HashMap<String, String> getValues(){
+    public HashMap<String, String> getValues() {
         return values;
     }
 
-    public void setValues(HashMap<String, String> values){
+    public void setValues(HashMap<String, String> values) {
         this.values = values;
     }
 
-    public String valueByName(String name){
+    public String valueByName(String name) {
         return values.get(name);
     }
 
@@ -36,19 +36,19 @@ public class FormObject implements Serializable {
         this.optionLists = optionLists;
     }
 
-    public List<Option> optionListByName(String key){
+    public List<Option> optionListByName(String key) {
         return optionLists.get(key);
     }
 
-    public HashMap<String, List<Checkbox>> getCheckboxLists(){
+    public HashMap<String, List<Checkbox>> getCheckboxLists() {
         return checkboxLists;
     }
 
-    public Map<String, String> getErrorMap(){
+    public Map<String, String> getErrorMap() {
         return errorMap;
     }
 
-    public void setErrorMap(Map<String, String> errorMap){
+    public void setErrorMap(Map<String, String> errorMap) {
         this.errorMap = errorMap;
     }
 
@@ -56,7 +56,7 @@ public class FormObject implements Serializable {
         return dynamicFields;
     }
 
-    public void setDynamicFields(List<DynamicField> dynamicFields){
+    public void setDynamicFields(List<DynamicField> dynamicFields) {
         this.dynamicFields = dynamicFields;
     }
 

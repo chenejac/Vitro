@@ -10,7 +10,6 @@ import java.util.Map;
  * SPARQL query and prepare it for insertion into the template data model.
  *
  * @author rjy7
- *
  */
 
 public interface ObjectPropertyDataPostProcessor {

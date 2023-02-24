@@ -2,20 +2,15 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.beans.FormObject;
@@ -36,18 +31,21 @@ import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassGroupDao;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-@WebServlet(name = "VclassRetryController", urlPatterns = {"/vclass_retry"} )
+@WebServlet(name = "VclassRetryController", urlPatterns = {"/vclass_retry"})
 public class VclassRetryController extends BaseEditController {
 
-	private static final Log log = LogFactory.getLog(VclassRetryController.class.getName());
+    private static final Log log = LogFactory.getLog(VclassRetryController.class.getName());
 
-    public void doPost (HttpServletRequest req, HttpServletResponse response) {
+    public void doPost(HttpServletRequest req, HttpServletResponse response) {
         if (!isAuthorizedToDisplayPage(req, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-        	return;
+            return;
         }
 
-    	VitroRequest request = new VitroRequest(req);
+        VitroRequest request = new VitroRequest(req);
 
         //create an EditProcessObject for this and put it in the session
         EditProcessObject epo = super.createEpo(request);
@@ -73,10 +71,10 @@ public class VclassRetryController extends BaseEditController {
         OntologyDao oDao = wadf.getOntologyDao();
 
         VClass vclassForEditing = null;
-        if (!epo.getUseRecycledBean()){
+        if (!epo.getUseRecycledBean()) {
             if (request.getParameter("uri") != null) {
                 try {
-                    vclassForEditing = (VClass)vcwDao.getVClassByURI(request.getParameter("uri"));
+                    vclassForEditing = (VClass) vcwDao.getVClassByURI(request.getParameter("uri"));
                     action = "update";
                     epo.setAction("update");
                 } catch (NullPointerException e) {
@@ -95,19 +93,20 @@ public class VclassRetryController extends BaseEditController {
 
         //make a simple mask for the class's id
         Object[] simpleMaskPair = new Object[2];
-        simpleMaskPair[0]="URI";
-        simpleMaskPair[1]=vclassForEditing.getURI();
+        simpleMaskPair[0] = "URI";
+        simpleMaskPair[1] = vclassForEditing.getURI();
         epo.getSimpleMask().add(simpleMaskPair);
 
         //validators
         List localNameValidatorList = new ArrayList();
         localNameValidatorList.add(new XMLNameValidator());
-        epo.getValidatorMap().put("LocalName",localNameValidatorList);
+        epo.getValidatorMap().put("LocalName", localNameValidatorList);
 
         //set up any listeners
         List changeListenerList = new LinkedList();
         if (request.getParameter("superclassUri") != null) {
-            changeListenerList.add(new SubclassListener(request.getParameter("superclassUri"), request.getUnfilteredWebappDaoFactory()));
+            changeListenerList.add(new SubclassListener(request.getParameter("superclassUri"),
+                request.getUnfilteredWebappDaoFactory()));
         }
         epo.setChangeListenerList(changeListenerList);
 
@@ -120,16 +119,21 @@ public class VclassRetryController extends BaseEditController {
         try {
             Class[] args = new Class[1];
             args[0] = String.class;
-            epo.setGetMethod(VClassDao.class.getDeclaredMethod("getVClassByURI",args));
+            epo.setGetMethod(VClassDao.class.getDeclaredMethod("getVClassByURI", args));
         } catch (NoSuchMethodException e) {
-            log.error(this.getClass().getName()+" could not find the getVClassByURI method");
+            log.error(this.getClass().getName() + " could not find the getVClassByURI method");
         }
 
-        HashMap<String, List<Option>> optionMap = new HashMap<String,List<Option>>();
+        HashMap<String, List<Option>> optionMap = new HashMap<String, List<Option>>();
         try {
             VClassGroupDao vcgDao = request.getUnfilteredWebappDaoFactory().getVClassGroupDao();
-            List classGroupOptionList = FormUtils.makeOptionListFromBeans(vcgDao.getPublicGroupsWithVClasses(),"URI","PublicName",vclassForEditing.getGroupURI(),null,(vclassForEditing.getGroupURI()!=null && !(vclassForEditing.getGroupURI().equals(""))));
-            classGroupOptionList.add(0,new Option("", "none", ("update".equals(action) && (vclassForEditing.getGroupURI()==null || vclassForEditing.getGroupURI().equals("")))));
+            List classGroupOptionList = FormUtils
+                .makeOptionListFromBeans(vcgDao.getPublicGroupsWithVClasses(), "URI", "PublicName",
+                    vclassForEditing.getGroupURI(), null, (vclassForEditing.getGroupURI() != null &&
+                        !(vclassForEditing.getGroupURI().equals(""))));
+            classGroupOptionList.add(0, new Option("", "none", ("update".equals(action) &&
+                (vclassForEditing.getGroupURI() == null ||
+                    vclassForEditing.getGroupURI().equals("")))));
             optionMap.put("GroupURI", classGroupOptionList);
 
         } catch (Exception e) {
@@ -137,17 +141,26 @@ public class VclassRetryController extends BaseEditController {
         }
         try {
             List namespaceIdList = (action.equals("insert"))
-                    ? FormUtils.makeOptionListFromBeans(oDao.getAllOntologies(),"URI","Name", ((vclassForEditing.getNamespace()==null) ? "" : vclassForEditing.getNamespace()), null, false)
-                    : FormUtils.makeOptionListFromBeans(oDao.getAllOntologies(),"URI","Name", ((vclassForEditing.getNamespace()==null) ? "" : vclassForEditing.getNamespace()), null, true);
-	        namespaceIdList.add(0, new Option(request.getUnfilteredWebappDaoFactory().getDefaultNamespace(),"default"));
+                ? FormUtils.makeOptionListFromBeans(oDao.getAllOntologies(), "URI", "Name",
+                ((vclassForEditing.getNamespace() == null) ? "" : vclassForEditing.getNamespace()),
+                null, false)
+                : FormUtils.makeOptionListFromBeans(oDao.getAllOntologies(), "URI", "Name",
+                ((vclassForEditing.getNamespace() == null) ? "" : vclassForEditing.getNamespace()),
+                null, true);
+            namespaceIdList.add(0,
+                new Option(request.getUnfilteredWebappDaoFactory().getDefaultNamespace(),
+                    "default"));
             optionMap.put("Namespace", namespaceIdList);
         } catch (Exception e) {
             log.error(this.getClass().getName() + "unable to create Namespace option list");
         }
 
-        optionMap.put("HiddenFromDisplayBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getDisplayOptionsList(vclassForEditing));
-        optionMap.put("ProhibitedFromUpdateBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getUpdateOptionsList(vclassForEditing));
-        optionMap.put("HiddenFromPublishBelowRoleLevelUsingRoleUri",RoleLevelOptionsSetup.getPublishOptionsList(vclassForEditing));
+        optionMap.put("HiddenFromDisplayBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getDisplayOptionsList(vclassForEditing));
+        optionMap.put("ProhibitedFromUpdateBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getUpdateOptionsList(vclassForEditing));
+        optionMap.put("HiddenFromPublishBelowRoleLevelUsingRoleUri",
+            RoleLevelOptionsSetup.getPublishOptionsList(vclassForEditing));
 
         FormObject foo = new FormObject();
         foo.setErrorMap(epo.getErrMsgMap());
@@ -155,17 +168,17 @@ public class VclassRetryController extends BaseEditController {
 
         epo.setFormObject(foo);
 
-        request.setAttribute("formValue",foo.getValues());
+        request.setAttribute("formValue", foo.getValues());
 
-        FormUtils.populateFormFromBean(vclassForEditing,action,foo,epo.getBadValueMap());
+        FormUtils.populateFormFromBean(vclassForEditing, action, foo, epo.getBadValueMap());
 
-        request.setAttribute("formJsp","/templates/edit/specific/vclass_retry.jsp");
-        request.setAttribute("colspan","4");
-        request.setAttribute("scripts","/templates/edit/formBasic.js");
-        request.setAttribute("title","Class Editing Form");
-        request.setAttribute("_action",action);
-        request.setAttribute("unqualifiedClassName","VClass");
-        setRequestAttributes(request,epo);
+        request.setAttribute("formJsp", "/templates/edit/specific/vclass_retry.jsp");
+        request.setAttribute("colspan", "4");
+        request.setAttribute("scripts", "/templates/edit/formBasic.js");
+        request.setAttribute("title", "Class Editing Form");
+        request.setAttribute("_action", action);
+        request.setAttribute("unqualifiedClassName", "VClass");
+        setRequestAttributes(request, epo);
 
         try {
             JSPPageHandler.renderBasicPage(request, response, "/templates/edit/formBasic.jsp");
@@ -176,27 +189,33 @@ public class VclassRetryController extends BaseEditController {
 
     }
 
-    public void doGet (HttpServletRequest request, HttpServletResponse response) {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
         doPost(request, response);
     }
 
-    /** This listener allows us to link a new class to a parent upon creation */
+    /**
+     * This listener allows us to link a new class to a parent upon creation
+     */
     class SubclassListener implements ChangeListener {
         String superclassURI = null;
         WebappDaoFactory daoFactory = null;
+
         public SubclassListener(String superclassURI, WebappDaoFactory cdf) {
             this.superclassURI = superclassURI;
             this.daoFactory = cdf;
         }
+
         public void doInserted(Object newObj, EditProcessObject epo) {
             Classes2Classes c2c = new Classes2Classes();
-            c2c.setSubclassURI(((VClass)newObj).getURI());
+            c2c.setSubclassURI(((VClass) newObj).getURI());
             c2c.setSuperclassURI(superclassURI);
             daoFactory.getVClassDao().insertNewClasses2Classes(c2c);
         }
+
         public void doUpdated(Object oldObj, Object newObj, EditProcessObject epo) {
             // nothing to do
         }
+
         public void doDeleted(Object oldObj, EditProcessObject epo) {
             // nothing to do
         }
@@ -204,13 +223,15 @@ public class VclassRetryController extends BaseEditController {
 
     class VclassInsertPageForwarder implements PageForwarder {
 
-        public void doForward(HttpServletRequest request, HttpServletResponse response, EditProcessObject epo){
+        public void doForward(HttpServletRequest request, HttpServletResponse response,
+                              EditProcessObject epo) {
             String newVclassUrl = "vclassEdit?uri=";
             VClass vcl = (VClass) epo.getNewBean();
             try {
-                newVclassUrl += URLEncoder.encode(vcl.getURI(),"UTF-8");
+                newVclassUrl += URLEncoder.encode(vcl.getURI(), "UTF-8");
             } catch (Exception e) {
-                log.error(this.getClass().getName()+" could not use UTF-8 encoding to encode new URL");
+                log.error(
+                    this.getClass().getName() + " could not use UTF-8 encoding to encode new URL");
             }
             try {
                 response.sendRedirect(newVclassUrl);

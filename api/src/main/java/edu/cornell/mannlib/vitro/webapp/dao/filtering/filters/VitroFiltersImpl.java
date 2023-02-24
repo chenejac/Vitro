@@ -2,8 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.dao.filtering.filters;
 
-import net.sf.jga.fn.UnaryFunctor;
-import net.sf.jga.fn.adaptor.AdaptorFunctors;
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
@@ -12,66 +10,78 @@ import edu.cornell.mannlib.vitro.webapp.beans.ObjectPropertyStatement;
 import edu.cornell.mannlib.vitro.webapp.beans.PropertyGroup;
 import edu.cornell.mannlib.vitro.webapp.beans.VClass;
 import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
+import net.sf.jga.fn.UnaryFunctor;
+import net.sf.jga.fn.adaptor.AdaptorFunctors;
 
 /**
  * A object to hold all the filters commonly used by the vitro webapp.
  *
  * @author bdc34
- *
  */
 public class VitroFiltersImpl extends VitroFiltersBase {
 
     /* *************** filters used by Webapp and Core ******************* */
-    /** filter for vitro.bean.Individual objects */
-    UnaryFunctor<Individual,Boolean>              individualFilter;
-
-   /** filter for DataProperty objects */
-    UnaryFunctor<DataProperty,Boolean>            dataPropertyFilter;
-    /** filter for ObjectProperty objects */
-    UnaryFunctor<ObjectProperty,Boolean>          objectPropertyFilter;
-
-    /** filter for DataPropertyStatement objects */
-    UnaryFunctor<DataPropertyStatement,Boolean>   dataPropertyStatementFilter;
-    /** filter for ObjectPropertyStatement objects */
-    UnaryFunctor<ObjectPropertyStatement,Boolean> objectPropertyStatementFilter;
-
-    /** filter for VClass objects */
-    UnaryFunctor<VClass,Boolean>                  classFilter;
-
-    /* *************** filters only used by Webapp ******************* */
-    /** filter for VClassGroup objects */
-    UnaryFunctor<VClassGroup,Boolean>          vClassGroupFilter;
-
-    /** fitler for PropertyGroup objects */
-    UnaryFunctor<PropertyGroup, Boolean>      propertyGroupFilter;
-
     public final static UnaryFunctor FILTER_OUT_NOTHING =
         AdaptorFunctors.constantUnary(Boolean.TRUE);
+    /**
+     * filter for vitro.bean.Individual objects
+     */
+    UnaryFunctor<Individual, Boolean> individualFilter;
+    /**
+     * filter for DataProperty objects
+     */
+    UnaryFunctor<DataProperty, Boolean> dataPropertyFilter;
+    /**
+     * filter for ObjectProperty objects
+     */
+    UnaryFunctor<ObjectProperty, Boolean> objectPropertyFilter;
+    /**
+     * filter for DataPropertyStatement objects
+     */
+    UnaryFunctor<DataPropertyStatement, Boolean> dataPropertyStatementFilter;
+    /**
+     * filter for ObjectPropertyStatement objects
+     */
+    UnaryFunctor<ObjectPropertyStatement, Boolean> objectPropertyStatementFilter;
+
+    /* *************** filters only used by Webapp ******************* */
+    /**
+     * filter for VClass objects
+     */
+    UnaryFunctor<VClass, Boolean> classFilter;
+    /**
+     * filter for VClassGroup objects
+     */
+    UnaryFunctor<VClassGroup, Boolean> vClassGroupFilter;
+    /**
+     * fitler for PropertyGroup objects
+     */
+    UnaryFunctor<PropertyGroup, Boolean> propertyGroupFilter;
 
     /**
      * Builds a filter that does no filtering.
      */
     @SuppressWarnings("unchecked")
-    public VitroFiltersImpl(){
+    public VitroFiltersImpl() {
         individualFilter = FILTER_OUT_NOTHING;
         dataPropertyFilter = FILTER_OUT_NOTHING;
         objectPropertyFilter = FILTER_OUT_NOTHING;
-        dataPropertyStatementFilter  = FILTER_OUT_NOTHING;
-        objectPropertyStatementFilter= FILTER_OUT_NOTHING;
-        classFilter= FILTER_OUT_NOTHING;
+        dataPropertyStatementFilter = FILTER_OUT_NOTHING;
+        objectPropertyStatementFilter = FILTER_OUT_NOTHING;
+        classFilter = FILTER_OUT_NOTHING;
         vClassGroupFilter = FILTER_OUT_NOTHING;
         propertyGroupFilter = FILTER_OUT_NOTHING;
     }
 
     public VitroFiltersImpl(
-            UnaryFunctor<Individual, Boolean> individualFilter,
-            UnaryFunctor<DataProperty, Boolean> dataPropertyFilter,
-            UnaryFunctor<ObjectProperty, Boolean> objectPropertyFilter,
-            UnaryFunctor<DataPropertyStatement, Boolean> dataPropertyStatementFilter,
-            UnaryFunctor<ObjectPropertyStatement, Boolean> objectPropertyStatementFilter,
-            UnaryFunctor<VClass, Boolean> classFilter,
-            UnaryFunctor<VClassGroup, Boolean> classGroupFilter,
-            UnaryFunctor<PropertyGroup,Boolean>propertyGroupFilter) {
+        UnaryFunctor<Individual, Boolean> individualFilter,
+        UnaryFunctor<DataProperty, Boolean> dataPropertyFilter,
+        UnaryFunctor<ObjectProperty, Boolean> objectPropertyFilter,
+        UnaryFunctor<DataPropertyStatement, Boolean> dataPropertyStatementFilter,
+        UnaryFunctor<ObjectPropertyStatement, Boolean> objectPropertyStatementFilter,
+        UnaryFunctor<VClass, Boolean> classFilter,
+        UnaryFunctor<VClassGroup, Boolean> classGroupFilter,
+        UnaryFunctor<PropertyGroup, Boolean> propertyGroupFilter) {
         super();
         this.individualFilter = individualFilter;
         this.dataPropertyFilter = dataPropertyFilter;
@@ -91,7 +101,7 @@ public class VitroFiltersImpl extends VitroFiltersBase {
     }
 
     public VitroFilters setIndividualFilter(
-            UnaryFunctor<Individual, Boolean> individualFilter) {
+        UnaryFunctor<Individual, Boolean> individualFilter) {
         this.individualFilter = individualFilter;
         return this;
     }
@@ -104,7 +114,7 @@ public class VitroFiltersImpl extends VitroFiltersBase {
     }
 
     public VitroFilters setDataPropertyFilter(
-            UnaryFunctor<DataProperty, Boolean> dataPropertyFilter) {
+        UnaryFunctor<DataProperty, Boolean> dataPropertyFilter) {
         this.dataPropertyFilter = dataPropertyFilter;
         return this;
     }
@@ -117,7 +127,7 @@ public class VitroFiltersImpl extends VitroFiltersBase {
     }
 
     public VitroFilters setObjectPropertyFilter(
-            UnaryFunctor<ObjectProperty, Boolean> objectPropertyFilter) {
+        UnaryFunctor<ObjectProperty, Boolean> objectPropertyFilter) {
         this.objectPropertyFilter = objectPropertyFilter;
         return this;
     }
@@ -130,7 +140,7 @@ public class VitroFiltersImpl extends VitroFiltersBase {
     }
 
     public VitroFilters setDataPropertyStatementFilter(
-            UnaryFunctor<DataPropertyStatement, Boolean> dataPropertyStatementFilter) {
+        UnaryFunctor<DataPropertyStatement, Boolean> dataPropertyStatementFilter) {
         this.dataPropertyStatementFilter = dataPropertyStatementFilter;
         return this;
     }
@@ -143,7 +153,7 @@ public class VitroFiltersImpl extends VitroFiltersBase {
     }
 
     public VitroFilters setObjectPropertyStatementFilter(
-            UnaryFunctor<ObjectPropertyStatement, Boolean> objectPropertyStatementFilter) {
+        UnaryFunctor<ObjectPropertyStatement, Boolean> objectPropertyStatementFilter) {
         this.objectPropertyStatementFilter = objectPropertyStatementFilter;
         return this;
     }
@@ -168,7 +178,7 @@ public class VitroFiltersImpl extends VitroFiltersBase {
     }
 
     public VitroFilters setVClassGroupFilter(
-            UnaryFunctor<VClassGroup, Boolean> classGroupFilter) {
+        UnaryFunctor<VClassGroup, Boolean> classGroupFilter) {
         vClassGroupFilter = classGroupFilter;
         return this;
     }
@@ -178,7 +188,7 @@ public class VitroFiltersImpl extends VitroFiltersBase {
     }
 
     public void setPropertyGroupFilter(
-            UnaryFunctor<PropertyGroup, Boolean> propertyGroupFilter) {
+        UnaryFunctor<PropertyGroup, Boolean> propertyGroupFilter) {
         this.propertyGroupFilter = propertyGroupFilter;
     }
 

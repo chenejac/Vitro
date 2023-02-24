@@ -2,12 +2,10 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit.listing;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 
 import edu.cornell.mannlib.vedit.controller.BaseEditController;
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
@@ -21,59 +19,61 @@ import edu.cornell.mannlib.vitro.webapp.dao.DataPropertyStatementDao;
 import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
 import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
 
-@WebServlet(name = "DataPropertyStatementListingController", urlPatterns = {"/listDataPropertyStatements"} )
+@WebServlet(name = "DataPropertyStatementListingController", urlPatterns = {
+    "/listDataPropertyStatements"})
 public class DataPropertyStatementListingController extends BaseEditController {
 
-   public void doGet(HttpServletRequest request, HttpServletResponse response) {
-       if (!isAuthorizedToDisplayPage(request, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-       	return;
-       }
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
+        if (!isAuthorizedToDisplayPage(request, response, SimplePermission.EDIT_ONTOLOGY.ACTION)) {
+            return;
+        }
 
         VitroRequest vrequest = new VitroRequest(request);
 
         String noResultsMsgStr = "No data properties found";
 
-        int startAt=1;
+        int startAt = 1;
         String startAtParam = request.getParameter("startAt");
-        if (startAtParam!=null && startAtParam.trim().length()>0) {
+        if (startAtParam != null && startAtParam.trim().length() > 0) {
             try {
                 startAt = Integer.parseInt(startAtParam);
-                if (startAt<=0) {
+                if (startAt <= 0) {
                     startAt = 1;
                 }
-            } catch(NumberFormatException ex) {
-                throw new Error("Cannot interpret "+startAtParam+" as a number");
+            } catch (NumberFormatException ex) {
+                throw new Error("Cannot interpret " + startAtParam + " as a number");
             }
         }
 
-        int endAt=50;
+        int endAt = 50;
         String endAtParam = request.getParameter("endAt");
-        if (endAtParam!=null && endAtParam.trim().length()>0) {
+        if (endAtParam != null && endAtParam.trim().length() > 0) {
             try {
                 endAt = Integer.parseInt(endAtParam);
-                if (endAt<=0) {
-                    endAt=1;
+                if (endAt <= 0) {
+                    endAt = 1;
                 }
-                if (endAt<startAt) {
+                if (endAt < startAt) {
                     int temp = startAt;
                     startAt = endAt;
                     endAt = temp;
                 }
-            } catch(NumberFormatException ex) {
-                throw new Error("Cannot interpret "+endAtParam+" as a number");
+            } catch (NumberFormatException ex) {
+                throw new Error("Cannot interpret " + endAtParam + " as a number");
             }
         }
 
         ArrayList results = new ArrayList();
 
-        request.setAttribute("results",results);
+        request.setAttribute("results", results);
 
         results.add("XX");
         results.add("subject");
         results.add("property");
         results.add("object");
 
-        DataPropertyStatementDao dpsDao = vrequest.getUnfilteredWebappDaoFactory().getDataPropertyStatementDao();
+        DataPropertyStatementDao dpsDao =
+            vrequest.getUnfilteredWebappDaoFactory().getDataPropertyStatementDao();
         DataPropertyDao dpDao = vrequest.getUnfilteredWebappDaoFactory().getDataPropertyDao();
         IndividualDao iDao = vrequest.getUnfilteredWebappDaoFactory().getIndividualDao();
 
@@ -83,36 +83,37 @@ public class DataPropertyStatementListingController extends BaseEditController {
 
         int count = 0;
 
-       for (DataPropertyStatement dataPropertyStatement : dpsDao.getDataPropertyStatements(dp, startAt, endAt)) {
-           count++;
-           DataPropertyStatement dps = dataPropertyStatement;
-           Individual subj = iDao.getIndividualByURI(dps.getIndividualURI());
-           results.add("XX");
-           results.add(ListingControllerWebUtils.formatIndividualLink(subj));
-           results.add(dp.getPublicName());
-           results.add(dps.getData());
-       }
-
-        if (count == 0) {
-        	results.add("XX");
-        	results.add("No statements found for property \""+dp.getPublicName()+"\"");
-        	results.add("");
-        	results.add("");
+        for (DataPropertyStatement dataPropertyStatement : dpsDao
+            .getDataPropertyStatements(dp, startAt, endAt)) {
+            count++;
+            DataPropertyStatement dps = dataPropertyStatement;
+            Individual subj = iDao.getIndividualByURI(dps.getIndividualURI());
+            results.add("XX");
+            results.add(ListingControllerWebUtils.formatIndividualLink(subj));
+            results.add(dp.getPublicName());
+            results.add(dps.getData());
         }
 
-        request.setAttribute("columncount",new Integer(4));
-        request.setAttribute("suppressquery","true");
-        request.setAttribute("title","Data Property Statements");
+        if (count == 0) {
+            results.add("XX");
+            results.add("No statements found for property \"" + dp.getPublicName() + "\"");
+            results.add("");
+            results.add("");
+        }
+
+        request.setAttribute("columncount", new Integer(4));
+        request.setAttribute("suppressquery", "true");
+        request.setAttribute("title", "Data Property Statements");
         try {
             JSPPageHandler.renderBasicPage(request, response, Controllers.HORIZONTAL_JSP);
         } catch (Throwable t) {
             t.printStackTrace();
         }
 
-   }
+    }
 
-   public void doPost(HttpServletRequest request, HttpServletResponse response) {
-	   // don't post to this controller
-   }
+    public void doPost(HttpServletRequest request, HttpServletResponse response) {
+        // don't post to this controller
+    }
 
 }

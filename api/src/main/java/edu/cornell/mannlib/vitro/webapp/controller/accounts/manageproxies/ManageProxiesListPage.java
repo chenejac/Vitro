@@ -9,9 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.beans.SelfEditingConfiguration;
 import edu.cornell.mannlib.vitro.webapp.beans.UserAccount;
@@ -25,200 +22,201 @@ import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.Res
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.responsevalues.TemplateResponseValues;
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
 import edu.cornell.mannlib.vitro.webapp.web.images.PlaceholderUtil;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * TODO
  */
 public class ManageProxiesListPage extends AbstractPageHandler {
-	private static final Log log = LogFactory
-			.getLog(ManageProxiesListPage.class);
+    public static final String PARAMETER_RELATIONSHIPS_PER_PAGE = "relationshipsPerPage";
+    public static final String PARAMETER_PAGE_INDEX = "pageIndex";
+    public static final String PARAMETER_VIEW_TYPE = "viewType";
+    public static final String PARAMETER_SEARCH_TERM = "searchTerm";
+    private static final Log log = LogFactory
+        .getLog(ManageProxiesListPage.class);
+    private static final String TEMPLATE_NAME = "manageProxies-list.ftl";
 
-	public static final String PARAMETER_RELATIONSHIPS_PER_PAGE = "relationshipsPerPage";
-	public static final String PARAMETER_PAGE_INDEX = "pageIndex";
-	public static final String PARAMETER_VIEW_TYPE = "viewType";
-	public static final String PARAMETER_SEARCH_TERM = "searchTerm";
+    private final Context selectorContext;
 
-	private static final String TEMPLATE_NAME = "manageProxies-list.ftl";
+    private ProxyRelationshipSelectionCriteria criteria =
+        ProxyRelationshipSelectionCriteria.DEFAULT_CRITERIA;
 
-	private final Context selectorContext;
+    public ManageProxiesListPage(VitroRequest vreq) {
+        super(vreq);
 
-	private ProxyRelationshipSelectionCriteria criteria = ProxyRelationshipSelectionCriteria.DEFAULT_CRITERIA;
+        selectorContext = new Context(userAccountsModel, unionModel,
+            getMatchingProperty());
+        parseParameters();
+    }
 
-	public ManageProxiesListPage(VitroRequest vreq) {
-		super(vreq);
+    private String getMatchingProperty() {
+        return ConfigurationProperties.getBean(vreq).getProperty(
+            "selfEditing.idMatchingProperty", "");
+    }
 
-		selectorContext = new Context(userAccountsModel, unionModel,
-				getMatchingProperty());
-		parseParameters();
-	}
+    /**
+     * Build the criteria from the request parameters.
+     */
+    private void parseParameters() {
+        int relationshipsPerPage = getIntegerParameter(
+            PARAMETER_RELATIONSHIPS_PER_PAGE,
+            DEFAULT_RELATIONSHIPS_PER_PAGE);
+        int pageIndex = getIntegerParameter(PARAMETER_PAGE_INDEX, 1);
+        ProxyRelationshipView viewType = ProxyRelationshipView.fromKeyword(vreq
+            .getParameter(PARAMETER_VIEW_TYPE));
+        String searchTerm = getStringParameter(PARAMETER_SEARCH_TERM, "");
 
-	private String getMatchingProperty() {
-		return ConfigurationProperties.getBean(vreq).getProperty(
-				"selfEditing.idMatchingProperty", "");
-	}
+        criteria = new ProxyRelationshipSelectionCriteria(relationshipsPerPage,
+            pageIndex, viewType, searchTerm);
 
-	/**
-	 * Build the criteria from the request parameters.
-	 */
-	private void parseParameters() {
-		int relationshipsPerPage = getIntegerParameter(
-				PARAMETER_RELATIONSHIPS_PER_PAGE,
-				DEFAULT_RELATIONSHIPS_PER_PAGE);
-		int pageIndex = getIntegerParameter(PARAMETER_PAGE_INDEX, 1);
-		ProxyRelationshipView viewType = ProxyRelationshipView.fromKeyword(vreq
-				.getParameter(PARAMETER_VIEW_TYPE));
-		String searchTerm = getStringParameter(PARAMETER_SEARCH_TERM, "");
+        log.debug("selection criteria is: " + criteria);
+    }
 
-		criteria = new ProxyRelationshipSelectionCriteria(relationshipsPerPage,
-				pageIndex, viewType, searchTerm);
+    public ResponseValues showPage() {
+        ProxyRelationshipSelection selection = ProxyRelationshipSelector
+            .select(selectorContext, criteria);
+        log.debug("Selection: " + selection);
 
-		log.debug("selection criteria is: " + criteria);
-	}
+        Map<String, Object> body = buildTemplateBodyMap(selection);
+        return new TemplateResponseValues(TEMPLATE_NAME, body);
+    }
 
-	public ResponseValues showPage() {
-		ProxyRelationshipSelection selection = ProxyRelationshipSelector
-				.select(selectorContext, criteria);
-		log.debug("Selection: " + selection);
+    private Map<String, Object> buildTemplateBodyMap(
+        ProxyRelationshipSelection selection) {
+        Map<String, Object> body = new HashMap<String, Object>();
 
-		Map<String, Object> body = buildTemplateBodyMap(selection);
-		return new TemplateResponseValues(TEMPLATE_NAME, body);
-	}
+        body.put("relationshipsPerPage", criteria.getRelationshipsPerPage());
+        body.put("pageIndex", criteria.getPageIndex());
+        body.put("viewType", criteria.getViewBy());
+        body.put("searchTerm", criteria.getSearchTerm());
 
-	private Map<String, Object> buildTemplateBodyMap(
-			ProxyRelationshipSelection selection) {
-		Map<String, Object> body = new HashMap<String, Object>();
+        body.put("relationships", wrapProxyRelationships(selection));
+        body.put("total", selection.getTotalResultCount());
+        body.put("page", buildPageMap(selection));
 
-		body.put("relationshipsPerPage", criteria.getRelationshipsPerPage());
-		body.put("pageIndex", criteria.getPageIndex());
-		body.put("viewType", criteria.getViewBy());
-		body.put("searchTerm", criteria.getSearchTerm());
+        body.put("formUrls", buildUrlsMap());
 
-		body.put("relationships", wrapProxyRelationships(selection));
-		body.put("total", selection.getTotalResultCount());
-		body.put("page", buildPageMap(selection));
+        applyMessage(vreq, body);
 
-		body.put("formUrls", buildUrlsMap());
+        log.debug("body map is: " + body);
+        return body;
+    }
 
-		applyMessage(vreq, body);
+    private List<ProxyRelationship> wrapProxyRelationships(
+        ProxyRelationshipSelection selection) {
+        List<ProxyRelationship> wrapped = new ArrayList<ProxyRelationship>();
+        for (ProxyRelationship r : selection.getProxyRelationships()) {
+            wrapped.add(new ProxyRelationship(wrapProxyItemList(r
+                .getProxyInfos()), wrapProfileItemList(r.getProfileInfos())));
+        }
+        return wrapped;
+    }
 
-		log.debug("body map is: " + body);
-		return body;
-	}
+    private List<ProxyItemInfo> wrapProxyItemList(List<ProxyItemInfo> items) {
+        List<ProxyItemInfo> wrapped = new ArrayList<ProxyItemInfo>();
+        for (ProxyItemInfo item : items) {
+            wrapped.add(wrapProxyItem(item));
+        }
+        return wrapped;
+    }
 
-	private List<ProxyRelationship> wrapProxyRelationships(
-			ProxyRelationshipSelection selection) {
-		List<ProxyRelationship> wrapped = new ArrayList<ProxyRelationship>();
-		for (ProxyRelationship r : selection.getProxyRelationships()) {
-			wrapped.add(new ProxyRelationship(wrapProxyItemList(r
-					.getProxyInfos()), wrapProfileItemList(r.getProfileInfos())));
-		}
-		return wrapped;
-	}
+    private List<ProxyItemInfo> wrapProfileItemList(List<ProxyItemInfo> items) {
+        List<ProxyItemInfo> wrapped = new ArrayList<ProxyItemInfo>();
+        for (ProxyItemInfo item : items) {
+            wrapped.add(wrapProfileItem(item));
+        }
+        return wrapped;
+    }
 
-	private List<ProxyItemInfo> wrapProxyItemList(List<ProxyItemInfo> items) {
-		List<ProxyItemInfo> wrapped = new ArrayList<ProxyItemInfo>();
-		for (ProxyItemInfo item : items) {
-			wrapped.add(wrapProxyItem(item));
-		}
-		return wrapped;
-	}
+    private ProxyItemInfo wrapProxyItem(ProxyItemInfo item) {
+        String imagePath = item.getImageUrl();
+        if (imagePath.isEmpty()) {
+            imagePath = PlaceholderUtil.getPlaceholderImagePathForType(vreq,
+                VitroVocabulary.USERACCOUNT);
+        }
 
-	private List<ProxyItemInfo> wrapProfileItemList(List<ProxyItemInfo> items) {
-		List<ProxyItemInfo> wrapped = new ArrayList<ProxyItemInfo>();
-		for (ProxyItemInfo item : items) {
-			wrapped.add(wrapProfileItem(item));
-		}
-		return wrapped;
-	}
+        UserAccount ua = userAccountsDao.getUserAccountByUri(item.getUri());
+        List<Individual> profiles = SelfEditingConfiguration.getBean(vreq)
+            .getAssociatedIndividuals(indDao, ua);
+        String profileUri = (profiles.isEmpty()) ? "" : profiles.get(0)
+            .getURI();
 
-	private ProxyItemInfo wrapProxyItem(ProxyItemInfo item) {
-		String imagePath = item.getImageUrl();
-		if (imagePath.isEmpty()) {
-			imagePath = PlaceholderUtil.getPlaceholderImagePathForType(vreq,
-					VitroVocabulary.USERACCOUNT);
-		}
+        return new ProxyItemWrapper(item.getUri(), item.getLabel(),
+            item.getClassLabel(), UrlBuilder.getUrl(imagePath), profileUri);
+    }
 
-		UserAccount ua = userAccountsDao.getUserAccountByUri(item.getUri());
-		List<Individual> profiles = SelfEditingConfiguration.getBean(vreq)
-				.getAssociatedIndividuals(indDao, ua);
-		String profileUri = (profiles.isEmpty()) ? "" : profiles.get(0)
-				.getURI();
+    private ProxyItemInfo wrapProfileItem(ProxyItemInfo item) {
+        String imagePath = item.getImageUrl();
+        if (imagePath.isEmpty()) {
+            imagePath = PlaceholderUtil.getPlaceholderImagePathForIndividual(
+                vreq, item.getUri());
+        }
 
-		return new ProxyItemWrapper(item.getUri(), item.getLabel(),
-				item.getClassLabel(), UrlBuilder.getUrl(imagePath), profileUri);
-	}
+        return new ProfileItemWrapper(item.getUri(), item.getLabel(),
+            item.getClassLabel(), UrlBuilder.getUrl(imagePath));
+    }
 
-	private ProxyItemInfo wrapProfileItem(ProxyItemInfo item) {
-		String imagePath = item.getImageUrl();
-		if (imagePath.isEmpty()) {
-			imagePath = PlaceholderUtil.getPlaceholderImagePathForIndividual(
-					vreq, item.getUri());
-		}
+    private Map<String, Integer> buildPageMap(
+        ProxyRelationshipSelection selection) {
+        int currentPage = selection.getCriteria().getPageIndex();
 
-		return new ProfileItemWrapper(item.getUri(), item.getLabel(),
-				item.getClassLabel(), UrlBuilder.getUrl(imagePath));
-	}
+        float pageCount = ((float) selection.getTotalResultCount())
+            / selection.getCriteria().getRelationshipsPerPage();
+        int lastPage = (int) Math.ceil(pageCount);
 
-	private Map<String, Integer> buildPageMap(
-			ProxyRelationshipSelection selection) {
-		int currentPage = selection.getCriteria().getPageIndex();
+        Map<String, Integer> map = new HashMap<String, Integer>();
 
-		float pageCount = ((float) selection.getTotalResultCount())
-				/ selection.getCriteria().getRelationshipsPerPage();
-		int lastPage = (int) Math.ceil(pageCount);
+        map.put("current", currentPage);
+        map.put("first", 1);
+        map.put("last", lastPage);
 
-		Map<String, Integer> map = new HashMap<String, Integer>();
+        if (currentPage < lastPage) {
+            map.put("next", currentPage + 1);
+        }
+        if (currentPage > 1) {
+            map.put("previous", currentPage - 1);
+        }
 
-		map.put("current", currentPage);
-		map.put("first", 1);
-		map.put("last", lastPage);
+        return map;
+    }
 
-		if (currentPage < lastPage) {
-			map.put("next", currentPage + 1);
-		}
-		if (currentPage > 1) {
-			map.put("previous", currentPage - 1);
-		}
+    protected Map<String, String> buildUrlsMap() {
+        Map<String, String> map = new HashMap<String, String>();
 
-		return map;
-	}
+        map.put("list", UrlBuilder.getUrl("/manageProxies/list"));
+        map.put("edit", UrlBuilder.getUrl("/manageProxies/edit"));
+        map.put("create", UrlBuilder.getUrl("/manageProxies/create"));
+        map.put("ajax", UrlBuilder.getUrl("/proxiesAjax"));
 
-	protected Map<String, String> buildUrlsMap() {
-		Map<String, String> map = new HashMap<String, String>();
+        return map;
+    }
 
-		map.put("list", UrlBuilder.getUrl("/manageProxies/list"));
-		map.put("edit", UrlBuilder.getUrl("/manageProxies/edit"));
-		map.put("create", UrlBuilder.getUrl("/manageProxies/create"));
-		map.put("ajax", UrlBuilder.getUrl("/proxiesAjax"));
+    public static class ProxyItemWrapper extends ProxyItemInfo {
+        private final String profileUri;
 
-		return map;
-	}
+        public ProxyItemWrapper(String uri, String label, String classLabel,
+                                String imageUrl, String profileUri) {
+            super(uri, label, classLabel, imageUrl);
+            this.profileUri = profileUri;
+        }
 
-	public static class ProxyItemWrapper extends ProxyItemInfo {
-		private final String profileUri;
+        public String getProfileUri() {
+            return profileUri;
+        }
 
-		public ProxyItemWrapper(String uri, String label, String classLabel,
-				String imageUrl, String profileUri) {
-			super(uri, label, classLabel, imageUrl);
-			this.profileUri = profileUri;
-		}
+        @Override
+        public String toString() {
+            return "ProxyItemWrapper[uri=" + getUri() + ", label=" + getLabel()
+                + ", classLabel=" + getClassLabel() + ", imageUrl="
+                + getImageUrl() + ", profileUri=" + profileUri + "]";
+        }
+    }
 
-		public String getProfileUri() {
-			return profileUri;
-		}
-
-		@Override
-		public String toString() {
-			return "ProxyItemWrapper[uri=" + getUri() + ", label=" + getLabel()
-					+ ", classLabel=" + getClassLabel() + ", imageUrl="
-					+ getImageUrl() + ", profileUri=" + profileUri + "]";
-		}
-	}
-
-	private static class ProfileItemWrapper extends ProxyItemInfo {
-		public ProfileItemWrapper(String uri, String label, String classLabel,
-				String imageUrl) {
-			super(uri, label, classLabel, imageUrl);
-		}
-	}
+    private static class ProfileItemWrapper extends ProxyItemInfo {
+        public ProfileItemWrapper(String uri, String label, String classLabel,
+                                  String imageUrl) {
+            super(uri, label, classLabel, imageUrl);
+        }
+    }
 }

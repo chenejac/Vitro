@@ -8,20 +8,20 @@ package edu.cornell.mannlib.vitro.webapp.filestorage.impl;
  */
 public class InvalidPathException extends RuntimeException {
 
-	public InvalidPathException() {
-		super();
-	}
+    public InvalidPathException() {
+        super();
+    }
 
-	public InvalidPathException(String message) {
-		super(message);
-	}
+    public InvalidPathException(String message) {
+        super(message);
+    }
 
-	public InvalidPathException(Throwable cause) {
-		super(cause);
-	}
+    public InvalidPathException(Throwable cause) {
+        super(cause);
+    }
 
-	public InvalidPathException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public InvalidPathException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }

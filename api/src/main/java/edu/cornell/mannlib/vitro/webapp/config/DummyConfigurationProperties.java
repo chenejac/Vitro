@@ -14,28 +14,28 @@ import org.apache.commons.logging.LogFactory;
  * properties while logging warning messages for each request.
  */
 class DummyConfigurationProperties extends ConfigurationProperties {
-	private static final Log log = LogFactory
-			.getLog(DummyConfigurationProperties.class);
+    private static final Log log = LogFactory
+        .getLog(DummyConfigurationProperties.class);
 
-	@Override
-	public String getProperty(String key) {
-		log.warn("ConfigurationProperties has not been initialized: getProperty(\""
-				+ key + "\")");
-		return null;
-	}
+    @Override
+    public String getProperty(String key) {
+        log.warn("ConfigurationProperties has not been initialized: getProperty(\""
+            + key + "\")");
+        return null;
+    }
 
-	@Override
-	public String getProperty(String key, String defaultValue) {
-		log.warn("ConfigurationProperties has not been initialized: getProperty(\""
-				+ key + "\", \"" + defaultValue + "\")");
-		return defaultValue;
-	}
+    @Override
+    public String getProperty(String key, String defaultValue) {
+        log.warn("ConfigurationProperties has not been initialized: getProperty(\""
+            + key + "\", \"" + defaultValue + "\")");
+        return defaultValue;
+    }
 
-	@Override
-	public Map<String, String> getPropertyMap() {
-		log.warn("ConfigurationProperties has not been initialized: "
-				+ "getPropertyMap()");
-		return Collections.emptyMap();
-	}
+    @Override
+    public Map<String, String> getPropertyMap() {
+        log.warn("ConfigurationProperties has not been initialized: "
+            + "getPropertyMap()");
+        return Collections.emptyMap();
+    }
 
 }

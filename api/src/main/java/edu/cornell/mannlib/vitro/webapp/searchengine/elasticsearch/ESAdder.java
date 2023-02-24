@@ -9,17 +9,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
+import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchInputDocument;
+import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchInputField;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
 import org.apache.http.entity.ContentType;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
-import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchInputDocument;
-import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchInputField;
 
 /**
  * The nuts and bolts of adding a document to the Elasticsearch index
@@ -34,19 +32,19 @@ public class ESAdder {
     }
 
     public void add(Collection<SearchInputDocument> docs)
-            throws SearchEngineException {
+        throws SearchEngineException {
         for (SearchInputDocument doc : docs) {
             addDocument(doc);
         }
     }
 
     private void addDocument(SearchInputDocument doc)
-            throws SearchEngineException {
+        throws SearchEngineException {
         try {
             Map<String, List<Object>> map = convertDocToMap(doc);
             String json = new ObjectMapper().writeValueAsString(map);
             log.debug("Adding document for '" + doc.getField("DocId") + "': "
-                    + json);
+                + json);
 
             putToElastic(json, (String) doc.getField("DocId").getFirstValue());
         } catch (Exception e) {
@@ -76,17 +74,17 @@ public class ESAdder {
     }
 
     private void putToElastic(String json, String docId)
-            throws SearchEngineException {
+        throws SearchEngineException {
         try {
             String url = baseUrl + "/_doc/"
-                    + URLEncoder.encode(docId, "UTF8");
+                + URLEncoder.encode(docId, "UTF8");
             Response response = Request.Put(url)
-                    .bodyString(json, ContentType.APPLICATION_JSON).execute();
+                .bodyString(json, ContentType.APPLICATION_JSON).execute();
             log.debug("Response from Elasticsearch: "
-                    + response.returnContent().asString());
+                + response.returnContent().asString());
         } catch (Exception e) {
             throw new SearchEngineException("Failed to put to Elasticsearch",
-                    e);
+                e);
         }
     }
 }

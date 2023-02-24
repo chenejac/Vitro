@@ -28,24 +28,24 @@ import edu.cornell.mannlib.vitro.webapp.i18n.I18nBundle;
 
 /**
  * This wraps a WebappDaoFactory and applies filtering.
- *
- *  Objects that can be filtered by this class:
- *
- *  IndividualWebapp
- *  ObjectProperty
- *  Tab
- *  VClassGroup
- *  VClass
- *  User
- *
- *  If getCoreDaoFactory() is called on a WebappDaoFactoryFiltering, the returned
- *  CoreDaoFactory will have the same filtering as the WebappDaoFactoryFiltering.
- *
- *  Notice: A WebappDaoFactoryFiltering with a set of filters will always
- *  filter the same regardless of context.  If you need to filter one
- *  way on an entity page and a different way on a index page, then
- *  you will need WebappDaoFactoryFiltering objects with different sets
- *  of filters.
+ * <p>
+ * Objects that can be filtered by this class:
+ * <p>
+ * IndividualWebapp
+ * ObjectProperty
+ * Tab
+ * VClassGroup
+ * VClass
+ * User
+ * <p>
+ * If getCoreDaoFactory() is called on a WebappDaoFactoryFiltering, the returned
+ * CoreDaoFactory will have the same filtering as the WebappDaoFactoryFiltering.
+ * <p>
+ * Notice: A WebappDaoFactoryFiltering with a set of filters will always
+ * filter the same regardless of context.  If you need to filter one
+ * way on an entity page and a different way on a index page, then
+ * you will need WebappDaoFactoryFiltering objects with different sets
+ * of filters.
  *
  * @author bdc34
  */
@@ -55,47 +55,48 @@ public class WebappDaoFactoryFiltering implements WebappDaoFactory {
 
     transient private VitroFilters filters;
 
-    transient private DataPropertyDao          filteringDataPropertyDao=null;
-    transient private DataPropertyStatementDao filteringDataPropertyStatementDao=null;
-    transient private IndividualDao            filteringIndividualDao=null;
-    transient private ObjectPropertyDao        filteringObjectPropertyDao=null;
-    transient private FauxPropertyDao          filteringFauxPropertyDao=null;
-    transient private ObjectPropertyStatementDao filteringObjectPropertyStatementDao=null;
-    transient private VClassDao                filteringVClassDao=null;
+    transient private DataPropertyDao filteringDataPropertyDao = null;
+    transient private DataPropertyStatementDao filteringDataPropertyStatementDao = null;
+    transient private IndividualDao filteringIndividualDao = null;
+    transient private ObjectPropertyDao filteringObjectPropertyDao = null;
+    transient private FauxPropertyDao filteringFauxPropertyDao = null;
+    transient private ObjectPropertyStatementDao filteringObjectPropertyStatementDao = null;
+    transient private VClassDao filteringVClassDao = null;
 
-    transient private UserAccountsDao filteringUserAccountsDao=null;
-    transient private VClassGroupDao filteringVClassGroupDao=null;
-    transient private PropertyGroupDao filteringPropertyGroupDao=null;
-    transient private PropertyInstanceDao filteringPropertyInstanceDao=null;
+    transient private UserAccountsDao filteringUserAccountsDao = null;
+    transient private VClassGroupDao filteringVClassGroupDao = null;
+    transient private PropertyGroupDao filteringPropertyGroupDao = null;
+    transient private PropertyInstanceDao filteringPropertyInstanceDao = null;
 
-    public WebappDaoFactoryFiltering(WebappDaoFactory innerDao, VitroFilters filters){
-        if( innerDao == null )
+    public WebappDaoFactoryFiltering(WebappDaoFactory innerDao, VitroFilters filters) {
+        if (innerDao == null) {
             throw new Error("innerWebappDaoFactory must be non-null");
+        }
         this.filters = filters;
         this.innerWebappDaoFactory = innerDao;
     }
 
-	@Override
-	public String toString() {
-		return "WebappDaoFactoryFiltering[inner=" + innerWebappDaoFactory
-				+ ", filters=" + filters + "]";
-	}
+    @Override
+    public String toString() {
+        return "WebappDaoFactoryFiltering[inner=" + innerWebappDaoFactory
+            + ", filters=" + filters + "]";
+    }
 
 
     /* ******************* filtering *********************** */
 
 
-	public String checkURI(String uriStr) {
-    	return innerWebappDaoFactory.checkURI(uriStr);
+    public String checkURI(String uriStr) {
+        return innerWebappDaoFactory.checkURI(uriStr);
     }
 
     @Override
-	public String checkURIForEditableEntity(String uriStr) {
-    	return innerWebappDaoFactory.checkURIForEditableEntity(uriStr);
-	}
+    public String checkURIForEditableEntity(String uriStr) {
+        return innerWebappDaoFactory.checkURIForEditableEntity(uriStr);
+    }
 
-	public boolean hasExistingURI(String uriStr) {
-    	return innerWebappDaoFactory.hasExistingURI(uriStr);
+    public boolean hasExistingURI(String uriStr) {
+        return innerWebappDaoFactory.hasExistingURI(uriStr);
     }
 
     public WebappDaoFactory getUserAwareDaoFactory(String userURI) {
@@ -108,45 +109,49 @@ public class WebappDaoFactoryFiltering implements WebappDaoFactory {
     }
 
     public Set<String> getNonuserNamespaces() {
-    	return innerWebappDaoFactory.getNonuserNamespaces();
+        return innerWebappDaoFactory.getNonuserNamespaces();
     }
 
     public List<String> getPreferredLanguages() {
-    	return innerWebappDaoFactory.getPreferredLanguages();
+        return innerWebappDaoFactory.getPreferredLanguages();
     }
 
     public List<String> getCommentsForResource(String resourceURI) {
-    	return innerWebappDaoFactory.getCommentsForResource(resourceURI);
+        return innerWebappDaoFactory.getCommentsForResource(resourceURI);
     }
 
-    public IndividualDao getIndividualDao(){
-        if( filteringIndividualDao == null)
+    public IndividualDao getIndividualDao() {
+        if (filteringIndividualDao == null) {
             filteringIndividualDao =
-                new IndividualDaoFiltering(innerWebappDaoFactory.getIndividualDao(),filters);
+                new IndividualDaoFiltering(innerWebappDaoFactory.getIndividualDao(), filters);
+        }
         return filteringIndividualDao;
     }
 
     public UserAccountsDao getUserAccountsDao() {
-    	if( filteringUserAccountsDao == null)
-    		filteringUserAccountsDao =
-    			new UserAccountsDaoFiltering(innerWebappDaoFactory.getUserAccountsDao(),filters);
-    	return filteringUserAccountsDao;
+        if (filteringUserAccountsDao == null) {
+            filteringUserAccountsDao =
+                new UserAccountsDaoFiltering(innerWebappDaoFactory.getUserAccountsDao(), filters);
+        }
+        return filteringUserAccountsDao;
     }
 
     public VClassGroupDao getVClassGroupDao() {
-        if( filteringVClassGroupDao == null)
+        if (filteringVClassGroupDao == null) {
             filteringVClassGroupDao =
                 new VClassGroupDaoFiltering(innerWebappDaoFactory.getVClassGroupDao(),
-                                            this,filters);
+                    this, filters);
+        }
 
         return filteringVClassGroupDao;
     }
 
     public PropertyGroupDao getPropertyGroupDao() {
-        if( filteringPropertyGroupDao == null)
+        if (filteringPropertyGroupDao == null) {
             filteringPropertyGroupDao =
                 new PropertyGroupDaoFiltering(innerWebappDaoFactory.getPropertyGroupDao(),
-                                            this, filters);
+                    this, filters);
+        }
         return filteringPropertyGroupDao;
     }
 
@@ -170,7 +175,7 @@ public class WebappDaoFactoryFiltering implements WebappDaoFactory {
     }
 
     public ApplicationDao getApplicationDao() {
-    	return innerWebappDaoFactory.getApplicationDao();
+        return innerWebappDaoFactory.getApplicationDao();
     }
 
 ///////////////////////////////////////////////////////////////////
@@ -189,70 +194,74 @@ public class WebappDaoFactoryFiltering implements WebappDaoFactory {
     /* ******************* filtering DAOs *************************** */
 
     public PropertyInstanceDao getPropertyInstanceDao() {
-        if( filteringPropertyInstanceDao == null ){
+        if (filteringPropertyInstanceDao == null) {
             filteringPropertyInstanceDao =
                 new FilteringPropertyInstanceDao(
-                        innerWebappDaoFactory.getPropertyInstanceDao(),
-                        innerWebappDaoFactory.getObjectPropertyDao(),
-                        innerWebappDaoFactory.getIndividualDao(),
-                        filters);
+                    innerWebappDaoFactory.getPropertyInstanceDao(),
+                    innerWebappDaoFactory.getObjectPropertyDao(),
+                    innerWebappDaoFactory.getIndividualDao(),
+                    filters);
         }
         return filteringPropertyInstanceDao;
     }
 
     public DataPropertyDao getDataPropertyDao() {
-        if (filteringDataPropertyDao == null ){
+        if (filteringDataPropertyDao == null) {
             filteringDataPropertyDao =
                 new DataPropertyDaoFiltering(innerWebappDaoFactory.getDataPropertyDao(),
-                                             filters);
+                    filters);
         }
         return filteringDataPropertyDao;
     }
 
 
     public DataPropertyStatementDao getDataPropertyStatementDao() {
-        if (filteringDataPropertyStatementDao == null ){
+        if (filteringDataPropertyStatementDao == null) {
             filteringDataPropertyStatementDao =
-                new DataPropertyStatementDaoFiltering(innerWebappDaoFactory.getDataPropertyStatementDao(),
-                        filters);
+                new DataPropertyStatementDaoFiltering(
+                    innerWebappDaoFactory.getDataPropertyStatementDao(),
+                    filters);
         }
         return filteringDataPropertyStatementDao;
     }
 
 
     public ObjectPropertyStatementDao getObjectPropertyStatementDao() {
-        if (filteringObjectPropertyStatementDao == null ){
+        if (filteringObjectPropertyStatementDao == null) {
             filteringObjectPropertyStatementDao =
-                new ObjectPropertyStatementDaoFiltering(innerWebappDaoFactory.getObjectPropertyStatementDao(),
-                        filters);
+                new ObjectPropertyStatementDaoFiltering(
+                    innerWebappDaoFactory.getObjectPropertyStatementDao(),
+                    filters);
         }
         return filteringObjectPropertyStatementDao;
     }
 
 
     public ObjectPropertyDao getObjectPropertyDao() {
-        if (filteringObjectPropertyDao == null ){
-            filteringObjectPropertyDao = new ObjectPropertyDaoFiltering(innerWebappDaoFactory.getObjectPropertyDao(),
+        if (filteringObjectPropertyDao == null) {
+            filteringObjectPropertyDao =
+                new ObjectPropertyDaoFiltering(innerWebappDaoFactory.getObjectPropertyDao(),
                     filters);
         }
         return filteringObjectPropertyDao;
     }
 
     public FauxPropertyDao getFauxPropertyDao() {
-    	if (filteringFauxPropertyDao == null ){
-    		filteringFauxPropertyDao = new FauxPropertyDaoFiltering(innerWebappDaoFactory.getFauxPropertyDao(),
-    				filters);
-    	}
-    	return filteringFauxPropertyDao;
+        if (filteringFauxPropertyDao == null) {
+            filteringFauxPropertyDao =
+                new FauxPropertyDaoFiltering(innerWebappDaoFactory.getFauxPropertyDao(),
+                    filters);
+        }
+        return filteringFauxPropertyDao;
     }
 
 
     public VClassDao getVClassDao() {
-        if (filteringVClassDao == null ){
+        if (filteringVClassDao == null) {
             filteringVClassDao = new VClassDaoFiltering(
-                    innerWebappDaoFactory.getVClassDao(),
-                    innerWebappDaoFactory.getIndividualDao(),
-                    filters
+                innerWebappDaoFactory.getVClassDao(),
+                innerWebappDaoFactory.getIndividualDao(),
+                filters
             );
         }
         return filteringVClassDao;
@@ -264,12 +273,12 @@ public class WebappDaoFactoryFiltering implements WebappDaoFactory {
     }
 
     @Override
-    public MenuDao getMenuDao(){
+    public MenuDao getMenuDao() {
         return innerWebappDaoFactory.getMenuDao();
     }
 
     @Override
-    public DisplayModelDao getDisplayModelDao(){
+    public DisplayModelDao getDisplayModelDao() {
         return innerWebappDaoFactory.getDisplayModelDao();
     }
 

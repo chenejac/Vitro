@@ -3,13 +3,11 @@ package org.linkeddatafragments.exceptions;
 import org.linkeddatafragments.datasource.IDataSource;
 
 /**
- *
  * @author Miel Vander Sande
  */
 abstract public class DataSourceException extends Exception {
 
     /**
-     *
      * @param cause
      */
     public DataSourceException(Throwable cause) {
@@ -17,7 +15,6 @@ abstract public class DataSourceException extends Exception {
     }
 
     /**
-     *
      * @param datasourceName
      * @param message
      */
@@ -26,7 +23,6 @@ abstract public class DataSourceException extends Exception {
     }
 
     /**
-     *
      * @param datasource
      * @param message
      */

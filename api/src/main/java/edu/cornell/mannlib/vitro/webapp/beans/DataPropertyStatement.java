@@ -4,7 +4,6 @@ package edu.cornell.mannlib.vitro.webapp.beans;
 
 /**
  * a class representing a particular instance of a data property
- *
  */
 public interface DataPropertyStatement {
 

@@ -33,7 +33,8 @@ public class ExceptionResponseValues extends TemplateResponseValues {
         this.cause = cause;
     }
 
-    public ExceptionResponseValues(String templateName, Map<String, Object> map, Throwable cause, int statusCode) {
+    public ExceptionResponseValues(String templateName, Map<String, Object> map, Throwable cause,
+                                   int statusCode) {
         super(templateName, map, statusCode);
         this.cause = cause;
     }

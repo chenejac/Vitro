@@ -10,33 +10,33 @@ import java.util.Collection;
  */
 public interface SearchInputField {
 
-	/**
-	 * Add values to this field.
-	 */
-	void addValues(Object... values);
+    /**
+     * Add values to this field.
+     */
+    void addValues(Object... values);
 
-	/**
-	 * Add values to this field.
-	 */
-	void addValues(Collection<? extends Object> values);
+    /**
+     * Add values to this field.
+     */
+    void addValues(Collection<? extends Object> values);
 
-	/**
-	 * Set the boost level for this field.
-	 */
-	void setBoost(float boost);
+    String getName();
 
-	String getName();
+    float getBoost();
 
-	float getBoost();
+    /**
+     * Set the boost level for this field.
+     */
+    void setBoost(float boost);
 
-	/**
-	 * May return an empty collection, but never null.
-	 */
-	Collection<Object> getValues();
+    /**
+     * May return an empty collection, but never null.
+     */
+    Collection<Object> getValues();
 
-	/**
-	 * May return null.
-	 */
-	Object getFirstValue();
+    /**
+     * May return null.
+     */
+    Object getFirstValue();
 
 }

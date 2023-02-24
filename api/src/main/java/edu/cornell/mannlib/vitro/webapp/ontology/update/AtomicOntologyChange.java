@@ -3,83 +3,81 @@
 package edu.cornell.mannlib.vitro.webapp.ontology.update;
 
 /**
- *
  * We need to document what is in source and destinationURI for each
  * change type.
- *
  */
 public class AtomicOntologyChange {
 
-	private String sourceURI;
-	private String destinationURI;
-	private AtomicChangeType atomicChangeType;
-	private String notes;
+    private String sourceURI;
+    private String destinationURI;
+    private AtomicChangeType atomicChangeType;
+    private String notes;
 
-	public AtomicOntologyChange() {
+    public AtomicOntologyChange() {
 
     }
 
-	public AtomicOntologyChange(String sourceURI,
-	                            String destinationURI,
-	                            AtomicChangeType atomicChangeType,
-	                            String notes) {
+    public AtomicOntologyChange(String sourceURI,
+                                String destinationURI,
+                                AtomicChangeType atomicChangeType,
+                                String notes) {
 
-		this.sourceURI = sourceURI;
-		this.destinationURI = destinationURI;
-		this.atomicChangeType = atomicChangeType;
-		this.notes = notes;
+        this.sourceURI = sourceURI;
+        this.destinationURI = destinationURI;
+        this.atomicChangeType = atomicChangeType;
+        this.notes = notes;
     }
 
-	@Override
-	public String toString() {
-	    return "Source: " + sourceURI + "; Destination: " + destinationURI +
-	            "; Type: " + atomicChangeType + "; Notes:" + notes;
-	}
+    @Override
+    public String toString() {
+        return "Source: " + sourceURI + "; Destination: " + destinationURI +
+            "; Type: " + atomicChangeType + "; Notes:" + notes;
+    }
 
-	/**
-	 * Contains the URI of a class or property in the previous version of
-	 * the ontology, or null if a new class or property was introduced
-	 * in the current version of the ontology.
-	 */
-	public String getSourceURI() {
-		return this.sourceURI;
-	}
+    /**
+     * Contains the URI of a class or property in the previous version of
+     * the ontology, or null if a new class or property was introduced
+     * in the current version of the ontology.
+     */
+    public String getSourceURI() {
+        return this.sourceURI;
+    }
 
-	public void setSourceURI(String sourceURI) {
-		this.sourceURI = sourceURI;
-	}
+    public void setSourceURI(String sourceURI) {
+        this.sourceURI = sourceURI;
+    }
 
-	/**
-	 * Contains the URI of a class or property in the current version of
-	 * the ontology, or null if a class or property was removed from the
-	 * previous version of the ontology.
-	 */
-	public String getDestinationURI() {
-		return this.destinationURI;
-	}
+    /**
+     * Contains the URI of a class or property in the current version of
+     * the ontology, or null if a class or property was removed from the
+     * previous version of the ontology.
+     */
+    public String getDestinationURI() {
+        return this.destinationURI;
+    }
 
-	public void setDestinationURI(String destinationURI) {
-		this.destinationURI = destinationURI;
-	}
+    public void setDestinationURI(String destinationURI) {
+        this.destinationURI = destinationURI;
+    }
 
-	public AtomicChangeType getAtomicChangeType() {
-		return atomicChangeType;
-	}
+    public AtomicChangeType getAtomicChangeType() {
+        return atomicChangeType;
+    }
 
-	public void setAtomicChangeType(AtomicChangeType atomicChangeType) {
-		this.atomicChangeType = atomicChangeType;
-	}
+    public void setAtomicChangeType(AtomicChangeType atomicChangeType) {
+        this.atomicChangeType = atomicChangeType;
+    }
 
-	public String getNotes() {
-		return notes;
-	}
+    public String getNotes() {
+        return notes;
+    }
 
-	public void setNotes(String notes) {
-		this.notes = notes;
-	}
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
 
-	public enum AtomicChangeType {
-		ADD, DELETE, RENAME
-	}
+    public enum AtomicChangeType {
+        ADD, DELETE, RENAME
+    }
 
 }

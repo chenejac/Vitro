@@ -6,23 +6,24 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * A class for sorting language strings by acceptability according to a 
- * supplied list of language preferences.  
+ * A class for sorting language strings by acceptability according to a
+ * supplied list of language preferences.
  * Refactored from LanguageFilteringRDFService for reuse by classes performing
  * similar functions.
  */
 public class LangSort {
-     
+
     private static final Log log = LogFactory.getLog(LangSort.class);
-    
+
     protected List<String> langs;
     private int inexactMatchPenalty;
     private int noLanguage;
     private int noMatch;
 
     /**
-     * Construct a language string sorter with a supplied list of preferred 
+     * Construct a language string sorter with a supplied list of preferred
      * language strings
+     *
      * @param preferredLanguageStrings list of preferred languages of form
      *                                 'en-US', 'es', 'fr-CA'.  May not be null.
      */
@@ -34,11 +35,11 @@ public class LangSort {
         // no match is worse than no language.
         this.noMatch = noLanguage + 1;
     }
-    
+
     protected int compareLangs(String t1lang, String t2lang) {
         int index1 = languageIndex(t1lang);
         int index2 = languageIndex(t2lang);
-        if(index1 == index2) {
+        if (index1 == index2) {
             return t1lang.compareTo(t2lang);
         } else {
             return languageIndex(t1lang) - languageIndex(t2lang);

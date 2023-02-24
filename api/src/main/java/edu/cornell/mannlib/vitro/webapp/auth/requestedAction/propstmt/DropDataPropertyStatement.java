@@ -2,24 +2,23 @@
 
 package edu.cornell.mannlib.vitro.webapp.auth.requestedAction.propstmt;
 
-import org.apache.jena.ontology.OntModel;
-
 import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
+import org.apache.jena.ontology.OntModel;
 
 /**
  * Should we allow the user to delete this DataPropertyStatement from this
  * model?
  */
 public class DropDataPropertyStatement extends
-		AbstractDataPropertyStatementAction {
+    AbstractDataPropertyStatementAction {
 
-	public DropDataPropertyStatement(OntModel ontModel, String subjectUri,
-			String predicateUri, String dataValue) {
-		super(ontModel, subjectUri, predicateUri, dataValue);
-	}
+    public DropDataPropertyStatement(OntModel ontModel, String subjectUri,
+                                     String predicateUri, String dataValue) {
+        super(ontModel, subjectUri, predicateUri, dataValue);
+    }
 
-	public DropDataPropertyStatement(OntModel ontModel,
-			DataPropertyStatement dps) {
-		super(ontModel, dps);
-	}
+    public DropDataPropertyStatement(OntModel ontModel,
+                                     DataPropertyStatement dps) {
+        super(ontModel, dps);
+    }
 }

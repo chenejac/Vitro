@@ -14,36 +14,36 @@ import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
  * RDFServiceVirtuoso.
  */
 public class ContentTripleSourceVirtuoso extends ContentTripleSourceSPARQL {
-	private String baseUri;
-	private String username;
-	private String password;
+    private String baseUri;
+    private String username;
+    private String password;
 
-	@Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#hasBaseURI", minOccurs = 1, maxOccurs = 1)
-	public void setBaseUri(String uri) {
-		baseUri = uri;
-	}
+    @Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#hasBaseURI", minOccurs = 1, maxOccurs = 1)
+    public void setBaseUri(String uri) {
+        baseUri = uri;
+    }
 
-	@Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#hasUsername", minOccurs = 1, maxOccurs = 1)
-	public void setUsername(String user) {
-		username = user;
-	}
+    @Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#hasUsername", minOccurs = 1, maxOccurs = 1)
+    public void setUsername(String user) {
+        username = user;
+    }
 
-	@Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#hasPassword", minOccurs = 1, maxOccurs = 1)
-	public void setPassword(String pass) {
-		password = pass;
-	}
+    @Property(uri = "http://vitro.mannlib.cornell.edu/ns/vitro/ApplicationSetup#hasPassword", minOccurs = 1, maxOccurs = 1)
+    public void setPassword(String pass) {
+        password = pass;
+    }
 
-	@Override
-	protected RDFService createRDFService(ComponentStartupStatus ss) {
-		ss.info("Using Virtuoso at " + baseUri + ", authenticating as "
-				+ username);
-		return new RDFServiceVirtuoso(baseUri, username, password);
-	}
+    @Override
+    protected RDFService createRDFService(ComponentStartupStatus ss) {
+        ss.info("Using Virtuoso at " + baseUri + ", authenticating as "
+            + username);
+        return new RDFServiceVirtuoso(baseUri, username, password);
+    }
 
-	@Override
-	public String toString() {
-		return "ContentTripleSourceVirtuoso[" + ToString.hashHex(this)
-				+ ", baseUri=" + baseUri + ", username=" + username + "]";
-	}
+    @Override
+    public String toString() {
+        return "ContentTripleSourceVirtuoso[" + ToString.hashHex(this)
+            + ", baseUri=" + baseUri + ", username=" + username + "]";
+    }
 
 }

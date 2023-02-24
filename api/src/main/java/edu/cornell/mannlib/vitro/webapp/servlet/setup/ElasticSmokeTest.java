@@ -2,6 +2,12 @@
 
 package edu.cornell.mannlib.vitro.webapp.servlet.setup;
 
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import edu.cornell.mannlib.vitro.webapp.config.ConfigurationProperties;
 import edu.cornell.mannlib.vitro.webapp.startup.StartupStatus;
 import edu.cornell.mannlib.vitro.webapp.utils.http.HttpClientFactory;
@@ -12,12 +18,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
-
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * If we can't connect to ElasticSearch, add a Warning item to the StartupStatus.
@@ -35,11 +35,12 @@ public class ElasticSmokeTest {
     public void doTest(ServletContextEvent sce) {
         final StartupStatus ss = StartupStatus.getBean(sce.getServletContext());
 
-        String elasticUrlString = ConfigurationProperties.getBean(sce).getProperty("vitro.local.elastic.url", "");
+        String elasticUrlString =
+            ConfigurationProperties.getBean(sce).getProperty("vitro.local.elastic.url", "");
         if (elasticUrlString.isEmpty()) {
             ss.fatal(listener, "Can't connect to ElasticSearch engine. "
-                    + "runtime.properties must contain a value for "
-                    + "vitro.local.elastic.url");
+                + "runtime.properties must contain a value for "
+                + "vitro.local.elastic.url");
             return;
         }
 
@@ -49,9 +50,9 @@ public class ElasticSmokeTest {
             elasticUrl = new URL(elasticUrlString);
         } catch (MalformedURLException e) {
             ss.fatal(listener, "Can't connect to ElasticSearch engine. "
-                    + "The value for vitro.local.elastic.url "
-                    + "in runtime.properties is not a valid URL: '"
-                    + elasticUrlString + "'", e);
+                + "The value for vitro.local.elastic.url "
+                + "in runtime.properties is not a valid URL: '"
+                + elasticUrlString + "'", e);
         }
 
         ss.info(listener, "Starting ElasticSearch test.");

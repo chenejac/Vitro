@@ -1,118 +1,120 @@
   /* $This file is distributed under the terms of the license in LICENSE$ */
 
-package edu.cornell.mannlib.vitro.webapp.reasoner;
+  package edu.cornell.mannlib.vitro.webapp.reasoner;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+  import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+  import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames;
+  import edu.cornell.mannlib.vitro.webapp.utils.threads.VitroBackgroundThread;
+  import org.apache.commons.logging.Log;
+  import org.apache.commons.logging.LogFactory;
+  import org.apache.jena.rdf.listeners.StatementListener;
+  import org.apache.jena.rdf.model.Statement;
 
-import org.apache.jena.rdf.listeners.StatementListener;
-import org.apache.jena.rdf.model.Statement;
+  /**
+   * Route notification of changes to TBox to the incremental ABox reasoner.
+   * The incremental ABox reasoner handles only subClass and
+   * equivalentClass class axioms. Reasoning dones as a result of TBox
+   * changes is always done in a separate thread.
+   */
 
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames;
-import edu.cornell.mannlib.vitro.webapp.utils.threads.VitroBackgroundThread;
+  public class SimpleReasonerTBoxListener extends StatementListener {
 
-/**
- * Route notification of changes to TBox to the incremental ABox reasoner.
- * The incremental ABox reasoner handles only subClass and
- * equivalentClass class axioms. Reasoning dones as a result of TBox
- * changes is always done in a separate thread.
- */
+      private static final Log log = LogFactory.getLog(SimpleReasonerTBoxListener.class);
 
-public class SimpleReasonerTBoxListener extends StatementListener {
+      private SimpleReasoner simpleReasoner;
+      private Thread workerThread;
+      private boolean stopRequested;
+      private String name;
 
-	private static final Log log = LogFactory.getLog(SimpleReasonerTBoxListener.class);
+      private volatile boolean processingUpdates = false;
+      private ConcurrentLinkedQueue<ModelUpdate> modelUpdates = null;
 
-    private SimpleReasoner simpleReasoner;
-    private Thread workerThread;
-    private boolean stopRequested;
-    private String name;
+      public SimpleReasonerTBoxListener(SimpleReasoner simpleReasoner) {
+          this.simpleReasoner = simpleReasoner;
+          this.stopRequested = false;
+          this.modelUpdates = new ConcurrentLinkedQueue<ModelUpdate>();
+          this.processingUpdates = false;
+      }
 
-	private volatile boolean processingUpdates = false;
-	private ConcurrentLinkedQueue<ModelUpdate> modelUpdates = null;
+      public SimpleReasonerTBoxListener(SimpleReasoner simpleReasoner, String name) {
+          this.simpleReasoner = simpleReasoner;
+          this.name = name;
+          this.stopRequested = false;
+          this.modelUpdates = new ConcurrentLinkedQueue<ModelUpdate>();
+          this.processingUpdates = false;
+      }
 
-	public SimpleReasonerTBoxListener(SimpleReasoner simpleReasoner) {
-		this.simpleReasoner = simpleReasoner;
-		this.stopRequested = false;
-		this.modelUpdates = new ConcurrentLinkedQueue<ModelUpdate>();
-		this.processingUpdates = false;
-	}
+      @Override
+      public void addedStatement(Statement statement) {
 
-	public SimpleReasonerTBoxListener(SimpleReasoner simpleReasoner, String name) {
-		this.simpleReasoner = simpleReasoner;
-	    this.name = name;
-		this.stopRequested = false;
-		this.modelUpdates = new ConcurrentLinkedQueue<ModelUpdate>();
-		this.processingUpdates = false;
-	}
+          ModelUpdate mu =
+              new ModelUpdate(statement, ModelUpdate.Operation.ADD, ModelNames.TBOX_ASSERTIONS);
+          processUpdate(mu);
+      }
 
-	@Override
-	public void addedStatement(Statement statement) {
+      @Override
+      public void removedStatement(Statement statement) {
 
-		ModelUpdate mu = new ModelUpdate(statement, ModelUpdate.Operation.ADD, ModelNames.TBOX_ASSERTIONS);
-		processUpdate(mu);
-	}
+          ModelUpdate mu =
+              new ModelUpdate(statement, ModelUpdate.Operation.RETRACT, ModelNames.TBOX_ASSERTIONS);
+          processUpdate(mu);
+      }
 
-	@Override
-	public void removedStatement(Statement statement) {
+      private synchronized void processUpdate(ModelUpdate mu) {
+          if (!processingUpdates && (modelUpdates.peek() != null)) {
+              log.warn("TBoxProcessor thread was not running and work queue is not empty. size = " +
+                  modelUpdates.size() + " The work will be processed now.");
+          }
 
-		ModelUpdate mu = new ModelUpdate(statement, ModelUpdate.Operation.RETRACT, ModelNames.TBOX_ASSERTIONS);
-		processUpdate(mu);
-	}
+          modelUpdates.add(mu);
 
-	private synchronized void processUpdate(ModelUpdate mu) {
-		if (!processingUpdates && (modelUpdates.peek() != null)) {
-			log.warn("TBoxProcessor thread was not running and work queue is not empty. size = " + modelUpdates.size() + " The work will be processed now.");
-		}
+          if (!processingUpdates) {
+              processingUpdates = true;
+              workerThread = new TBoxUpdateProcessor("TBoxUpdateProcessor (" + getName() + ")");
+              workerThread.start();
+          }
+      }
 
-		modelUpdates.add(mu);
+      private synchronized ModelUpdate nextUpdate() {
+          ModelUpdate mu = modelUpdates.poll();
+          processingUpdates = (mu != null);
+          return mu;
+      }
 
-		if (!processingUpdates) {
-			processingUpdates = true;
-			workerThread = new TBoxUpdateProcessor("TBoxUpdateProcessor (" + getName() + ")");
-			workerThread.start();
-		}
-	}
+      public String getName() {
+          return (name == null) ? "SimpleReasonerTBoxListener" : name;
+      }
 
-   private synchronized ModelUpdate nextUpdate() {
-	    ModelUpdate mu = modelUpdates.poll();
-	    processingUpdates = (mu != null);
-	    return mu;
-   }
+      public void setStopRequested() {
+          this.stopRequested = true;
+      }
 
-   public String getName() {
-		return (name == null) ? "SimpleReasonerTBoxListener" : name;
-   }
+      private class TBoxUpdateProcessor extends VitroBackgroundThread {
+          public TBoxUpdateProcessor(String name) {
+              super(name);
+          }
 
-   public void setStopRequested() {
-	    this.stopRequested = true;
-   }
-
-   private class TBoxUpdateProcessor extends VitroBackgroundThread {
-        public TBoxUpdateProcessor(String name) {
-        	super(name);
-        }
-
-        @Override
-        public void run() {
-            try {
-	        	 log.debug("starting thread");
-	        	 ModelUpdate mu = nextUpdate();
-	        	 while (mu != null && !stopRequested) {
-	    		    if (mu.getOperation() == ModelUpdate.Operation.ADD) {
-	    				simpleReasoner.addedTBoxStatement(mu.getStatement());
-	    		    } else if (mu.getOperation() == ModelUpdate.Operation.RETRACT) {
-	    			    simpleReasoner.removedTBoxStatement(mu.getStatement());
-	    		    } else {
-	    			    log.error("unexpected operation value in ModelUpdate object: " + mu.getOperation());
-	    		    }
-	    		    mu = nextUpdate();
-	        	 }
-            }  finally {
-        	     processingUpdates = false;
-        	     log.debug("ending thread");
-            }
-        }
-    }
-}
+          @Override
+          public void run() {
+              try {
+                  log.debug("starting thread");
+                  ModelUpdate mu = nextUpdate();
+                  while (mu != null && !stopRequested) {
+                      if (mu.getOperation() == ModelUpdate.Operation.ADD) {
+                          simpleReasoner.addedTBoxStatement(mu.getStatement());
+                      } else if (mu.getOperation() == ModelUpdate.Operation.RETRACT) {
+                          simpleReasoner.removedTBoxStatement(mu.getStatement());
+                      } else {
+                          log.error("unexpected operation value in ModelUpdate object: " +
+                              mu.getOperation());
+                      }
+                      mu = nextUpdate();
+                  }
+              } finally {
+                  processingUpdates = false;
+                  log.debug("ending thread");
+              }
+          }
+      }
+  }

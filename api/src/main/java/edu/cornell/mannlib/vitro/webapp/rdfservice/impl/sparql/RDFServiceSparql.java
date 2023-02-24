@@ -16,6 +16,20 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import edu.cornell.mannlib.vitro.webapp.dao.jena.RDFServiceDataset;
+import edu.cornell.mannlib.vitro.webapp.dao.jena.SparqlGraph;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeListener;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeSet;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.ModelChange;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.ResultSetConsumer;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.ChangeSetImpl;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.RDFServiceImpl;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.RDFServiceUtils;
+import edu.cornell.mannlib.vitro.webapp.utils.http.HttpClientFactory;
+import edu.cornell.mannlib.vitro.webapp.utils.sparql.ResultSetIterators.ResultSetQuadsIterator;
+import edu.cornell.mannlib.vitro.webapp.utils.sparql.ResultSetIterators.ResultSetTriplesIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,8 +52,6 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
-import org.apache.jena.riot.RDFDataMgr;
-
 import org.apache.jena.graph.Triple;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
@@ -55,22 +67,8 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.sparql.core.Quad;
-
-import edu.cornell.mannlib.vitro.webapp.dao.jena.RDFServiceDataset;
-import edu.cornell.mannlib.vitro.webapp.dao.jena.SparqlGraph;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeListener;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.ChangeSet;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.ModelChange;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceException;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.ResultSetConsumer;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.ChangeSetImpl;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.RDFServiceImpl;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.impl.RDFServiceUtils;
-import edu.cornell.mannlib.vitro.webapp.utils.http.HttpClientFactory;
-import edu.cornell.mannlib.vitro.webapp.utils.sparql.ResultSetIterators.ResultSetQuadsIterator;
-import edu.cornell.mannlib.vitro.webapp.utils.sparql.ResultSetIterators.ResultSetTriplesIterator;
 
 /*
  * API to write, read, and update Vitro's RDF store, with support
@@ -79,488 +77,454 @@ import edu.cornell.mannlib.vitro.webapp.utils.sparql.ResultSetIterators.ResultSe
  */
 public class RDFServiceSparql extends RDFServiceImpl implements RDFService {
 
-	private static final Log log = LogFactory.getLog(RDFServiceImpl.class);
-	protected String readEndpointURI;
-	protected String updateEndpointURI;
-	// the number of triples to be
-	private static final int CHUNK_SIZE = 5000; // added/removed in a single
-	// SPARQL UPDATE
+    private static final Log log = LogFactory.getLog(RDFServiceImpl.class);
+    // the number of triples to be
+    private static final int CHUNK_SIZE = 5000; // added/removed in a single
+    private static final boolean ADD = true;
+    private static final boolean REMOVE = false;
+    // SPARQL UPDATE
+    private static final boolean WHERE_CLAUSE = true;
+    protected String readEndpointURI;
+    protected String updateEndpointURI;
+    protected HttpClient httpClient;
+    protected boolean rebuildGraphURICache = true;
+    private List<String> graphURIs = null;
 
-	protected HttpClient httpClient;
+    /**
+     * Returns an RDFService for a remote repository
+     *
+     * @param readEndpointURI      - URI of the read SPARQL endpoint for the knowledge base
+     * @param updateEndpointURI    - URI of the update SPARQL endpoint for the knowledge base
+     * @param defaultWriteGraphURI - URI of the default write graph within the knowledge base.
+     *                             this is the graph that will be written to when a graph
+     *                             is not explicitly specified.
+     *                             <p>
+     *                             The default read graph is the union of all graphs in the
+     *                             knowledge base
+     */
+    public RDFServiceSparql(String readEndpointURI, String updateEndpointURI,
+                            String defaultWriteGraphURI) {
+        this.readEndpointURI = readEndpointURI;
+        this.updateEndpointURI = updateEndpointURI;
+        httpClient = HttpClientFactory.getHttpClient();
 
-	protected boolean rebuildGraphURICache = true;
-	private List<String> graphURIs = null;
+        if (RDFServiceSparql.class.getName().equals(this.getClass().getName())) {
+            testConnection();
+        }
+    }
 
-	/**
-	 * Returns an RDFService for a remote repository
-	 * @param readEndpointURI - URI of the read SPARQL endpoint for the knowledge base
-	 * @param updateEndpointURI - URI of the update SPARQL endpoint for the knowledge base
-	 * @param defaultWriteGraphURI - URI of the default write graph within the knowledge base.
-	 *                   this is the graph that will be written to when a graph
-	 *                   is not explicitly specified.
-	 *
-	 * The default read graph is the union of all graphs in the
-	 * knowledge base
-	 */
-	public RDFServiceSparql(String readEndpointURI, String updateEndpointURI, String defaultWriteGraphURI) {
-		this.readEndpointURI = readEndpointURI;
-		this.updateEndpointURI = updateEndpointURI;
-		httpClient = HttpClientFactory.getHttpClient();
+    /**
+     * Returns an RDFService for a remote repository
+     *
+     * @param readEndpointURI   - URI of the read SPARQL endpoint for the knowledge base
+     * @param updateEndpointURI - URI of the update SPARQL endpoint for the knowledge base
+     *                          <p>
+     *                          The default read graph is the union of all graphs in the
+     *                          knowledge base
+     */
+    public RDFServiceSparql(String readEndpointURI, String updateEndpointURI) {
+        this(readEndpointURI, updateEndpointURI, null);
+    }
 
-		if (RDFServiceSparql.class.getName().equals(this.getClass().getName())) {
-			testConnection();
-		}
-	}
+    /**
+     * Returns an RDFService for a remote repository
+     *
+     * @param endpointURI - URI of the read and update SPARQL endpoint for the knowledge base
+     *                    <p>
+     *                    The default read graph is the union of all graphs in the
+     *                    knowledge base
+     */
+    public RDFServiceSparql(String endpointURI) {
+        this(endpointURI, endpointURI, null);
+    }
 
-	protected void testConnection() {
-		try {
-			this.sparqlSelectQuery(
-					"SELECT ?s WHERE { ?s a " +
-							"<http://vitro.mannlib.cornell.edu/ns/vitro/nonsense/> }",
-					RDFService.ResultFormat.JSON);
-		} catch (Exception e) {
-			throw new RuntimeException("Unable to connect to endpoint at " +
-					readEndpointURI, e);
-		}
-	}
+    protected void testConnection() {
+        try {
+            this.sparqlSelectQuery(
+                "SELECT ?s WHERE { ?s a " +
+                    "<http://vitro.mannlib.cornell.edu/ns/vitro/nonsense/> }",
+                RDFService.ResultFormat.JSON);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to connect to endpoint at " +
+                readEndpointURI, e);
+        }
+    }
 
-	/**
-	 * Returns an RDFService for a remote repository
-	 * @param readEndpointURI - URI of the read SPARQL endpoint for the knowledge base
-	 * @param updateEndpointURI - URI of the update SPARQL endpoint for the knowledge base
-	 *
-	 * The default read graph is the union of all graphs in the
-	 * knowledge base
-	 */
-	public RDFServiceSparql(String readEndpointURI, String updateEndpointURI) {
-		this(readEndpointURI, updateEndpointURI, null);
-	}
+    public void close() {
+        // nothing for now
+    }
 
-	/**
-	 * Returns an RDFService for a remote repository
-	 * @param endpointURI - URI of the read and update SPARQL endpoint for the knowledge base
-	 *
-	 * The default read graph is the union of all graphs in the
-	 * knowledge base
-	 */
-	public RDFServiceSparql(String endpointURI) {
-		this(endpointURI, endpointURI, null);
-	}
+    /**
+     * Perform a series of additions to and or removals from specified graphs
+     * in the RDF store.  preConditionSparql will be executed against the
+     * union of all the graphs in the knowledge base before any updates are made.
+     * If the precondition query returns a non-empty result no updates
+     * will be made.
+     *
+     * @param changeSet - a set of changes to be performed on the RDF store.
+     * @return boolean - indicates whether the precondition was satisfied
+     */
+    @Override
+    public boolean changeSetUpdate(ChangeSet changeSet)
+        throws RDFServiceException {
 
-	public void close() {
-		// nothing for now
-	}
+        if (changeSet.getPreconditionQuery() != null
+            && !isPreconditionSatisfied(
+            changeSet.getPreconditionQuery(),
+            changeSet.getPreconditionQueryType())) {
+            return false;
+        }
 
-	/**
-	 * Perform a series of additions to and or removals from specified graphs
-	 * in the RDF store.  preConditionSparql will be executed against the
-	 * union of all the graphs in the knowledge base before any updates are made.
-	 * If the precondition query returns a non-empty result no updates
-	 * will be made.
-	 *
-	 * @param changeSet - a set of changes to be performed on the RDF store.
-	 *
-	 * @return boolean - indicates whether the precondition was satisfied
-	 */
-	@Override
-	public boolean changeSetUpdate(ChangeSet changeSet)
-			throws RDFServiceException {
+        try {
 
-		if (changeSet.getPreconditionQuery() != null
-				&& !isPreconditionSatisfied(
-				changeSet.getPreconditionQuery(),
-				changeSet.getPreconditionQueryType())) {
-		    return false;
-		}
+            for (Object o : changeSet.getPreChangeEvents()) {
+                this.notifyListenersOfEvent(o);
+            }
 
-		try {
+            for (ModelChange modelChange : changeSet.getModelChanges()) {
+                if (!modelChange.getSerializedModel().markSupported()) {
+                    byte[] bytes = IOUtils.toByteArray(modelChange.getSerializedModel());
+                    modelChange.setSerializedModel(new ByteArrayInputStream(bytes));
+                }
+                modelChange.getSerializedModel().mark(Integer.MAX_VALUE);
+                performChange(modelChange);
+            }
 
-		    for (Object o : changeSet.getPreChangeEvents()) {
-		        this.notifyListenersOfEvent(o);
-			}
+            notifyListenersOfChanges(changeSet);
 
-			for (ModelChange modelChange : changeSet.getModelChanges()) {
-				if (!modelChange.getSerializedModel().markSupported()) {
-					byte[] bytes = IOUtils.toByteArray(modelChange.getSerializedModel());
-					modelChange.setSerializedModel(new ByteArrayInputStream(bytes));
-				}
-				modelChange.getSerializedModel().mark(Integer.MAX_VALUE);
-				performChange(modelChange);
-			}
+            for (Object o : changeSet.getPostChangeEvents()) {
+                this.notifyListenersOfEvent(o);
+            }
 
-			notifyListenersOfChanges(changeSet);
+        } catch (Exception e) {
+            log.error(e, e);
+            throw new RDFServiceException(e);
+        } finally {
+            rebuildGraphURICache = true;
+        }
+        return true;
+    }
 
-			for (Object o : changeSet.getPostChangeEvents()) {
-				this.notifyListenersOfEvent(o);
-			}
+    /**
+     * Performs a SPARQL construct query against the knowledge base. The query may have
+     * an embedded graph identifier.
+     *
+     * @param queryStr     - the SPARQL query to be executed against the RDF store
+     * @param resultFormat - type of serialization for RDF result of the SPARQL query
+     */
+    @Override
+    public InputStream sparqlConstructQuery(String queryStr,
+                                            RDFServiceImpl.ModelSerializationFormat resultFormat)
+        throws RDFServiceException {
 
-		} catch (Exception e) {
-			log.error(e, e);
-			throw new RDFServiceException(e);
-		} finally {
-			rebuildGraphURICache = true;
-		}
-		return true;
-	}
+        Model model = ModelFactory.createDefaultModel();
+        Query query = createQuery(queryStr);
+        QueryExecution qe = QueryExecutionFactory.sparqlService(readEndpointURI, query);
 
-	/**
-	 * Performs a SPARQL construct query against the knowledge base. The query may have
-	 * an embedded graph identifier.
-	 *
-	 * @param queryStr - the SPARQL query to be executed against the RDF store
-	 * @param resultFormat - type of serialization for RDF result of the SPARQL query
-	 */
-	@Override
-	public InputStream sparqlConstructQuery(String queryStr,
-											RDFServiceImpl.ModelSerializationFormat resultFormat) throws RDFServiceException {
+        try {
+            qe.execConstruct(model);
+        } catch (Exception e) {
+            log.error("Error executing CONSTRUCT against remote endpoint: " + queryStr);
+        } finally {
+            qe.close();
+        }
 
-		Model model = ModelFactory.createDefaultModel();
-		Query query = createQuery(queryStr);
-		QueryExecution qe = QueryExecutionFactory.sparqlService(readEndpointURI, query);
+        ByteArrayOutputStream serializedModel = new ByteArrayOutputStream();
+        model.write(serializedModel, getSerializationFormatString(resultFormat));
+        InputStream result = new ByteArrayInputStream(serializedModel.toByteArray());
+        return result;
+    }
 
-		try {
-			qe.execConstruct(model);
-		} catch (Exception e) {
-			log.error("Error executing CONSTRUCT against remote endpoint: " + queryStr);
-		} finally {
-			qe.close();
-		}
+    public void sparqlConstructQuery(String queryStr, Model model) throws RDFServiceException {
 
-		ByteArrayOutputStream serializedModel = new ByteArrayOutputStream();
-		model.write(serializedModel,getSerializationFormatString(resultFormat));
-		InputStream result = new ByteArrayInputStream(serializedModel.toByteArray());
-		return result;
-	}
+        Query query = createQuery(queryStr);
+        QueryExecution qe = QueryExecutionFactory.sparqlService(readEndpointURI, query);
 
-	public void sparqlConstructQuery(String queryStr, Model model) throws RDFServiceException {
+        try {
+            qe.execConstruct(model);
+        } catch (Exception e) {
+            log.error("Error executing CONSTRUCT against remote endpoint: " + queryStr);
+        } finally {
+            qe.close();
+        }
+    }
 
-		Query query = createQuery(queryStr);
-		QueryExecution qe = QueryExecutionFactory.sparqlService(readEndpointURI, query);
+    /**
+     * Performs a SPARQL describe query against the knowledge base. The query may have
+     * an embedded graph identifier.
+     *
+     * @param queryStr     - the SPARQL query to be executed against the RDF store
+     * @param resultFormat - type of serialization for RDF result of the SPARQL query
+     * @return InputStream - the result of the query
+     */
+    @Override
+    public InputStream sparqlDescribeQuery(String queryStr,
+                                           RDFServiceImpl.ModelSerializationFormat resultFormat)
+        throws RDFServiceException {
 
-		try {
-			qe.execConstruct(model);
-		} catch (Exception e) {
-			log.error("Error executing CONSTRUCT against remote endpoint: " + queryStr);
-		} finally {
-			qe.close();
-		}
-	}
+        Model model = ModelFactory.createDefaultModel();
+        Query query = createQuery(queryStr);
+        QueryExecution qe = QueryExecutionFactory.sparqlService(readEndpointURI, query);
 
-	/**
-	 * Performs a SPARQL describe query against the knowledge base. The query may have
-	 * an embedded graph identifier.
-	 *
-	 * @param queryStr - the SPARQL query to be executed against the RDF store
-	 * @param resultFormat - type of serialization for RDF result of the SPARQL query
-	 *
-	 * @return InputStream - the result of the query
-	 *
-	 */
-	@Override
-	public InputStream sparqlDescribeQuery(String queryStr,
-										   RDFServiceImpl.ModelSerializationFormat resultFormat) throws RDFServiceException {
+        try {
+            qe.execDescribe(model);
+        } finally {
+            qe.close();
+        }
 
-		Model model = ModelFactory.createDefaultModel();
-		Query query = createQuery(queryStr);
-		QueryExecution qe = QueryExecutionFactory.sparqlService(readEndpointURI, query);
+        ByteArrayOutputStream serializedModel = new ByteArrayOutputStream();
+        model.write(serializedModel, getSerializationFormatString(resultFormat));
+        InputStream result = new ByteArrayInputStream(serializedModel.toByteArray());
+        return result;
+    }
 
-		try {
-			qe.execDescribe(model);
-		} finally {
-			qe.close();
-		}
+    /**
+     * Performs a SPARQL select query against the knowledge base. The query may have
+     * an embedded graph identifier.
+     *
+     * @param queryStr     - the SPARQL query to be executed against the RDF store
+     * @param resultFormat - format for the result of the Select query
+     * @return InputStream - the result of the query
+     */
+    @Override
+    public InputStream sparqlSelectQuery(String queryStr, RDFService.ResultFormat resultFormat)
+        throws RDFServiceException {
 
-		ByteArrayOutputStream serializedModel = new ByteArrayOutputStream();
-		model.write(serializedModel,getSerializationFormatString(resultFormat));
-		InputStream result = new ByteArrayInputStream(serializedModel.toByteArray());
-		return result;
-	}
+        //QueryEngineHTTP qh = new QueryEngineHTTP(readEndpointURI, queryStr);
 
-	/**
-	 * Performs a SPARQL select query against the knowledge base. The query may have
-	 * an embedded graph identifier.
-	 *
-	 * @param queryStr - the SPARQL query to be executed against the RDF store
-	 * @param resultFormat - format for the result of the Select query
-	 *
-	 * @return InputStream - the result of the query
-	 *
-	 */
-	@Override
-	public InputStream sparqlSelectQuery(String queryStr, RDFService.ResultFormat resultFormat) throws RDFServiceException {
+        try {
+            HttpGet meth = new HttpGet(
+                new URIBuilder(readEndpointURI).addParameter("query", queryStr).build());
+            meth.addHeader("Accept", "application/sparql-results+xml");
+            HttpContext context = getContext(meth);
+            HttpResponse response =
+                context != null ? httpClient.execute(meth, context) : httpClient.execute(meth);
+            try {
+                int statusCode = response.getStatusLine().getStatusCode();
+                if (statusCode > 399) {
+                    log.error("response " + statusCode + " to query. \n");
+                    log.debug("update string: \n" + queryStr);
+                    throw new RDFServiceException("Unable to perform SPARQL SELECT");
+                }
 
-		//QueryEngineHTTP qh = new QueryEngineHTTP(readEndpointURI, queryStr);
+                try (InputStream in = response.getEntity().getContent()) {
+                    ResultSet resultSet = ResultSetFactory.fromXML(in);
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    switch (resultFormat) {
+                        case CSV:
+                            ResultSetFormatter.outputAsCSV(outputStream, resultSet);
+                            break;
+                        case TEXT:
+                            ResultSetFormatter.out(outputStream, resultSet);
+                            break;
+                        case JSON:
+                            ResultSetFormatter.outputAsJSON(outputStream, resultSet);
+                            break;
+                        case XML:
+                            ResultSetFormatter.outputAsXML(outputStream, resultSet);
+                            break;
+                        default:
+                            throw new RDFServiceException("unrecognized result format");
+                    }
+                    InputStream result = new ByteArrayInputStream(
+                        outputStream.toByteArray());
+                    return result;
+                }
+            } finally {
+                EntityUtils.consume(response.getEntity());
+            }
+        } catch (IOException | URISyntaxException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
 
-		try {
-			HttpGet meth = new HttpGet(new URIBuilder(readEndpointURI).addParameter("query", queryStr).build());
-			meth.addHeader("Accept", "application/sparql-results+xml");
-			HttpContext context = getContext(meth);
-			HttpResponse response = context != null ? httpClient.execute(meth, context) : httpClient.execute(meth);
-			try {
-				int statusCode = response.getStatusLine().getStatusCode();
-				if (statusCode > 399) {
-					log.error("response " + statusCode + " to query. \n");
-					log.debug("update string: \n" + queryStr);
-					throw new RDFServiceException("Unable to perform SPARQL SELECT");
-				}
+    public void sparqlSelectQuery(String queryStr, ResultSetConsumer consumer)
+        throws RDFServiceException {
 
-				try (InputStream in = response.getEntity().getContent()) {
-					ResultSet resultSet = ResultSetFactory.fromXML(in);
-					ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-					switch (resultFormat) {
-						case CSV:
-							ResultSetFormatter.outputAsCSV(outputStream, resultSet);
-							break;
-						case TEXT:
-							ResultSetFormatter.out(outputStream, resultSet);
-							break;
-						case JSON:
-							ResultSetFormatter.outputAsJSON(outputStream, resultSet);
-							break;
-						case XML:
-							ResultSetFormatter.outputAsXML(outputStream, resultSet);
-							break;
-						default:
-							throw new RDFServiceException("unrecognized result format");
-					}
-					InputStream result = new ByteArrayInputStream(
-							outputStream.toByteArray());
-					return result;
-				}
-			} finally {
-				EntityUtils.consume(response.getEntity());
-			}
-		} catch (IOException | URISyntaxException ioe) {
-			throw new RuntimeException(ioe);
-		}
-	}
+        //QueryEngineHTTP qh = new QueryEngineHTTP(readEndpointURI, queryStr);
 
-	public void sparqlSelectQuery(String queryStr, ResultSetConsumer consumer) throws RDFServiceException {
+        try {
+            HttpGet meth = new HttpGet(
+                new URIBuilder(readEndpointURI).addParameter("query", queryStr).build());
+            meth.addHeader("Accept", "application/sparql-results+xml");
+            HttpContext context = getContext(meth);
+            HttpResponse response =
+                context != null ? httpClient.execute(meth, context) : httpClient.execute(meth);
+            try {
+                int statusCode = response.getStatusLine().getStatusCode();
+                if (statusCode > 399) {
+                    log.error("response " + statusCode + " to query. \n");
+                    log.debug("update string: \n" + queryStr);
+                    throw new RDFServiceException("Unable to perform SPARQL UPDATE");
+                }
 
-		//QueryEngineHTTP qh = new QueryEngineHTTP(readEndpointURI, queryStr);
+                try (InputStream in = response.getEntity().getContent()) {
+                    consumer.processResultSet(ResultSetFactory.fromXML(in));
+                }
+            } finally {
+                EntityUtils.consume(response.getEntity());
+            }
+        } catch (IOException | URISyntaxException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
 
-		try {
-			HttpGet meth = new HttpGet(new URIBuilder(readEndpointURI).addParameter("query", queryStr).build());
-			meth.addHeader("Accept", "application/sparql-results+xml");
-			HttpContext context = getContext(meth);
-			HttpResponse response = context != null ? httpClient.execute(meth, context) : httpClient.execute(meth);
-			try {
-				int statusCode = response.getStatusLine().getStatusCode();
-				if (statusCode > 399) {
-					log.error("response " + statusCode + " to query. \n");
-					log.debug("update string: \n" + queryStr);
-					throw new RDFServiceException("Unable to perform SPARQL UPDATE");
-				}
+    /**
+     * Performs a SPARQL ASK query against the knowledge base. The query may have
+     * an embedded graph identifier.
+     *
+     * @param queryStr - the SPARQL query to be executed against the RDF store
+     * @return boolean - the result of the SPARQL query
+     */
+    @Override
+    public boolean sparqlAskQuery(String queryStr) throws RDFServiceException {
 
-				try (InputStream in = response.getEntity().getContent()) {
-					consumer.processResultSet(ResultSetFactory.fromXML(in));
-				}
-			} finally {
-				EntityUtils.consume(response.getEntity());
-			}
-		} catch (IOException | URISyntaxException ioe) {
-			throw new RuntimeException(ioe);
-		}
-	}
+        Query query = createQuery(queryStr);
+        QueryExecution qe = QueryExecutionFactory.sparqlService(readEndpointURI, query);
 
-	/**
-	 * Performs a SPARQL ASK query against the knowledge base. The query may have
-	 * an embedded graph identifier.
-	 *
-	 * @param queryStr - the SPARQL query to be executed against the RDF store
-	 *
-	 * @return  boolean - the result of the SPARQL query
-	 */
-	@Override
-	public boolean sparqlAskQuery(String queryStr) throws RDFServiceException {
+        try {
+            return qe.execAsk();
+        } finally {
+            qe.close();
+        }
+    }
 
-		Query query = createQuery(queryStr);
-		QueryExecution qe = QueryExecutionFactory.sparqlService(readEndpointURI, query);
+    /**
+     * Get a list of all the graph URIs in the RDF store.
+     */
+    @Override
+    public List<String> getGraphURIs() throws RDFServiceException {
+        if (graphURIs == null || rebuildGraphURICache) {
+            graphURIs = getGraphURIsFromSparqlQuery();
+            rebuildGraphURICache = false;
+        }
+        return graphURIs;
+    }
 
-		try {
-			return qe.execAsk();
-		} finally {
-			qe.close();
-		}
-	}
+    private List<String> getGraphURIsFromSparqlQuery() throws RDFServiceException {
+        String fastJenaQuery = "SELECT DISTINCT ?g WHERE { GRAPH ?g {} } ORDER BY ?g";
+        String standardQuery = "SELECT DISTINCT ?g WHERE { GRAPH ?g { ?s ?p ?o } }";
+        List<String> graphURIs = new ArrayList<String>();
+        try {
+            graphURIs = getGraphURIsFromSparqlQuery(fastJenaQuery);
+        } catch (Exception e) {
+            log.debug("Unable to use non-standard ARQ query for graph list", e);
+        }
+        if (graphURIs.isEmpty()) {
+            graphURIs = getGraphURIsFromSparqlQuery(standardQuery);
+            Collections.sort(graphURIs);
+        }
+        return graphURIs;
+    }
 
-	/**
-	 * Get a list of all the graph URIs in the RDF store.
-	 */
-	@Override
-	public List<String> getGraphURIs() throws RDFServiceException {
-		if (graphURIs == null || rebuildGraphURICache) {
-			graphURIs = getGraphURIsFromSparqlQuery();
-			rebuildGraphURICache = false;
-		}
-		return graphURIs;
-	}
+    private List<String> getGraphURIsFromSparqlQuery(String queryString)
+        throws RDFServiceException {
+        final List<String> graphURIs = new ArrayList<String>();
+        try {
+            sparqlSelectQuery(queryString, new ResultSetConsumer() {
+                @Override
+                protected void processQuerySolution(QuerySolution qs) {
+                    if (qs != null) { // no idea how this happens, but it seems to
+                        RDFNode n = qs.getResource("g");
+                        if (n != null && n.isResource()) {
+                            graphURIs.add(((Resource) n).getURI());
+                        }
+                    }
+                }
+            });
+        } catch (Exception e) {
+            throw new RDFServiceException("Unable to list graph URIs", e);
+        }
+        return graphURIs;
+    }
 
-	private List<String> getGraphURIsFromSparqlQuery() throws RDFServiceException {
-		String fastJenaQuery = "SELECT DISTINCT ?g WHERE { GRAPH ?g {} } ORDER BY ?g";
-		String standardQuery = "SELECT DISTINCT ?g WHERE { GRAPH ?g { ?s ?p ?o } }";
-		List<String> graphURIs = new ArrayList<String>();
-		try {
-			graphURIs = getGraphURIsFromSparqlQuery(fastJenaQuery);
-		} catch (Exception e) {
-			log.debug("Unable to use non-standard ARQ query for graph list", e);
-		}
-		if (graphURIs.isEmpty()) {
-			graphURIs = getGraphURIsFromSparqlQuery(standardQuery);
-			Collections.sort(graphURIs);
-		}
-		return graphURIs;
-	}
+    /**
+     *
+     */
+    @Override
+    public void getGraphMetadata() throws RDFServiceException {
+        throw new UnsupportedOperationException();
+    }
 
-	private List<String> getGraphURIsFromSparqlQuery(String queryString) throws RDFServiceException {
-		final List<String> graphURIs = new ArrayList<String>();
-		try {
-			sparqlSelectQuery(queryString, new ResultSetConsumer() {
-				@Override
-				protected void processQuerySolution(QuerySolution qs) {
-					if (qs != null) { // no idea how this happens, but it seems to
-						RDFNode n = qs.getResource("g");
-						if (n != null && n.isResource()) {
-							graphURIs.add(((Resource) n).getURI());
-						}
-					}
-				}
-			});
-		} catch (Exception e) {
-			throw new RDFServiceException("Unable to list graph URIs", e);
-		}
-		return graphURIs;
-	}
+    /**
+     * Get the URI of the default write graph
+     *
+     * @return String URI of default write graph
+     */
+    @Override
+    public String getDefaultWriteGraphURI() throws RDFServiceException {
+        return defaultWriteGraphURI;
+    }
 
-	/**
-	 */
-	@Override
-	public void getGraphMetadata() throws RDFServiceException {
-	    throw new UnsupportedOperationException();
-	}
+    /**
+     * Register a listener to listen to changes in any graph in
+     * the RDF store.
+     */
+    @Override
+    public synchronized void registerListener(ChangeListener changeListener)
+        throws RDFServiceException {
 
-	/**
-	 * Get the URI of the default write graph
-	 *
-	 * @return String URI of default write graph
-	 */
-	@Override
-	public String getDefaultWriteGraphURI() throws RDFServiceException {
-		return defaultWriteGraphURI;
-	}
+        if (!registeredListeners.contains(changeListener)) {
+            registeredListeners.add(changeListener);
+        }
+    }
 
-	/**
-	 * Register a listener to listen to changes in any graph in
-	 * the RDF store.
-	 *
-	 */
-	@Override
-	public synchronized void registerListener(ChangeListener changeListener) throws RDFServiceException {
+    /**
+     * Unregister a listener from listening to changes in any graph
+     * in the RDF store.
+     */
+    @Override
+    public synchronized void unregisterListener(ChangeListener changeListener)
+        throws RDFServiceException {
+        registeredListeners.remove(changeListener);
+    }
 
-		if (!registeredListeners.contains(changeListener)) {
-			registeredListeners.add(changeListener);
-		}
-	}
+    /**
+     * Create a ChangeSet object
+     *
+     * @return a ChangeSet object
+     */
+    @Override
+    public ChangeSet manufactureChangeSet() {
+        return new ChangeSetImpl();
+    }
 
-	/**
-	 * Unregister a listener from listening to changes in any graph
-	 * in the RDF store.
-	 *
-	 */
-	@Override
-	public synchronized void unregisterListener(ChangeListener changeListener) throws RDFServiceException {
-		registeredListeners.remove(changeListener);
-	}
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Non-override methods below
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    protected String getReadEndpointURI() {
+        return readEndpointURI;
+    }
 
-	/**
-	 * Create a ChangeSet object
-	 *
-	 * @return a ChangeSet object
-	 */
-	@Override
-	public ChangeSet manufactureChangeSet() {
-		return new ChangeSetImpl();
-	}
+    protected String getUpdateEndpointURI() {
+        return updateEndpointURI;
+    }
 
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Non-override methods below
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	protected String getReadEndpointURI() {
-		return readEndpointURI;
-	}
-
-	protected String getUpdateEndpointURI() {
-		return updateEndpointURI;
-	}
-
-	protected void executeUpdate(String updateString) throws RDFServiceException {
-		try {
-			HttpPost meth = new HttpPost(updateEndpointURI);
-			meth.addHeader("Content-Type", "application/x-www-form-urlencoded; charset="+Consts.UTF_8);
-			meth.setEntity(new UrlEncodedFormEntity(Arrays.asList(new BasicNameValuePair("update", updateString)),Consts.UTF_8));
-			HttpContext context = getContext(meth);
-			HttpResponse response = context != null ? httpClient.execute(meth, context) : httpClient.execute(meth);
-			try {
-				int statusCode = response.getStatusLine().getStatusCode();
-				if (statusCode > 399) {
-					log.error("response " + response.getStatusLine() + " to update. \n");
-					//log.debug("update string: \n" + updateString);
-					throw new RDFServiceException("Unable to perform SPARQL UPDATE");
-				}
-			} finally {
-				EntityUtils.consume(response.getEntity());
-			}
-		} catch (Exception e) {
-			log.debug("update string: \n" + updateString);
-			throw new RDFServiceException("Unable to perform change set update", e);
-		}
-	}
-
-	private void addModel(Model model, String graphURI) throws RDFServiceException {
-		try {
-		    long start = System.currentTimeMillis();
-			verbModel(model, graphURI, "INSERT");
-			log.info((System.currentTimeMillis() - start) + " ms to insert " + model.size() + " triples");
-		} finally {
-			rebuildGraphURICache = true;
-		}
-	}
-
-	private void deleteModel(Model model, String graphURI) throws RDFServiceException {
-		try {
-			verbModel(model, graphURI, "DELETE");
-		} finally {
-			rebuildGraphURICache = true;
-		}
-	}
-
-	private void verbModel(Model model, String graphURI, String verb) throws RDFServiceException {
-		Model m = ModelFactory.createDefaultModel();
-		StmtIterator stmtIt = model.listStatements();
-		int count = 0;
-		try {
-			while (stmtIt.hasNext()) {
-				count++;
-				m.add(stmtIt.nextStatement());
-				if (count % CHUNK_SIZE == 0 || !stmtIt.hasNext()) {
-					StringWriter sw = new StringWriter();
-					m.write(sw, "N-TRIPLE");
-					StringBuilder updateStringBuff = new StringBuilder();
-					updateStringBuff.append(verb).append(" DATA { ").append((graphURI != null) ? "GRAPH <" + graphURI + "> { " : "");
-					updateStringBuff.append(sw);
-					updateStringBuff.append((graphURI != null) ? " } " : "").append(" }");
-
-					String updateString = updateStringBuff.toString();
-
-					executeUpdate(updateString);
-
-					m.removeAll();
-				}
-			}
-		} finally {
-			stmtIt.close();
-		}
-	}
+    protected void executeUpdate(String updateString) throws RDFServiceException {
+        try {
+            HttpPost meth = new HttpPost(updateEndpointURI);
+            meth.addHeader("Content-Type",
+                "application/x-www-form-urlencoded; charset=" + Consts.UTF_8);
+            meth.setEntity(new UrlEncodedFormEntity(
+                Arrays.asList(new BasicNameValuePair("update", updateString)), Consts.UTF_8));
+            HttpContext context = getContext(meth);
+            HttpResponse response =
+                context != null ? httpClient.execute(meth, context) : httpClient.execute(meth);
+            try {
+                int statusCode = response.getStatusLine().getStatusCode();
+                if (statusCode > 399) {
+                    log.error("response " + response.getStatusLine() + " to update. \n");
+                    //log.debug("update string: \n" + updateString);
+                    throw new RDFServiceException("Unable to perform SPARQL UPDATE");
+                }
+            } finally {
+                EntityUtils.consume(response.getEntity());
+            }
+        } catch (Exception e) {
+            log.debug("update string: \n" + updateString);
+            throw new RDFServiceException("Unable to perform change set update", e);
+        }
+    }
 
 //	protected void addTriple(Triple t, String graphURI) throws RDFServiceException {
 //		try {
@@ -602,341 +566,391 @@ public class RDFServiceSparql extends RDFServiceImpl implements RDFService {
 //		}
 //	}
 
-	@Override
-	protected boolean isPreconditionSatisfied(String query,
-											  RDFService.SPARQLQueryType queryType)
-			throws RDFServiceException {
-		Model model = ModelFactory.createDefaultModel();
+    private void addModel(Model model, String graphURI) throws RDFServiceException {
+        try {
+            long start = System.currentTimeMillis();
+            verbModel(model, graphURI, "INSERT");
+            log.info((System.currentTimeMillis() - start) + " ms to insert " + model.size() +
+                " triples");
+        } finally {
+            rebuildGraphURICache = true;
+        }
+    }
 
-		switch (queryType) {
-			case DESCRIBE:
-				model.read(sparqlDescribeQuery(query,RDFService.ModelSerializationFormat.N3), null);
-				return !model.isEmpty();
-			case CONSTRUCT:
-				model.read(sparqlConstructQuery(query,RDFService.ModelSerializationFormat.N3), null);
-				return !model.isEmpty();
-			case SELECT:
-				return sparqlSelectQueryHasResults(query);
-			case ASK:
-				return sparqlAskQuery(query);
-			default:
-				throw new RDFServiceException("unrecognized SPARQL query type");
-		}
-	}
+    private void deleteModel(Model model, String graphURI) throws RDFServiceException {
+        try {
+            verbModel(model, graphURI, "DELETE");
+        } finally {
+            rebuildGraphURICache = true;
+        }
+    }
 
-	@Override
-	protected boolean sparqlSelectQueryHasResults(String queryStr) throws RDFServiceException {
+    private void verbModel(Model model, String graphURI, String verb) throws RDFServiceException {
+        Model m = ModelFactory.createDefaultModel();
+        StmtIterator stmtIt = model.listStatements();
+        int count = 0;
+        try {
+            while (stmtIt.hasNext()) {
+                count++;
+                m.add(stmtIt.nextStatement());
+                if (count % CHUNK_SIZE == 0 || !stmtIt.hasNext()) {
+                    StringWriter sw = new StringWriter();
+                    m.write(sw, "N-TRIPLE");
+                    StringBuilder updateStringBuff = new StringBuilder();
+                    updateStringBuff.append(verb).append(" DATA { ")
+                        .append((graphURI != null) ? "GRAPH <" + graphURI + "> { " : "");
+                    updateStringBuff.append(sw);
+                    updateStringBuff.append((graphURI != null) ? " } " : "").append(" }");
 
-		Query query = createQuery(queryStr);
-		QueryExecution qe = QueryExecutionFactory.sparqlService(readEndpointURI, query);
+                    String updateString = updateStringBuff.toString();
 
-		try {
-			ResultSet resultSet = qe.execSelect();
-			return resultSet.hasNext();
-		} finally {
-			qe.close();
-		}
-	}
+                    executeUpdate(updateString);
 
-	private void performChange(ModelChange modelChange) throws RDFServiceException {
-		Model model = parseModel(modelChange);
-		Model[] separatedModel = separateStatementsWithBlankNodes(model);
-		if (modelChange.getOperation() == ModelChange.Operation.ADD) {
-			addModel(separatedModel[1], modelChange.getGraphURI());
-			addBlankNodesWithSparqlUpdate(separatedModel[0], modelChange.getGraphURI());
-		} else if (modelChange.getOperation() == ModelChange.Operation.REMOVE) {
-			deleteModel(separatedModel[1], modelChange.getGraphURI());
-			removeBlankNodesWithSparqlUpdate(separatedModel[0], modelChange.getGraphURI());
-		} else {
-			log.error("unrecognized operation type");
-		}
-	}
+                    m.removeAll();
+                }
+            }
+        } finally {
+            stmtIt.close();
+        }
+    }
 
-	private void addBlankNodesWithSparqlUpdate(Model model, String graphURI)
-			throws RDFServiceException {
-		updateBlankNodesWithSparqlUpdate(model, graphURI, ADD);
-	}
+    @Override
+    protected boolean isPreconditionSatisfied(String query,
+                                              RDFService.SPARQLQueryType queryType)
+        throws RDFServiceException {
+        Model model = ModelFactory.createDefaultModel();
 
-	private void removeBlankNodesWithSparqlUpdate(Model model, String graphURI)
-			throws RDFServiceException {
-		updateBlankNodesWithSparqlUpdate(model, graphURI, REMOVE);
-	}
+        switch (queryType) {
+            case DESCRIBE:
+                model
+                    .read(sparqlDescribeQuery(query, RDFService.ModelSerializationFormat.N3), null);
+                return !model.isEmpty();
+            case CONSTRUCT:
+                model.read(sparqlConstructQuery(query, RDFService.ModelSerializationFormat.N3),
+                    null);
+                return !model.isEmpty();
+            case SELECT:
+                return sparqlSelectQueryHasResults(query);
+            case ASK:
+                return sparqlAskQuery(query);
+            default:
+                throw new RDFServiceException("unrecognized SPARQL query type");
+        }
+    }
 
-	private static final boolean ADD = true;
-	private static final boolean REMOVE = false;
+    @Override
+    protected boolean sparqlSelectQueryHasResults(String queryStr) throws RDFServiceException {
 
-	private void updateBlankNodesWithSparqlUpdate(Model model, String graphURI, boolean add)
-			throws RDFServiceException {
-		List<Statement> blankNodeStatements = new ArrayList<Statement>();
-		StmtIterator stmtIt = model.listStatements();
-		while (stmtIt.hasNext()) {
-			Statement stmt = stmtIt.nextStatement();
-			if (stmt.getSubject().isAnon() || stmt.getObject().isAnon()) {
-				blankNodeStatements.add(stmt);
-			}
-		}
+        Query query = createQuery(queryStr);
+        QueryExecution qe = QueryExecutionFactory.sparqlService(readEndpointURI, query);
 
-		if(blankNodeStatements.size() == 0) {
-			return;
-		}
+        try {
+            ResultSet resultSet = qe.execSelect();
+            return resultSet.hasNext();
+        } finally {
+            qe.close();
+        }
+    }
 
-		Model blankNodeModel = ModelFactory.createDefaultModel();
-		blankNodeModel.add(blankNodeStatements);
+    private void performChange(ModelChange modelChange) throws RDFServiceException {
+        Model model = parseModel(modelChange);
+        Model[] separatedModel = separateStatementsWithBlankNodes(model);
+        if (modelChange.getOperation() == ModelChange.Operation.ADD) {
+            addModel(separatedModel[1], modelChange.getGraphURI());
+            addBlankNodesWithSparqlUpdate(separatedModel[0], modelChange.getGraphURI());
+        } else if (modelChange.getOperation() == ModelChange.Operation.REMOVE) {
+            deleteModel(separatedModel[1], modelChange.getGraphURI());
+            removeBlankNodesWithSparqlUpdate(separatedModel[0], modelChange.getGraphURI());
+        } else {
+            log.error("unrecognized operation type");
+        }
+    }
 
-		log.debug("update model size " + model.size());
-		log.debug("blank node model size " + blankNodeModel.size());
+    private void addBlankNodesWithSparqlUpdate(Model model, String graphURI)
+        throws RDFServiceException {
+        updateBlankNodesWithSparqlUpdate(model, graphURI, ADD);
+    }
 
-		if (!add && blankNodeModel.size() == 1) {
-			log.warn("Deleting single triple with blank node: " + blankNodeModel);
-			log.warn("This likely indicates a problem; excessive data may be deleted.");
-		}
+    private void removeBlankNodesWithSparqlUpdate(Model model, String graphURI)
+        throws RDFServiceException {
+        updateBlankNodesWithSparqlUpdate(model, graphURI, REMOVE);
+    }
 
-		Query rootFinderQuery = QueryFactory.create(BNODE_ROOT_QUERY);
-		QueryExecution qe = QueryExecutionFactory.create(rootFinderQuery, blankNodeModel);
-		try {
-			ResultSet rs = qe.execSelect();
-			while (rs.hasNext()) {
-				QuerySolution qs = rs.next();
-				org.apache.jena.rdf.model.Resource s = qs.getResource("s");
-				String treeFinder = makeDescribe(s);
-				Query treeFinderQuery = QueryFactory.create(treeFinder);
-				QueryExecution qee = QueryExecutionFactory.create(treeFinderQuery, blankNodeModel);
-				try {
-					Model tree = qee.execDescribe();
-					if (s.isAnon()) {
-						if (add) {
-							addModel(tree, graphURI);
-						} else {
-							removeUsingSparqlUpdate(tree, graphURI);
-						}
-					} else {
-						StmtIterator sit = tree.listStatements(s, null, (RDFNode) null);
-						while (sit.hasNext()) {
-							Statement stmt = sit.nextStatement();
-							RDFNode n = stmt.getObject();
-							Model m2 = ModelFactory.createDefaultModel();
-							if (n.isResource()) {
-								org.apache.jena.rdf.model.Resource s2 =
-										(org.apache.jena.rdf.model.Resource) n;
-								// now run yet another describe query
-								String smallerTree = makeDescribe(s2);
-								Query smallerTreeQuery = QueryFactory.create(smallerTree);
-								QueryExecution qe3 = QueryExecutionFactory.create(
-										smallerTreeQuery, tree);
-								try {
-									qe3.execDescribe(m2);
-								} finally {
-									qe3.close();
-								}
-							}
-							m2.add(stmt);
-							if (add) {
-								addModel(m2, graphURI);
-							} else {
-								removeUsingSparqlUpdate(m2, graphURI);
-							}
-						}
-					}
-				} finally {
-					qee.close();
-				}
-			}
-		} finally {
-			qe.close();
-		}
-	}
+    private void updateBlankNodesWithSparqlUpdate(Model model, String graphURI, boolean add)
+        throws RDFServiceException {
+        List<Statement> blankNodeStatements = new ArrayList<Statement>();
+        StmtIterator stmtIt = model.listStatements();
+        while (stmtIt.hasNext()) {
+            Statement stmt = stmtIt.nextStatement();
+            if (stmt.getSubject().isAnon() || stmt.getObject().isAnon()) {
+                blankNodeStatements.add(stmt);
+            }
+        }
 
-	private void removeUsingSparqlUpdate(Model model, String graphURI)
-			throws RDFServiceException {
+        if (blankNodeStatements.size() == 0) {
+            return;
+        }
 
-		StmtIterator stmtIt = model.listStatements();
+        Model blankNodeModel = ModelFactory.createDefaultModel();
+        blankNodeModel.add(blankNodeStatements);
 
-		if (!stmtIt.hasNext()) {
-			stmtIt.close();
-			return;
-		}
+        log.debug("update model size " + model.size());
+        log.debug("blank node model size " + blankNodeModel.size());
 
-		StringBuffer queryBuff = new StringBuffer();
-		if (graphURI != null) {
-			queryBuff.append("WITH <").append(graphURI).append("> \n");
-		}
-		queryBuff.append("DELETE { \n");
-		List<Statement> stmts = stmtIt.toList();
-		sort(stmts);
-		addStatementPatterns(stmts, queryBuff, !WHERE_CLAUSE);
-		queryBuff.append("} WHERE { \n");
-		stmtIt = model.listStatements();
-		stmts = stmtIt.toList();
-		sort(stmts);
-		addStatementPatterns(stmts, queryBuff, WHERE_CLAUSE);
-		queryBuff.append("} \n");
+        if (!add && blankNodeModel.size() == 1) {
+            log.warn("Deleting single triple with blank node: " + blankNodeModel);
+            log.warn("This likely indicates a problem; excessive data may be deleted.");
+        }
 
-		if(log.isDebugEnabled()) {
-			log.debug(queryBuff.toString());
-		}
-		executeUpdate(queryBuff.toString());
-	}
+        Query rootFinderQuery = QueryFactory.create(BNODE_ROOT_QUERY);
+        QueryExecution qe = QueryExecutionFactory.create(rootFinderQuery, blankNodeModel);
+        try {
+            ResultSet rs = qe.execSelect();
+            while (rs.hasNext()) {
+                QuerySolution qs = rs.next();
+                org.apache.jena.rdf.model.Resource s = qs.getResource("s");
+                String treeFinder = makeDescribe(s);
+                Query treeFinderQuery = QueryFactory.create(treeFinder);
+                QueryExecution qee = QueryExecutionFactory.create(treeFinderQuery, blankNodeModel);
+                try {
+                    Model tree = qee.execDescribe();
+                    if (s.isAnon()) {
+                        if (add) {
+                            addModel(tree, graphURI);
+                        } else {
+                            removeUsingSparqlUpdate(tree, graphURI);
+                        }
+                    } else {
+                        StmtIterator sit = tree.listStatements(s, null, (RDFNode) null);
+                        while (sit.hasNext()) {
+                            Statement stmt = sit.nextStatement();
+                            RDFNode n = stmt.getObject();
+                            Model m2 = ModelFactory.createDefaultModel();
+                            if (n.isResource()) {
+                                org.apache.jena.rdf.model.Resource s2 =
+                                    (org.apache.jena.rdf.model.Resource) n;
+                                // now run yet another describe query
+                                String smallerTree = makeDescribe(s2);
+                                Query smallerTreeQuery = QueryFactory.create(smallerTree);
+                                QueryExecution qe3 = QueryExecutionFactory.create(
+                                    smallerTreeQuery, tree);
+                                try {
+                                    qe3.execDescribe(m2);
+                                } finally {
+                                    qe3.close();
+                                }
+                            }
+                            m2.add(stmt);
+                            if (add) {
+                                addModel(m2, graphURI);
+                            } else {
+                                removeUsingSparqlUpdate(m2, graphURI);
+                            }
+                        }
+                    }
+                } finally {
+                    qee.close();
+                }
+            }
+        } finally {
+            qe.close();
+        }
+    }
 
-	private List<Statement> sort(List<Statement> stmts) {
-		List<Statement> output = new ArrayList<Statement>();
-		int originalSize = stmts.size();
-		if (originalSize == 1)
-			return stmts;
-		List <Statement> remaining = stmts;
-		ConcurrentLinkedQueue<org.apache.jena.rdf.model.Resource> subjQueue =
-				new ConcurrentLinkedQueue<org.apache.jena.rdf.model.Resource>();
-		for(Statement stmt : remaining) {
-			if(stmt.getSubject().isURIResource()) {
-				subjQueue.add(stmt.getSubject());
-				break;
-			}
-		}
-		if (subjQueue.isEmpty()) {
-			throw new RuntimeException("No named subject in statement patterns");
-		}
-		while(remaining.size() > 0) {
-			if(subjQueue.isEmpty()) {
-				subjQueue.add(remaining.get(0).getSubject());
-			}
-			while(!subjQueue.isEmpty()) {
-				org.apache.jena.rdf.model.Resource subj = subjQueue.poll();
-				List<Statement> temp = new ArrayList<Statement>();
-				for (Statement stmt : remaining) {
-					if(stmt.getSubject().equals(subj)) {
-						output.add(stmt);
-						if (stmt.getObject().isResource()) {
-							subjQueue.add((org.apache.jena.rdf.model.Resource) stmt.getObject());
-						}
-					} else {
-						temp.add(stmt);
-					}
-				}
-				remaining = temp;
-			}
-		}
-		if(output.size() != originalSize) {
-			throw new RuntimeException("original list size was " + originalSize +
-					" but sorted size is " + output.size());
-		}
-		return output;
-	}
+    private void removeUsingSparqlUpdate(Model model, String graphURI)
+        throws RDFServiceException {
 
-	private static final boolean WHERE_CLAUSE = true;
+        StmtIterator stmtIt = model.listStatements();
 
-	private void addStatementPatterns(List<Statement> stmts, StringBuffer patternBuff, boolean whereClause) {
-		for(Statement stmt : stmts) {
-			Triple t = stmt.asTriple();
-			patternBuff.append(SparqlGraph.sparqlNodeDelete(t.getSubject(), null));
-			patternBuff.append(" ");
-			patternBuff.append(SparqlGraph.sparqlNodeDelete(t.getPredicate(), null));
-			patternBuff.append(" ");
-			patternBuff.append(SparqlGraph.sparqlNodeDelete(t.getObject(), null));
-			patternBuff.append(" .\n");
-			if (whereClause) {
-				if (t.getSubject().isBlank()) {
-					patternBuff.append("    FILTER(isBlank(").append(SparqlGraph.sparqlNodeDelete(t.getSubject(), null)).append(")) \n");
-				}
-				if (t.getObject().isBlank()) {
-					patternBuff.append("    FILTER(isBlank(").append(SparqlGraph.sparqlNodeDelete(t.getObject(), null)).append(")) \n");
-				}
-			}
-		}
-	}
+        if (!stmtIt.hasNext()) {
+            stmtIt.close();
+            return;
+        }
 
-	private String makeDescribe(org.apache.jena.rdf.model.Resource s) {
-		StringBuilder query = new StringBuilder("DESCRIBE <") ;
-		if (s.isAnon()) {
-			query.append("_:").append(s.getId().toString());
-		} else {
-			query.append(s.getURI());
-		}
-		query.append(">");
-		return query.toString();
-	}
+        StringBuffer queryBuff = new StringBuffer();
+        if (graphURI != null) {
+            queryBuff.append("WITH <").append(graphURI).append("> \n");
+        }
+        queryBuff.append("DELETE { \n");
+        List<Statement> stmts = stmtIt.toList();
+        sort(stmts);
+        addStatementPatterns(stmts, queryBuff, !WHERE_CLAUSE);
+        queryBuff.append("} WHERE { \n");
+        stmtIt = model.listStatements();
+        stmts = stmtIt.toList();
+        sort(stmts);
+        addStatementPatterns(stmts, queryBuff, WHERE_CLAUSE);
+        queryBuff.append("} \n");
 
-	private Model parseModel(ModelChange modelChange) {
-		Model model = ModelFactory.createDefaultModel();
-		model.read(modelChange.getSerializedModel(), null,
-				getSerializationFormatString(modelChange.getSerializationFormat()));
-		return model;
-	}
+        if (log.isDebugEnabled()) {
+            log.debug(queryBuff.toString());
+        }
+        executeUpdate(queryBuff.toString());
+    }
 
-	@Override
-	public void serializeAll(OutputStream outputStream)
-			throws RDFServiceException {
-		String query = "SELECT * WHERE { GRAPH ?g {?s ?p ?o}}";
-		serialize(outputStream, query);
-	}
+    private List<Statement> sort(List<Statement> stmts) {
+        List<Statement> output = new ArrayList<Statement>();
+        int originalSize = stmts.size();
+        if (originalSize == 1) {
+            return stmts;
+        }
+        List<Statement> remaining = stmts;
+        ConcurrentLinkedQueue<org.apache.jena.rdf.model.Resource> subjQueue =
+            new ConcurrentLinkedQueue<org.apache.jena.rdf.model.Resource>();
+        for (Statement stmt : remaining) {
+            if (stmt.getSubject().isURIResource()) {
+                subjQueue.add(stmt.getSubject());
+                break;
+            }
+        }
+        if (subjQueue.isEmpty()) {
+            throw new RuntimeException("No named subject in statement patterns");
+        }
+        while (remaining.size() > 0) {
+            if (subjQueue.isEmpty()) {
+                subjQueue.add(remaining.get(0).getSubject());
+            }
+            while (!subjQueue.isEmpty()) {
+                org.apache.jena.rdf.model.Resource subj = subjQueue.poll();
+                List<Statement> temp = new ArrayList<Statement>();
+                for (Statement stmt : remaining) {
+                    if (stmt.getSubject().equals(subj)) {
+                        output.add(stmt);
+                        if (stmt.getObject().isResource()) {
+                            subjQueue.add((org.apache.jena.rdf.model.Resource) stmt.getObject());
+                        }
+                    } else {
+                        temp.add(stmt);
+                    }
+                }
+                remaining = temp;
+            }
+        }
+        if (output.size() != originalSize) {
+            throw new RuntimeException("original list size was " + originalSize +
+                " but sorted size is " + output.size());
+        }
+        return output;
+    }
 
-	@Override
-	public void serializeGraph(String graphURI, OutputStream outputStream)
-			throws RDFServiceException {
-		String query = "SELECT * WHERE { GRAPH <" + graphURI + "> {?s ?p ?o}}";
-		serialize(outputStream, query);
-	}
+    private void addStatementPatterns(List<Statement> stmts, StringBuffer patternBuff,
+                                      boolean whereClause) {
+        for (Statement stmt : stmts) {
+            Triple t = stmt.asTriple();
+            patternBuff.append(SparqlGraph.sparqlNodeDelete(t.getSubject(), null));
+            patternBuff.append(" ");
+            patternBuff.append(SparqlGraph.sparqlNodeDelete(t.getPredicate(), null));
+            patternBuff.append(" ");
+            patternBuff.append(SparqlGraph.sparqlNodeDelete(t.getObject(), null));
+            patternBuff.append(" .\n");
+            if (whereClause) {
+                if (t.getSubject().isBlank()) {
+                    patternBuff.append("    FILTER(isBlank(")
+                        .append(SparqlGraph.sparqlNodeDelete(t.getSubject(), null)).append(")) \n");
+                }
+                if (t.getObject().isBlank()) {
+                    patternBuff.append("    FILTER(isBlank(")
+                        .append(SparqlGraph.sparqlNodeDelete(t.getObject(), null)).append(")) \n");
+                }
+            }
+        }
+    }
 
-	private void serialize(OutputStream outputStream, String query) throws RDFServiceException {
-		InputStream resultStream = sparqlSelectQuery(query, RDFService.ResultFormat.JSON);
-		ResultSet resultSet = ResultSetFactory.fromJSON(resultStream);
-		if (resultSet.getResultVars().contains("g")) {
-			Iterator<Quad> quads = new ResultSetQuadsIterator(resultSet);
-			RDFDataMgr.writeQuads(outputStream, quads);
-		} else {
-			Iterator<Triple> triples = new ResultSetTriplesIterator(resultSet);
-			RDFDataMgr.writeTriples(outputStream, triples);
-		}
-	}
+    private String makeDescribe(org.apache.jena.rdf.model.Resource s) {
+        StringBuilder query = new StringBuilder("DESCRIBE <");
+        if (s.isAnon()) {
+            query.append("_:").append(s.getId().toString());
+        } else {
+            query.append(s.getURI());
+        }
+        query.append(">");
+        return query.toString();
+    }
 
-	/**
-	 * The basic version. Parse the model from the file, read the model from the
-	 * tripleStore, and ask whether they are isomorphic.
-	 */
-	@Override
-	public boolean isEquivalentGraph(String graphURI, InputStream serializedGraph,
-									 ModelSerializationFormat serializationFormat) throws RDFServiceException {
-		Model fileModel = RDFServiceUtils.parseModel(serializedGraph, serializationFormat);
-		Model tripleStoreModel = new RDFServiceDataset(this).getNamedModel(graphURI);
-		Model fromTripleStoreModel = ModelFactory.createDefaultModel().add(tripleStoreModel);
-		return fileModel.isIsomorphicWith(fromTripleStoreModel);
-	}
+    private Model parseModel(ModelChange modelChange) {
+        Model model = ModelFactory.createDefaultModel();
+        model.read(modelChange.getSerializedModel(), null,
+            getSerializationFormatString(modelChange.getSerializationFormat()));
+        return model;
+    }
 
-	/**
-	 * The basic version. Parse the model from the file, read the model from the
-	 * tripleStore, and ask whether they are isomorphic.
-	 */
-	@Override
-	public boolean isEquivalentGraph(String graphURI, Model graph) throws RDFServiceException {
-		Model tripleStoreModel = new RDFServiceDataset(this).getNamedModel(graphURI);
-		Model fromTripleStoreModel = ModelFactory.createDefaultModel().add(tripleStoreModel);
-		return graph.isIsomorphicWith(fromTripleStoreModel);
-	}
+    @Override
+    public void serializeAll(OutputStream outputStream)
+        throws RDFServiceException {
+        String query = "SELECT * WHERE { GRAPH ?g {?s ?p ?o}}";
+        serialize(outputStream, query);
+    }
 
-	@Override
-	public boolean preferPreciseOptionals() {
-		return false;
-	}
+    @Override
+    public void serializeGraph(String graphURI, OutputStream outputStream)
+        throws RDFServiceException {
+        String query = "SELECT * WHERE { GRAPH <" + graphURI + "> {?s ?p ?o}}";
+        serialize(outputStream, query);
+    }
 
-	protected HttpContext getContext(HttpRequestBase request) {
-		UsernamePasswordCredentials credentials = getCredentials();
-		if (credentials != null) {
-			try {
-				request.addHeader(new BasicScheme().authenticate(credentials, request, null));
+    private void serialize(OutputStream outputStream, String query) throws RDFServiceException {
+        InputStream resultStream = sparqlSelectQuery(query, RDFService.ResultFormat.JSON);
+        ResultSet resultSet = ResultSetFactory.fromJSON(resultStream);
+        if (resultSet.getResultVars().contains("g")) {
+            Iterator<Quad> quads = new ResultSetQuadsIterator(resultSet);
+            RDFDataMgr.writeQuads(outputStream, quads);
+        } else {
+            Iterator<Triple> triples = new ResultSetTriplesIterator(resultSet);
+            RDFDataMgr.writeTriples(outputStream, triples);
+        }
+    }
 
-				CredentialsProvider provider = new BasicCredentialsProvider();
-				provider.setCredentials(AuthScope.ANY, getCredentials());
+    /**
+     * The basic version. Parse the model from the file, read the model from the
+     * tripleStore, and ask whether they are isomorphic.
+     */
+    @Override
+    public boolean isEquivalentGraph(String graphURI, InputStream serializedGraph,
+                                     ModelSerializationFormat serializationFormat)
+        throws RDFServiceException {
+        Model fileModel = RDFServiceUtils.parseModel(serializedGraph, serializationFormat);
+        Model tripleStoreModel = new RDFServiceDataset(this).getNamedModel(graphURI);
+        Model fromTripleStoreModel = ModelFactory.createDefaultModel().add(tripleStoreModel);
+        return fileModel.isIsomorphicWith(fromTripleStoreModel);
+    }
 
-				BasicHttpContext context = new BasicHttpContext();
-				context.setAttribute(ClientContext.CREDS_PROVIDER, provider);
-				return context;
-			} catch (AuthenticationException e) {
-				log.error("Unable to set credentials");
-			}
-		}
+    /**
+     * The basic version. Parse the model from the file, read the model from the
+     * tripleStore, and ask whether they are isomorphic.
+     */
+    @Override
+    public boolean isEquivalentGraph(String graphURI, Model graph) throws RDFServiceException {
+        Model tripleStoreModel = new RDFServiceDataset(this).getNamedModel(graphURI);
+        Model fromTripleStoreModel = ModelFactory.createDefaultModel().add(tripleStoreModel);
+        return graph.isIsomorphicWith(fromTripleStoreModel);
+    }
 
-		return new BasicHttpContext();
-	}
+    @Override
+    public boolean preferPreciseOptionals() {
+        return false;
+    }
 
-	protected UsernamePasswordCredentials getCredentials() {
-		return null;
-	}
+    protected HttpContext getContext(HttpRequestBase request) {
+        UsernamePasswordCredentials credentials = getCredentials();
+        if (credentials != null) {
+            try {
+                request.addHeader(new BasicScheme().authenticate(credentials, request, null));
+
+                CredentialsProvider provider = new BasicCredentialsProvider();
+                provider.setCredentials(AuthScope.ANY, getCredentials());
+
+                BasicHttpContext context = new BasicHttpContext();
+                context.setAttribute(ClientContext.CREDS_PROVIDER, provider);
+                return context;
+            } catch (AuthenticationException e) {
+                log.error("Unable to set credentials");
+            }
+        }
+
+        return new BasicHttpContext();
+    }
+
+    protected UsernamePasswordCredentials getCredentials() {
+        return null;
+    }
 }

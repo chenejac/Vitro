@@ -8,7 +8,7 @@ public class StaticDatasetFactory implements DatasetWrapperFactory {
 
     private Dataset _dataset;
 
-    public StaticDatasetFactory (Dataset dataset) {
+    public StaticDatasetFactory(Dataset dataset) {
         _dataset = dataset;
     }
 

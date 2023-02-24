@@ -21,116 +21,116 @@ import org.apache.commons.logging.LogFactory;
  * check their current status.
  */
 public class VitroBackgroundThread extends Thread {
-	// UQAM-Bug-Correction add start
-	public synchronized void start() {
-		super.start();
-	}
-	private static final Log log = LogFactory.getLog(VitroBackgroundThread.class);
+    private static final Log log = LogFactory.getLog(VitroBackgroundThread.class);
+    private static final ConcurrentLinkedQueue<WeakReference<VitroBackgroundThread>> allThreads =
+        new ConcurrentLinkedQueue<WeakReference<VitroBackgroundThread>>();
+    private volatile WorkLevelStamp stamp = new WorkLevelStamp(WorkLevel.IDLE);
 
-	private static final ConcurrentLinkedQueue<WeakReference<VitroBackgroundThread>> allThreads = new ConcurrentLinkedQueue<WeakReference<VitroBackgroundThread>>();
+    public VitroBackgroundThread(String name) {
+        super(name);
+        allThreads.add(new WeakReference<VitroBackgroundThread>(this));
+    }
 
-	/**
-	 * Get a list of all VitroBackgroundThreads that have not been garbage-collected.
-	 */
-	public static List<VitroBackgroundThread> getThreads() {
-		List<VitroBackgroundThread> list = new ArrayList<VitroBackgroundThread>();
-		for (WeakReference<VitroBackgroundThread> ref : allThreads) {
-			VitroBackgroundThread t = ref.get();
-			if (t != null) {
-				list.add(t);
-			}
-		}
-		return list;
-	}
+    public VitroBackgroundThread(Runnable target, String name) {
+        super(target, name);
+        allThreads.add(new WeakReference<VitroBackgroundThread>(this));
+    }
 
-	/**
-	 * Get a list of all VitroBackgroundThreads that have not died.
-	 */
-	public static List<VitroBackgroundThread> getLivingThreads() {
-		List<VitroBackgroundThread> list = new ArrayList<VitroBackgroundThread>();
-		for (VitroBackgroundThread t : getThreads()) {
-			if (t.isAlive()) {
-				list.add(t);
-			}
-		}
-		return list;
-	}
+    /**
+     * Get a list of all VitroBackgroundThreads that have not been garbage-collected.
+     */
+    public static List<VitroBackgroundThread> getThreads() {
+        List<VitroBackgroundThread> list = new ArrayList<VitroBackgroundThread>();
+        for (WeakReference<VitroBackgroundThread> ref : allThreads) {
+            VitroBackgroundThread t = ref.get();
+            if (t != null) {
+                list.add(t);
+            }
+        }
+        return list;
+    }
 
-	public enum WorkLevel {
-		IDLE, WORKING
-	}
+    /**
+     * Get a list of all VitroBackgroundThreads that have not died.
+     */
+    public static List<VitroBackgroundThread> getLivingThreads() {
+        List<VitroBackgroundThread> list = new ArrayList<VitroBackgroundThread>();
+        for (VitroBackgroundThread t : getThreads()) {
+            if (t.isAlive()) {
+                list.add(t);
+            }
+        }
+        return list;
+    }
 
-	private volatile WorkLevelStamp stamp = new WorkLevelStamp(WorkLevel.IDLE);
+    // UQAM-Bug-Correction add start
+    public synchronized void start() {
+        super.start();
+    }
 
-	public VitroBackgroundThread(String name) {
-		super(name);
-		allThreads.add(new WeakReference<VitroBackgroundThread>(this));
-	}
+    public void setWorkLevel(WorkLevel level, String... flags) {
+        log.debug("Set work level on '" + this.getName() + "' to " + level
+            + ", flags=" + Arrays.toString(flags));
+        stamp = new WorkLevelStamp(level, flags);
+    }
 
-	public VitroBackgroundThread(Runnable target, String name) {
-		super(target, name);
-		allThreads.add(new WeakReference<VitroBackgroundThread>(this));
-	}
+    public WorkLevelStamp getWorkLevel() {
+        return stamp;
+    }
 
-	public void setWorkLevel(WorkLevel level, String... flags) {
-		log.debug("Set work level on '" + this.getName() + "' to " + level
-				+ ", flags=" + Arrays.toString(flags));
-		stamp = new WorkLevelStamp(level, flags);
-	}
+    public enum WorkLevel {
+        IDLE, WORKING
+    }
 
-	public WorkLevelStamp getWorkLevel() {
-		return stamp;
-	}
+    /**
+     * An immutable object that holds both the current work level and the time
+     * that it was set.
+     * <p>
+     * Particular threads may want to assign additional state using zero or more
+     * "flags".
+     */
+    public static class WorkLevelStamp {
+        private final WorkLevel level;
+        private final long since;
+        private final List<String> flags;
 
-	/**
-	 * An immutable object that holds both the current work level and the time
-	 * that it was set.
-	 *
-	 * Particular threads may want to assign additional state using zero or more
-	 * "flags".
-	 */
-	public static class WorkLevelStamp {
-		private final WorkLevel level;
-		private final long since;
-		private final List<String> flags;
+        public WorkLevelStamp(WorkLevel level, String... flags) {
+            this.level = level;
+            this.since = System.currentTimeMillis();
+            this.flags = Collections.unmodifiableList(Arrays.asList(flags));
+        }
 
-		public WorkLevelStamp(WorkLevel level, String... flags) {
-			this.level = level;
-			this.since = System.currentTimeMillis();
-			this.flags = Collections.unmodifiableList(Arrays.asList(flags));
-		}
+        public WorkLevel getLevel() {
+            return level;
+        }
 
-		public WorkLevel getLevel() {
-			return level;
-		}
+        public Date getSince() {
+            return new Date(since);
+        }
 
-		public Date getSince() {
-			return new Date(since);
-		}
+        public Collection<String> getFlags() {
+            return flags;
+        }
+    }
 
-		public Collection<String> getFlags() {
-			return flags;
-		}
-	}
+    /**
+     * A factory class, for use in Executors, that creates threads with
+     * successive names.
+     */
+    public static class Factory implements ThreadFactory {
+        private final String threadName;
+        private final AtomicInteger index;
 
-	/**
-	 * A factory class, for use in Executors, that creates threads with
-	 * successive names.
-	 */
-	public static class Factory implements ThreadFactory{
-		private final String threadName;
-		private final AtomicInteger index;
+        public Factory(String threadName) {
+            this.threadName = threadName;
+            this.index = new AtomicInteger();
+        }
 
-		public Factory(String threadName) {
-			this.threadName = threadName;
-			this.index = new AtomicInteger();
-		}
+        @Override
+        public Thread newThread(Runnable r) {
+            return new VitroBackgroundThread(r, threadName + "_" + index.getAndIncrement());
+        }
 
-		@Override
-		public Thread newThread(Runnable r) {
-			return new VitroBackgroundThread(r, threadName + "_" + index.getAndIncrement());
-		}
-
-	}
+    }
 
 }

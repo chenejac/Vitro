@@ -2,24 +2,24 @@
 
 package edu.cornell.mannlib.vitro.webapp.web.templatemodels;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder.ParamMap;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 public class LinkTemplateModel extends BaseTemplateModel {
 
     private String url;
     private String text;
 
-    public LinkTemplateModel() { }
+    public LinkTemplateModel() {
+    }
 
     public LinkTemplateModel(String text, String path) {
         setText(text);
         setUrl(path);
     }
 
-    public LinkTemplateModel(String text, String path, String...params) {
+    public LinkTemplateModel(String text, String path, String... params) {
         setText(text);
         setUrl(path, params);
     }
@@ -27,10 +27,6 @@ public class LinkTemplateModel extends BaseTemplateModel {
     public LinkTemplateModel(String text, String path, ParamMap params) {
         setText(text);
         setUrl(path, params);
-    }
-
-    protected void setUrl(String path) {
-        url = UrlBuilder.getUrl(path);
     }
 
     protected void setUrl(String path, String... params) {
@@ -41,17 +37,21 @@ public class LinkTemplateModel extends BaseTemplateModel {
         url = UrlBuilder.getUrl(path, params);
     }
 
-    protected void setText(String text) {
-        this.text = StringEscapeUtils.ESCAPE_HTML4.translate(text);
+    public String getUrl() {
+        return cleanTextForDisplay(url);
+    }
+
+    protected void setUrl(String path) {
+        url = UrlBuilder.getUrl(path);
     }
 
     /* Template properties */
 
-    public String getUrl() {
-        return cleanTextForDisplay( url );
-    }
-
     public String getText() {
         return cleanTextForDisplay(text);
+    }
+
+    protected void setText(String text) {
+        this.text = StringEscapeUtils.ESCAPE_HTML4.translate(text);
     }
 }

@@ -2,21 +2,19 @@
 
 package edu.cornell.mannlib.vitro.webapp.i18n.selection;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
-import edu.cornell.mannlib.vitro.webapp.utils.LocaleUtility;
-import org.apache.commons.lang3.LocaleUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import edu.cornell.mannlib.vitro.webapp.config.ConfigurationProperties;
 import edu.cornell.mannlib.vitro.webapp.i18n.I18n;
 import edu.cornell.mannlib.vitro.webapp.startup.StartupStatus;
+import edu.cornell.mannlib.vitro.webapp.utils.LocaleUtility;
+import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -24,146 +22,143 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Check the ConfigurationProperties for a forced locale, or for a
  * comma-separate list of selectable locales.
- *
+ * <p>
  * Create the appropriate Locale objects and store them in the ServletContext.
  */
 public class LocaleSelectionSetup implements ServletContextListener {
 
-	private static final Log log = LogFactory
-			.getLog(LocaleSelectionSetup.class);
+    /**
+     * If this is set, the locale is forced. No selection will be offered to the
+     * user, and browser locales will be ignored.
+     */
+    public static final String PROPERTY_FORCE_LOCALE = "languages.forceLocale";
+    /**
+     * This is the list of locales that the user may select. There should be a
+     * national flag or symbol available for each supported locale.
+     */
+    public static final String PROPERTY_SELECTABLE_LOCALES = "languages.selectableLocales";
+    private static final Log log = LogFactory
+        .getLog(LocaleSelectionSetup.class);
+    private ServletContext ctx;
+    private StartupStatus ss;
+    private ConfigurationProperties props;
 
-	/**
-	 * If this is set, the locale is forced. No selection will be offered to the
-	 * user, and browser locales will be ignored.
-	 */
-	public static final String PROPERTY_FORCE_LOCALE = "languages.forceLocale";
+    private String forceString;
+    private String selectableString;
 
-	/**
-	 * This is the list of locales that the user may select. There should be a
-	 * national flag or symbol available for each supported locale.
-	 */
-	public static final String PROPERTY_SELECTABLE_LOCALES = "languages.selectableLocales";
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        ctx = sce.getServletContext();
+        ss = StartupStatus.getBean(ctx);
+        props = ConfigurationProperties.getBean(sce);
 
-	private ServletContext ctx;
-	private StartupStatus ss;
-	private ConfigurationProperties props;
+        // Instantiate I18n instance to afford access to ServletContext
+        // when requesting a bundle with or without a VitroRequest
+        I18n.setup(ctx);
 
-	private String forceString;
-	private String selectableString;
+        readProperties();
 
-	@Override
-	public void contextInitialized(ServletContextEvent sce) {
-		ctx = sce.getServletContext();
-		ss = StartupStatus.getBean(ctx);
-		props = ConfigurationProperties.getBean(sce);
+        if (isForcing() && hasSelectables()) {
+            warnAboutOverride();
+        }
 
-		// Instantiate I18n instance to afford access to ServletContext
-		// when requesting a bundle with or without a VitroRequest
-		I18n.setup(ctx);
+        if (isForcing()) {
+            forceLocale();
+        } else if (hasSelectables()) {
+            setUpSelections();
+        } else {
+            reportNoLocales();
+        }
+    }
 
-		readProperties();
+    private void readProperties() {
+        forceString = props.getProperty(PROPERTY_FORCE_LOCALE, "");
+        selectableString = props.getProperty(PROPERTY_SELECTABLE_LOCALES, "");
+    }
 
-		if (isForcing() && hasSelectables()) {
-			warnAboutOverride();
-		}
+    private boolean isForcing() {
+        return StringUtils.isNotBlank(forceString);
+    }
 
-		if (isForcing()) {
-			forceLocale();
-		} else if (hasSelectables()) {
-			setUpSelections();
-		} else {
-			reportNoLocales();
-		}
-	}
+    private boolean hasSelectables() {
+        return StringUtils.isNotBlank(selectableString);
+    }
 
-	private void readProperties() {
-		forceString = props.getProperty(PROPERTY_FORCE_LOCALE, "");
-		selectableString = props.getProperty(PROPERTY_SELECTABLE_LOCALES, "");
-	}
+    private void warnAboutOverride() {
+        ss.warning(this, "'" + PROPERTY_FORCE_LOCALE + "' will override '"
+            + PROPERTY_SELECTABLE_LOCALES + "'.");
+    }
 
-	private boolean isForcing() {
-		return StringUtils.isNotBlank(forceString);
-	}
+    private void forceLocale() {
+        try {
+            Locale forceLocale = buildLocale(forceString);
+            SelectedLocale.setForcedLocale(ctx, forceLocale);
+            ssInfo("Setting forced locale to '" + forceLocale + "'.");
+        } catch (IllegalArgumentException e) {
+            ssWarning("Problem in '" + PROPERTY_FORCE_LOCALE + "': "
+                + e.getMessage());
+        }
+    }
 
-	private boolean hasSelectables() {
-		return StringUtils.isNotBlank(selectableString);
-	}
+    private void setUpSelections() {
+        List<Locale> locales = new ArrayList<Locale>();
+        for (String string : splitSelectables()) {
+            try {
+                locales.add(buildLocale(string));
+            } catch (IllegalArgumentException e) {
+                ssWarning("Problem in '" + PROPERTY_SELECTABLE_LOCALES + "': "
+                    + e.getMessage());
+            }
+        }
 
-	private void warnAboutOverride() {
-		ss.warning(this, "'" + PROPERTY_FORCE_LOCALE + "' will override '"
-				+ PROPERTY_SELECTABLE_LOCALES + "'.");
-	}
+        SelectedLocale.setSelectableLocales(ctx, locales);
+        ssInfo("Setting selectable locales to '" + locales + "'.");
+    }
 
-	private void forceLocale() {
-		try {
-			Locale forceLocale = buildLocale(forceString);
-			SelectedLocale.setForcedLocale(ctx, forceLocale);
-			ssInfo("Setting forced locale to '" + forceLocale + "'.");
-		} catch (IllegalArgumentException e) {
-			ssWarning("Problem in '" + PROPERTY_FORCE_LOCALE + "': "
-					+ e.getMessage());
-		}
-	}
+    private String[] splitSelectables() {
+        return selectableString.split("\\s*,\\s*");
+    }
 
-	private void setUpSelections() {
-		List<Locale> locales = new ArrayList<Locale>();
-		for (String string : splitSelectables()) {
-			try {
-				locales.add(buildLocale(string));
-			} catch (IllegalArgumentException e) {
-				ssWarning("Problem in '" + PROPERTY_SELECTABLE_LOCALES + "': "
-						+ e.getMessage());
-			}
-		}
+    private void reportNoLocales() {
+        ssInfo("There is no Locale information.");
+    }
 
-		SelectedLocale.setSelectableLocales(ctx, locales);
-		ssInfo("Setting selectable locales to '" + locales + "'.");
-	}
+    private void ssInfo(String message) {
+        ss.info(this, message + showPropertyValues());
+    }
 
-	private String[] splitSelectables() {
-		return selectableString.split("\\s*,\\s*");
-	}
+    private void ssWarning(String message) {
+        ss.warning(this, message + showPropertyValues());
+    }
 
-	private void reportNoLocales() {
-		ssInfo("There is no Locale information.");
-	}
+    private String showPropertyValues() {
+        return " In runtime.properties, '" + PROPERTY_FORCE_LOCALE
+            + "' is set to '" + forceString + "', '"
+            + PROPERTY_SELECTABLE_LOCALES + "' is set to '"
+            + selectableString + "'";
+    }
 
-	private void ssInfo(String message) {
-		ss.info(this, message + showPropertyValues());
-	}
+    private Locale buildLocale(String localeString)
+        throws IllegalArgumentException {
 
-	private void ssWarning(String message) {
-		ss.warning(this, message + showPropertyValues());
-	}
+        // Replicate exception from lang2 with empty strings
+        if ("".equals(localeString)) {
+            throw new IllegalArgumentException("Invalid locale format");
+        }
 
-	private String showPropertyValues() {
-		return " In runtime.properties, '" + PROPERTY_FORCE_LOCALE
-				+ "' is set to '" + forceString + "', '"
-				+ PROPERTY_SELECTABLE_LOCALES + "' is set to '"
-				+ selectableString + "'";
-	}
+        Locale locale = LocaleUtility.languageStringToLocale(localeString);
 
-	private Locale buildLocale(String localeString)
-			throws IllegalArgumentException {
+        if (!"es_GO".equals(localeString) && // No complaint about bogus locale
+            !LocaleUtils.isAvailableLocale(locale.stripExtensions())) {
+            ssWarning("'" + locale + "' is not a recognized locale.");
+        }
 
-		// Replicate exception from lang2 with empty strings
-		if ("".equals(localeString)) {
-			throw new IllegalArgumentException("Invalid locale format");
-		}
+        return locale;
+    }
 
-		Locale locale = LocaleUtility.languageStringToLocale(localeString);
-
-		if (!"es_GO".equals(localeString) && // No complaint about bogus locale
-				!LocaleUtils.isAvailableLocale(locale.stripExtensions())) {
-			ssWarning("'" + locale + "' is not a recognized locale.");
-		}
-
-		return locale;
-	}
-
-	@Override
-	public void contextDestroyed(ServletContextEvent arg0) {
-		// Nothing to do at shutdown.
-	}
+    @Override
+    public void contextDestroyed(ServletContextEvent arg0) {
+        // Nothing to do at shutdown.
+    }
 
 }

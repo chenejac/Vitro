@@ -10,9 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
 import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
 import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngine;
@@ -28,17 +25,19 @@ import edu.cornell.mannlib.vitro.webapp.searchindex.SearchIndexerImpl.Task;
 import edu.cornell.mannlib.vitro.webapp.searchindex.SearchIndexerImpl.WorkerThreadPool;
 import edu.cornell.mannlib.vitro.webapp.searchindex.documentBuilding.DocumentModifierList;
 import edu.cornell.mannlib.vitro.webapp.searchindex.exclusions.SearchIndexExcluderList;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Get the URIs of all individuals in the model. Update each of their search
  * documents.
- *
+ * <p>
  * Delete all search documents that have not been updated since this rebuild
  * began. That removes all obsolete documents from the index.
  */
 public class RebuildIndexTask implements Task {
-	private static final Log log = LogFactory.getLog(RebuildIndexTask.class);
-	private final Date requestedAt;
+    private static final Log log = LogFactory.getLog(RebuildIndexTask.class);
+    private final Date requestedAt;
 
     private final IndexerConfig config;
     private RebuildIndexTaskImpl impl;
@@ -48,28 +47,28 @@ public class RebuildIndexTask implements Task {
         this.requestedAt = new Date();
     }
 
-	@Override
-	public void run() {
+    @Override
+    public void run() {
         impl = new RebuildIndexTaskImpl(config, requestedAt);
         impl.run();
-	}
+    }
 
-	@Override
-	public SearchIndexerStatus getStatus() {
-		return impl == null ? SearchIndexerStatus.idle() : impl.getStatus();
-	}
+    @Override
+    public SearchIndexerStatus getStatus() {
+        return impl == null ? SearchIndexerStatus.idle() : impl.getStatus();
+    }
 
-	@Override
-	public void notifyWorkUnitCompletion(Runnable workUnit) {
+    @Override
+    public void notifyWorkUnitCompletion(Runnable workUnit) {
         if (impl != null) {
             impl.notifyWorkUnitCompletion(workUnit);
         }
-	}
+    }
 
-	@Override
-	public String toString() {
-		return "RebuildIndexTask[requestedAt=" + new SimpleDateFormat().format(requestedAt) + "]";
-	}
+    @Override
+    public String toString() {
+        return "RebuildIndexTask[requestedAt=" + new SimpleDateFormat().format(requestedAt) + "]";
+    }
 
     private static class RebuildIndexTaskImpl implements Task {
         private final IndexerConfig config;
@@ -141,10 +140,10 @@ public class RebuildIndexTask implements Task {
                 searchEngine.commit();
             } catch (SearchEngineNotRespondingException e) {
                 log.warn("Failed to finalize search index: "
-                        + "the search engine is not responding.");
+                    + "the search engine is not responding.");
             } catch (SearchEngineException e) {
                 log.warn("Failed to finalize "
-                        + "from the search index", e);
+                    + "from the search index", e);
             }
         }
 
@@ -154,10 +153,10 @@ public class RebuildIndexTask implements Task {
                 searchEngine.deleteByQuery(query);
             } catch (SearchEngineNotRespondingException e) {
                 log.warn("Failed to delete outdated documents from the search index: "
-                        + "the search engine is not responding.");
+                    + "the search engine is not responding.");
             } catch (SearchEngineException e) {
                 log.warn("Failed to delete outdated documents "
-                        + "from the search index", e);
+                    + "from the search index", e);
             }
         }
 
@@ -166,7 +165,7 @@ public class RebuildIndexTask implements Task {
                 return searchEngine.documentCount();
             } catch (SearchEngineNotRespondingException e) {
                 log.warn("Failed to get document count from the search index: "
-                        + "the search engine is not responding.");
+                    + "the search engine is not responding.");
                 return 0;
             } catch (SearchEngineException e) {
                 log.warn("Failed to get document count from the search index.", e);
@@ -176,7 +175,7 @@ public class RebuildIndexTask implements Task {
 
         private SearchIndexerStatus buildStatus(State state, int documentsAfter) {
             return new SearchIndexerStatus(state, new Date(), new RebuildCounts(
-                    documentsBefore, documentsAfter));
+                documentsBefore, documentsAfter));
         }
 
         @Override
@@ -193,7 +192,7 @@ public class RebuildIndexTask implements Task {
         @Override
         public String toString() {
             return "RebuildIndexTask[requestedAt="
-                    + new SimpleDateFormat().format(requestedAt) + "]";
+                + new SimpleDateFormat().format(requestedAt) + "]";
         }
     }
 }

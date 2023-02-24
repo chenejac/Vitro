@@ -2,16 +2,11 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.beans.FormObject;
@@ -27,16 +22,20 @@ import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.DataPropertyDao;
 import edu.cornell.mannlib.vitro.webapp.dao.DataPropertyStatementDao;
 import edu.cornell.mannlib.vitro.webapp.dao.IndividualDao;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class DataPropertyStatementRetryController extends BaseEditController {
 
-	private static final Log log = LogFactory.getLog(DataPropertyStatementRetryController.class.getName());
+    private static final Log log =
+        LogFactory.getLog(DataPropertyStatementRetryController.class.getName());
 
-    public void doPost (HttpServletRequest request, HttpServletResponse response) {
-		if (!isAuthorizedToDisplayPage(request, response,
-				SimplePermission.DO_BACK_END_EDITING.ACTION)) {
-			return;
-		}
+    public void doPost(HttpServletRequest request, HttpServletResponse response) {
+        if (!isAuthorizedToDisplayPage(request, response,
+            SimplePermission.DO_BACK_END_EDITING.ACTION)) {
+            return;
+        }
 
         //create an EditProcessObject for this and put it in the session
         EditProcessObject epo = super.createEpo(request);
@@ -46,16 +45,16 @@ public class DataPropertyStatementRetryController extends BaseEditController {
         VitroRequest vreq = new VitroRequest(request);
 
         DataPropertyStatementDao dataPropertyStatementDao =
-        		vreq.getUnfilteredWebappDaoFactory().getDataPropertyStatementDao();
+            vreq.getUnfilteredWebappDaoFactory().getDataPropertyStatementDao();
         epo.setDataAccessObject(dataPropertyStatementDao);
         DataPropertyDao dpDao = vreq.getUnfilteredWebappDaoFactory().getDataPropertyDao();
         IndividualDao eDao = vreq.getUnfilteredWebappDaoFactory().getIndividualDao();
         epo.setBeanClass(DataPropertyStatement.class);
 
         DataPropertyStatement objectForEditing = null;
-        if (!epo.getUseRecycledBean()){
+        if (!epo.getUseRecycledBean()) {
             objectForEditing = new DataPropertyStatementImpl();
-            populateBeanFromParams(objectForEditing,vreq);
+            populateBeanFromParams(objectForEditing, vreq);
             if (vreq.getParameter(MULTIPLEXED_PARAMETER_NAME) != null) {
                 action = "update";
             }
@@ -70,11 +69,11 @@ public class DataPropertyStatementRetryController extends BaseEditController {
         List entityList = new LinkedList();
         if (objectForEditing.getIndividualURI() != null) {
             Individual individual = eDao.getIndividualByURI(objectForEditing.getIndividualURI());
-            entityList.add(new Option(individual.getURI(),individual.getName(),true));
+            entityList.add(new Option(individual.getURI(), individual.getName(), true));
         } else {
-            entityList.add(new Option ("-1", "Error: the individual must be specified", true));
+            entityList.add(new Option("-1", "Error: the individual must be specified", true));
         }
-        OptionMap.put("IndividualURI",entityList);
+        OptionMap.put("IndividualURI", entityList);
         DataProperty dp = dpDao.getDataPropertyByURI(objectForEditing.getDatapropURI());
         if (dp == null) {
             foo.getValues().put("Dataprop", "Error: the data property must be specified");
@@ -84,14 +83,14 @@ public class DataPropertyStatementRetryController extends BaseEditController {
         foo.setOptionLists(OptionMap);
         epo.setFormObject(foo);
 
-        FormUtils.populateFormFromBean(objectForEditing,action,foo);
+        FormUtils.populateFormFromBean(objectForEditing, action, foo);
 
-        request.setAttribute("formJsp","/templates/edit/specific/ents2data_retry.jsp");
-        request.setAttribute("scripts","/templates/edit/formBasic.js");
-        request.setAttribute("title","Individual Data Editing Form");
-        request.setAttribute("_action",action);
-        request.setAttribute("unqualifiedClassName","DataPropertyStatement");
-        setRequestAttributes(request,epo);
+        request.setAttribute("formJsp", "/templates/edit/specific/ents2data_retry.jsp");
+        request.setAttribute("scripts", "/templates/edit/formBasic.js");
+        request.setAttribute("title", "Individual Data Editing Form");
+        request.setAttribute("_action", action);
+        request.setAttribute("unqualifiedClassName", "DataPropertyStatement");
+        setRequestAttributes(request, epo);
 
         try {
             JSPPageHandler.renderBasicPage(request, response, "/templates/edit/formBasic.jsp");
@@ -103,7 +102,7 @@ public class DataPropertyStatementRetryController extends BaseEditController {
 
     }
 
-    public void doGet (HttpServletRequest request, HttpServletResponse response) {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
         doPost(request, response);
     }
 

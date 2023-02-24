@@ -2,18 +2,13 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.beans.FormObject;
@@ -24,24 +19,28 @@ import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.beans.ApplicationBean;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.ApplicationDao;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class ApplicationBeanRetryController extends BaseEditController {
 
-	private static final Log log = LogFactory.getLog(ApplicationBeanRetryController.class.getName());
+    private static final Log log =
+        LogFactory.getLog(ApplicationBeanRetryController.class.getName());
 
-    public void doPost (HttpServletRequest req, HttpServletResponse response) {
+    public void doPost(HttpServletRequest req, HttpServletResponse response) {
 
-		if (!isAuthorizedToDisplayPage(req, response,
-				SimplePermission.EDIT_SITE_INFORMATION.ACTION)) {
-        	return;
+        if (!isAuthorizedToDisplayPage(req, response,
+            SimplePermission.EDIT_SITE_INFORMATION.ACTION)) {
+            return;
         }
 
-    	VitroRequest request = new VitroRequest(req);
+        VitroRequest request = new VitroRequest(req);
 
         try {
-            super.doGet(request,response);
+            super.doGet(request, response);
         } catch (Exception e) {
-            log.error(e,e);
+            log.error(e, e);
         }
 
         //create an EditProcessObject for this and put it in the session
@@ -55,7 +54,7 @@ public class ApplicationBeanRetryController extends BaseEditController {
         ApplicationBean applicationForEditing = aDao.getApplicationBean();
         epo.setDataAccessObject(aDao);
 
-        if (!epo.getUseRecycledBean()){
+        if (!epo.getUseRecycledBean()) {
             action = "update";
             epo.setOriginalBean(applicationForEditing);
         } else {
@@ -84,12 +83,12 @@ public class ApplicationBeanRetryController extends BaseEditController {
         epo.setFormObject(foo);
         FormUtils.populateFormFromBean(applicationForEditing, epo.getAction(), foo);
 
-        request.setAttribute("formJsp","/templates/edit/specific/applicationBean_retry.jsp");
-        request.setAttribute("scripts","/templates/edit/formBasic.js");
-        request.setAttribute("title","Site Information");
-        request.setAttribute("_action",action);
-        request.setAttribute("unqualifiedClassName","ApplicationBean");
-        setRequestAttributes(request,epo);
+        request.setAttribute("formJsp", "/templates/edit/specific/applicationBean_retry.jsp");
+        request.setAttribute("scripts", "/templates/edit/formBasic.js");
+        request.setAttribute("title", "Site Information");
+        request.setAttribute("_action", action);
+        request.setAttribute("unqualifiedClassName", "ApplicationBean");
+        setRequestAttributes(request, epo);
 
         try {
             JSPPageHandler.renderBasicPage(request, response, "/templates/edit/formContact.jsp");
@@ -99,7 +98,7 @@ public class ApplicationBeanRetryController extends BaseEditController {
 
     }
 
-    public void doGet (HttpServletRequest request, HttpServletResponse response) {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
         doPost(request, response);
     }
 
@@ -111,10 +110,10 @@ public class ApplicationBeanRetryController extends BaseEditController {
      */
     private final List<Option> getThemeOptions(ApplicationBean application) {
 
-    	// Get the available themes
-    	ServletContext sc = getServletContext();
-    	boolean doSort = true;
-    	List<String> themeNames = ApplicationBean.themeInfo.getThemeNames();
+        // Get the available themes
+        ServletContext sc = getServletContext();
+        boolean doSort = true;
+        List<String> themeNames = ApplicationBean.themeInfo.getThemeNames();
 
         // Create the list of theme Options
         String currentThemeDir = application.getThemeDir();
@@ -123,10 +122,10 @@ public class ApplicationBeanRetryController extends BaseEditController {
         String themeName, themeDir;
         boolean selected;
         while (i.hasNext()) {
-        	themeName = i.next();
-        	themeDir = "themes/" + themeName + "/";
-        	selected = themeDir.equals(currentThemeDir);
-        	themeOptions.add(new Option(themeDir, themeName, selected));
+            themeName = i.next();
+            themeDir = "themes/" + themeName + "/";
+            selected = themeDir.equals(currentThemeDir);
+            themeOptions.add(new Option(themeDir, themeName, selected));
         }
 
         return themeOptions;

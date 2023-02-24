@@ -2,13 +2,12 @@
 
 package edu.cornell.mannlib.vitro.webapp.web.templatemodels;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.beans.VClass;
 import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder.ParamMap;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder.Route;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class VClassTemplateModel extends BaseTemplateModel {
 
@@ -21,7 +20,7 @@ public class VClassTemplateModel extends BaseTemplateModel {
         this.vclass = vclass;
     }
 
-    public String getUri(){
+    public String getUri() {
         return vclass.getURI();
     }
 

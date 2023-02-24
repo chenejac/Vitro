@@ -2,12 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.SendFailedException;
@@ -20,34 +14,38 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 
 import edu.cornell.mannlib.vitro.webapp.beans.UserAccount;
 import edu.cornell.mannlib.vitro.webapp.dao.UserAccountsDao;
 import edu.cornell.mannlib.vitro.webapp.email.FreemarkerEmailFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 @WebServlet(name = "mailusers", urlPatterns = {"/mailusers"}, loadOnStartup = 5)
 public class MailUsersServlet extends VitroHttpServlet {
-	private static final Log log = LogFactory.getLog(MailUsersServlet.class);
+    private static final Log log = LogFactory.getLog(MailUsersServlet.class);
 
     public static HttpServletRequest request;
     public static HttpServletRequest response;
 
     @Override
-	public void doGet( HttpServletRequest request, HttpServletResponse response )
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException {
         VitroRequest vreq = new VitroRequest(request);
 
-        String   confirmpage    = "/confirmUserMail.jsp";
-        String   errpage        = "/contact_err.jsp";
+        String confirmpage = "/confirmUserMail.jsp";
+        String errpage = "/contact_err.jsp";
         String status = null; // holds the error status
 
         if (!FreemarkerEmailFactory.isConfigured(vreq)) {
-			status = "This application has not yet been configured to send mail. "
-					+ "Email properties must be specified in the configuration properties file.";
-            response.sendRedirect( "test?bodyJsp=" + errpage + "&ERR=" + status );
+            status = "This application has not yet been configured to send mail. "
+                + "Email properties must be specified in the configuration properties file.";
+            response.sendRedirect("test?bodyJsp=" + errpage + "&ERR=" + status);
             return;
         }
 
@@ -82,29 +80,31 @@ public class MailUsersServlet extends VitroHttpServlet {
         deliverToArray = getEmailsForAllUserAccounts(vreq);
 
         //Removed all form type stuff b/c recipients pre-configured
-        recipientCount=(deliverToArray == null) ? 0 : deliverToArray.size();
+        recipientCount = (deliverToArray == null) ? 0 : deliverToArray.size();
 
         if (recipientCount == 0) {
             //log.error("recipientCount is 0 when DeliveryType specified as \""+formType+"\"");
             throw new Error(
-                    "To establish the Contact Us mail capability the system administrators must  "
+                "To establish the Contact Us mail capability the system administrators must  "
                     + "specify at least one email address in the current portal.");
         }
 
         // obtain passed in form data with a simple trim on the values
-        String   webusername    = vreq.getParameter("webusername");// Null.trim(); will give you an exception
-        String   webuseremail   = vreq.getParameter("webuseremail");//.trim();
-        String   comments       = vreq.getParameter("s34gfd88p9x1"); //what does this string signify?
+        String webusername =
+            vreq.getParameter("webusername");// Null.trim(); will give you an exception
+        String webuseremail = vreq.getParameter("webuseremail");//.trim();
+        String comments = vreq.getParameter("s34gfd88p9x1"); //what does this string signify?
         //webusername = "hjk54";
         //webuseremail = "hjk54@cornell.edu";
         //comments = "following are comments";
 
-       webusername=webusername.trim();
-       deliveryfrom = webuseremail;
-       comments=comments.trim();
+        webusername = webusername.trim();
+        deliveryfrom = webuseremail;
+        comments = comments.trim();
         //Removed spam filtering code
 
-        StringBuilder msgBuf = new StringBuilder(); // contains the intro copy for the body of the email message
+        StringBuilder msgBuf =
+            new StringBuilder(); // contains the intro copy for the body of the email message
         String lineSeparator = System.getProperty("line.separator"); // \r\n on windows, \n on unix
         // from MyLibrary
         msgBuf.setLength(0);
@@ -116,12 +116,14 @@ public class MailUsersServlet extends VitroHttpServlet {
         msgBuf.append("</head>").append(lineSeparator);
         msgBuf.append("<body>").append(lineSeparator);
         msgBuf.append("<h4>").append(deliveryfrom).append("</h4>").append(lineSeparator);
-        msgBuf.append("<h4>From: ").append(webusername).append(" (").append(webuseremail).append(")").append(" at IP address ").append(request.getRemoteAddr()).append("</h4>").append(lineSeparator);
+        msgBuf.append("<h4>From: ").append(webusername).append(" (").append(webuseremail)
+            .append(")").append(" at IP address ").append(request.getRemoteAddr()).append("</h4>")
+            .append(lineSeparator);
 
         //Don't need any 'likely viewing page' portion to be emailed out to the others
 
         msgBuf.append(lineSeparator).append("</i></p><h3>Comments:</h3>").append(lineSeparator);
-        if (comments==null || comments.equals("")) {
+        if (comments == null || comments.equals("")) {
             msgBuf.append("<p>BLANK MESSAGE</p>");
         } else {
             msgBuf.append("<p>").append(comments).append("</p>");
@@ -153,45 +155,47 @@ public class MailUsersServlet extends VitroHttpServlet {
         //s.setDebug(true);
         try {
             // Construct the message
-            MimeMessage msg = new MimeMessage( s );
+            MimeMessage msg = new MimeMessage(s);
             log.debug("trying to send message from servlet");
 
             // Set the from address
-            msg.setFrom( new InternetAddress( webuseremail ));
+            msg.setFrom(new InternetAddress(webuseremail));
 
             // Set the recipient address
 
-            if (recipientCount>0){
-                InternetAddress[] address=new InternetAddress[recipientCount];
-                for (int i=0; i<recipientCount; i++){
+            if (recipientCount > 0) {
+                InternetAddress[] address = new InternetAddress[recipientCount];
+                for (int i = 0; i < recipientCount; i++) {
                     address[i] = new InternetAddress(deliverToArray.get(i));
                 }
-                msg.setRecipients( Message.RecipientType.TO, address );
+                msg.setRecipients(Message.RecipientType.TO, address);
             }
 
             // Set the subject and text
-            msg.setSubject( deliveryfrom );
+            msg.setSubject(deliveryfrom);
 
             // add the multipart to the message
-            msg.setContent(msgText,"text/html; charset=UTF-8");
+            msg.setContent(msgText, "text/html; charset=UTF-8");
 
             // set the Date: header
-            msg.setSentDate( new Date() );
+            msg.setSentDate(new Date());
 
             log.debug("sending from servlet");
 
-        //if (!probablySpam)
-            Transport.send( msg ); // try to send the message via smtp - catch error exceptions
+            //if (!probablySpam)
+            Transport.send(msg); // try to send the message via smtp - catch error exceptions
 
 
         } catch (AddressException e) {
             status = "Please supply a valid email address.";
             log.debug("Error - status is " + status);
         } catch (SendFailedException e) {
-            status = "The system was unable to deliver your mail.  Please try again later.  [SEND FAILED]";
+            status =
+                "The system was unable to deliver your mail.  Please try again later.  [SEND FAILED]";
             log.error("Error - status is " + status);
         } catch (MessagingException e) {
-            status = "The system was unable to deliver your mail.  Please try again later.  [MESSAGING]";
+            status =
+                "The system was unable to deliver your mail.  Please try again later.  [MESSAGING]";
             log.error("Error - status is " + status, e);
         }
 
@@ -201,38 +205,40 @@ public class MailUsersServlet extends VitroHttpServlet {
         // Redirect to the appropriate confirmation page
         if (status == null && !probablySpam) {
             // message was sent successfully
-            response.sendRedirect( "test?bodyJsp=" + confirmpage );
+            response.sendRedirect("test?bodyJsp=" + confirmpage);
         } else {
             // exception occurred
-            response.sendRedirect( "test?bodyJsp=" + errpage + "&ERR=" + status );
+            response.sendRedirect("test?bodyJsp=" + errpage + "&ERR=" + status);
         }
 
     }
 
-	private List<String> getEmailsForAllUserAccounts(VitroRequest vreq) {
-		UserAccountsDao uaDao = vreq.getWebappDaoFactory().getUserAccountsDao();
+    private List<String> getEmailsForAllUserAccounts(VitroRequest vreq) {
+        UserAccountsDao uaDao = vreq.getWebappDaoFactory().getUserAccountsDao();
 
-		List<String> emails = new ArrayList<String>();
-		for (UserAccount user : uaDao.getAllUserAccounts()) {
-			emails.add(user.getEmailAddress());
-		}
+        List<String> emails = new ArrayList<String>();
+        for (UserAccount user : uaDao.getAllUserAccounts()) {
+            emails.add(user.getEmailAddress());
+        }
 
-		return emails;
-	}
-
-    @Override
-	public void doPost( HttpServletRequest request, HttpServletResponse response )
-        throws ServletException, IOException
-    {
-        doGet( request, response );
+        return emails;
     }
 
-    /** Intended to mangle url so it can get through spam filtering
-     *    http://host/dir/servlet?param=value -&gt;  host: dir/servlet?param=value */
-    public String stripProtocol( String in ){
-        if( in == null )
+    @Override
+    public void doPost(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+        doGet(request, response);
+    }
+
+    /**
+     * Intended to mangle url so it can get through spam filtering
+     * http://host/dir/servlet?param=value -&gt;  host: dir/servlet?param=value
+     */
+    public String stripProtocol(String in) {
+        if (in == null) {
             return "";
-        else
-            return in.replaceAll("http://", "host: " );
+        } else {
+            return in.replaceAll("http://", "host: ");
+        }
     }
 }

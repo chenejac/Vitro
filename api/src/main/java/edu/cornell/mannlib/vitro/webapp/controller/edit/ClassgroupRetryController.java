@@ -2,16 +2,11 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.beans.FormObject;
@@ -24,21 +19,24 @@ import edu.cornell.mannlib.vedit.validator.impl.RequiredFieldValidator;
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.beans.VClassGroup;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassGroupDao;
+import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 
 public class ClassgroupRetryController extends BaseEditController {
 
-	private static final Log log = LogFactory.getLog(ClassgroupRetryController.class.getName());
+    private static final Log log = LogFactory.getLog(ClassgroupRetryController.class.getName());
 
-    public void doPost (HttpServletRequest req, HttpServletResponse response) {
-		if (!isAuthorizedToDisplayPage(req, response,
-				SimplePermission.USE_MISCELLANEOUS_ADMIN_PAGES.ACTION)) {
-        	return;
+    public void doPost(HttpServletRequest req, HttpServletResponse response) {
+        if (!isAuthorizedToDisplayPage(req, response,
+            SimplePermission.USE_MISCELLANEOUS_ADMIN_PAGES.ACTION)) {
+            return;
         }
 
-    	VitroRequest request = new VitroRequest(req);
+        VitroRequest request = new VitroRequest(req);
 
         //create an EditProcessObject for this and put it in the session
         EditProcessObject epo = super.createEpo(request);
@@ -56,10 +54,11 @@ public class ClassgroupRetryController extends BaseEditController {
         epo.setDataAccessObject(cgDao);
 
         VClassGroup vclassGroupForEditing = null;
-        if (!epo.getUseRecycledBean()){
+        if (!epo.getUseRecycledBean()) {
             if (request.getParameter("uri") != null) {
                 try {
-                    vclassGroupForEditing = (VClassGroup)cgDao.getGroupByURI(request.getParameter("uri"));
+                    vclassGroupForEditing =
+                        (VClassGroup) cgDao.getGroupByURI(request.getParameter("uri"));
                     action = "update";
                     epo.setAction("update");
                 } catch (NullPointerException e) {
@@ -68,7 +67,7 @@ public class ClassgroupRetryController extends BaseEditController {
                 if (vclassGroupForEditing == null) {
                     //UTF-8 expected due to URIEncoding on Connector in server.xml
                     String uriToFind = request.getParameter("uri");
-                    vclassGroupForEditing = (VClassGroup)cgDao.getGroupByURI(uriToFind);
+                    vclassGroupForEditing = (VClassGroup) cgDao.getGroupByURI(uriToFind);
                 }
             } else {
                 vclassGroupForEditing = new VClassGroup();
@@ -92,23 +91,23 @@ public class ClassgroupRetryController extends BaseEditController {
         try {
             Class[] args = new Class[1];
             args[0] = String.class;
-            epo.setGetMethod(cgDao.getClass().getDeclaredMethod("getGroupByURI",args));
+            epo.setGetMethod(cgDao.getClass().getDeclaredMethod("getGroupByURI", args));
         } catch (NoSuchMethodException e) {
-            log.error(this.getClass().getName()+" could not find the getGroupByURI method");
+            log.error(this.getClass().getName() + " could not find the getGroupByURI method");
         }
 
         FormObject foo = new FormObject();
         foo.setErrorMap(epo.getErrMsgMap());
         epo.setFormObject(foo);
 
-        FormUtils.populateFormFromBean(vclassGroupForEditing,action,foo,epo.getBadValueMap());
+        FormUtils.populateFormFromBean(vclassGroupForEditing, action, foo, epo.getBadValueMap());
 
-        request.setAttribute("formJsp","/templates/edit/specific/classgroup_retry.jsp");
-        request.setAttribute("scripts","/templates/edit/formBasic.js");
-        request.setAttribute("title","Classgroup Editing Form");
-        request.setAttribute("_action",action);
-        request.setAttribute("unqualifiedClassName","VClassGroup");
-        setRequestAttributes(request,epo);
+        request.setAttribute("formJsp", "/templates/edit/specific/classgroup_retry.jsp");
+        request.setAttribute("scripts", "/templates/edit/formBasic.js");
+        request.setAttribute("title", "Classgroup Editing Form");
+        request.setAttribute("_action", action);
+        request.setAttribute("unqualifiedClassName", "VClassGroup");
+        setRequestAttributes(request, epo);
 
         try {
             JSPPageHandler.renderBasicPage(request, response, "/templates/edit/formBasic.jsp");
@@ -120,13 +119,14 @@ public class ClassgroupRetryController extends BaseEditController {
 
     }
 
-    public void doGet (HttpServletRequest request, HttpServletResponse response) {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
         doPost(request, response);
     }
 
     class VclassGroupInsertPageForwarder implements PageForwarder {
 
-        public void doForward(HttpServletRequest request, HttpServletResponse response, EditProcessObject epo){
+        public void doForward(HttpServletRequest request, HttpServletResponse response,
+                              EditProcessObject epo) {
             String newVclassGroupUrl = "listGroups";
             try {
                 response.sendRedirect(newVclassGroupUrl);

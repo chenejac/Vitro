@@ -2,9 +2,9 @@
 
 package edu.cornell.mannlib.vitro.webapp.dao;
 
-import edu.cornell.mannlib.vitro.webapp.beans.Ontology;
-
 import java.util.List;
+
+import edu.cornell.mannlib.vitro.webapp.beans.Ontology;
 
 public interface OntologyDao {
 

@@ -1,9 +1,9 @@
 package org.linkeddatafragments.datasource;
 
+import java.io.Closeable;
+
 import org.linkeddatafragments.fragments.ILinkedDataFragment;
 import org.linkeddatafragments.fragments.ILinkedDataFragmentRequest;
-
-import java.io.Closeable;
 
 /**
  * Processes {@link ILinkedDataFragmentRequest}s and returns
@@ -11,16 +11,14 @@ import java.io.Closeable;
  *
  * @author <a href="http://olafhartig.de">Olaf Hartig</a>
  */
-public interface IFragmentRequestProcessor extends Closeable
-{
+public interface IFragmentRequestProcessor extends Closeable {
 
     /**
-     *
      * @param request
      * @return
      * @throws IllegalArgumentException
      */
     ILinkedDataFragment createRequestedFragment(
-            final ILinkedDataFragmentRequest request)
-                    throws IllegalArgumentException;
+        final ILinkedDataFragmentRequest request)
+        throws IllegalArgumentException;
 }

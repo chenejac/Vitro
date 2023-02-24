@@ -3,28 +3,30 @@
 <!DOCTYPE html>
 <html lang="en" prefix="hydra: http://www.w3.org/ns/hydra/core# void: http://rdfs.org/ns/void#">
 <head>
-  <meta charset="utf-8">
+    <meta charset="utf-8">
     <title>Linked Data Fragments Server ${ (title!header)?ensure_starts_with("(")?ensure_ends_with(")") }</title>
-  <link rel="stylesheet" href="${ assetsPath }style.css" />
-  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:700italic,400,700|Droid+Sans+Mono" type="text/css" />
-  <meta name="viewport" content="width=device-width,minimum-scale=1,maximum-scale=1">
+    <link href="${ assetsPath }style.css" rel="stylesheet"/>
+    <link href="//fonts.googleapis.com/css?family=Open+Sans:700italic,400,700|Droid+Sans+Mono" rel="stylesheet"
+          type="text/css"/>
+    <meta content="width=device-width,minimum-scale=1,maximum-scale=1" name="viewport">
 </head>
 <body>
-  <header>
+<header>
     <h1><a href="${homePath}">Linked Data Fragments Server</a></h1>
     <figure class="logo">
-      <a href="http://linkeddatafragments.org/"><img src="${ assetsPath }logo.svg" alt="Linked Data Fragments" /></a>
+        <a href="http://linkeddatafragments.org/"><img alt="Linked Data Fragments" src="${ assetsPath }logo.svg"/></a>
     </figure>
-  </header>
-  <main>
-      <@contents/>
-  </main>
-  <footer>
+</header>
+<main>
+    <@contents/>
+</main>
+<footer>
     <p>
-      Powered by a <a href="https://github.com/LinkedDataFragments/Server.java" target="_blank">Linked Data Fragments Server</a>
-      ©2013–${date?string.yyyy} Multimedia Lab – iMinds – Ghent University
+        Powered by a <a href="https://github.com/LinkedDataFragments/Server.java" target="_blank">Linked Data Fragments
+        Server</a>
+        ©2013–${date?string.yyyy} Multimedia Lab – iMinds – Ghent University
     </p>
-  </footer>
+</footer>
 </body>
 </html>
 </#macro>

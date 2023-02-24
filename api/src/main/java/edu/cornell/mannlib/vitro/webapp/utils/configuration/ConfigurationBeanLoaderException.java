@@ -6,11 +6,11 @@ package edu.cornell.mannlib.vitro.webapp.utils.configuration;
  * Indicates that the loading of configuration beans did not succeed.
  */
 public class ConfigurationBeanLoaderException extends Exception {
-	public ConfigurationBeanLoaderException(String message) {
-		super(message);
-	}
+    public ConfigurationBeanLoaderException(String message) {
+        super(message);
+    }
 
-	public ConfigurationBeanLoaderException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public ConfigurationBeanLoaderException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

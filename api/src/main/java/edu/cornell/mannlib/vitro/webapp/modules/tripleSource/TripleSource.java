@@ -2,26 +2,25 @@
 
 package edu.cornell.mannlib.vitro.webapp.modules.tripleSource;
 
-import org.apache.jena.query.Dataset;
-import org.apache.jena.rdf.model.ModelMaker;
-
 import edu.cornell.mannlib.vitro.webapp.modelaccess.ontmodels.OntModelCache;
 import edu.cornell.mannlib.vitro.webapp.modules.Application;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFServiceFactory;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.rdf.model.ModelMaker;
 
 /**
  * A provider of triples and the data structures by which they are accessed.
  */
-public interface TripleSource extends Application.Module{
-	RDFServiceFactory getRDFServiceFactory();
+public interface TripleSource extends Application.Module {
+    RDFServiceFactory getRDFServiceFactory();
 
-	RDFService getRDFService();
+    RDFService getRDFService();
 
-	Dataset getDataset();
+    Dataset getDataset();
 
-	ModelMaker getModelMaker();
+    ModelMaker getModelMaker();
 
-	OntModelCache getShortTermOntModels(RDFService shortTermRdfService,
-			OntModelCache longTermOntModelCache);
+    OntModelCache getShortTermOntModels(RDFService shortTermRdfService,
+                                        OntModelCache longTermOntModelCache);
 }

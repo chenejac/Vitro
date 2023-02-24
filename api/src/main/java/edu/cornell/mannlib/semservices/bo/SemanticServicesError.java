@@ -3,73 +3,71 @@
 package edu.cornell.mannlib.semservices.bo;
 
 public class SemanticServicesError {
-   private String message;
-   private String exception;
-   private String severity;
+    private String message;
+    private String exception;
+    private String severity;
 
-   /**
-    *
-    */
-   public SemanticServicesError() {
-      super();
-   }
-
-
-
-   /**
-    * @param exception Exception description
-    * @param message Error message
-    * @param severity Severity
-    */
-   public SemanticServicesError(String exception, String message, String severity) {
-      super();
-      this.exception = exception;
-      this.message = message;
-      this.severity = severity;
-   }
+    /**
+     *
+     */
+    public SemanticServicesError() {
+        super();
+    }
 
 
+    /**
+     * @param exception Exception description
+     * @param message   Error message
+     * @param severity  Severity
+     */
+    public SemanticServicesError(String exception, String message, String severity) {
+        super();
+        this.exception = exception;
+        this.message = message;
+        this.severity = severity;
+    }
 
-   /**
-    * @return the message
-    */
-   public String getMessage() {
-      return message;
-   }
 
-   /**
-    * @param message the message to set
-    */
-   public void setMessage(String message) {
-      this.message = message;
-   }
+    /**
+     * @return the message
+     */
+    public String getMessage() {
+        return message;
+    }
 
-   /**
-    * @return the exception
-    */
-   public String getException() {
-      return exception;
-   }
+    /**
+     * @param message the message to set
+     */
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
-   /**
-    * @param exception the exception to set
-    */
-   public void setException(String exception) {
-      this.exception = exception;
-   }
+    /**
+     * @return the exception
+     */
+    public String getException() {
+        return exception;
+    }
 
-   /**
-    * @return the severity
-    */
-   public String getSeverity() {
-      return severity;
-   }
+    /**
+     * @param exception the exception to set
+     */
+    public void setException(String exception) {
+        this.exception = exception;
+    }
 
-   /**
-    * @param severity the severity to set
-    */
-   public void setSeverity(String severity) {
-      this.severity = severity;
-   }
+    /**
+     * @return the severity
+     */
+    public String getSeverity() {
+        return severity;
+    }
+
+    /**
+     * @param severity the severity to set
+     */
+    public void setSeverity(String severity) {
+        this.severity = severity;
+    }
 
 }

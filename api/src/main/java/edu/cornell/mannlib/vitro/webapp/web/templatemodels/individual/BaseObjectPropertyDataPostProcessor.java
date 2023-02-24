@@ -4,21 +4,21 @@ package edu.cornell.mannlib.vitro.webapp.web.templatemodels.individual;
 import java.util.List;
 import java.util.Map;
 
+import edu.cornell.mannlib.vitro.webapp.beans.Individual;
+import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import edu.cornell.mannlib.vitro.webapp.beans.Individual;
-import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
-
 public abstract class BaseObjectPropertyDataPostProcessor implements
-        ObjectPropertyDataPostProcessor {
+    ObjectPropertyDataPostProcessor {
 
     private static final Log log = LogFactory.getLog(BaseObjectPropertyDataPostProcessor.class);
 
     protected final ObjectPropertyTemplateModel objectPropertyTemplateModel;
     protected final WebappDaoFactory wdf;
 
-    public BaseObjectPropertyDataPostProcessor(ObjectPropertyTemplateModel optm, WebappDaoFactory wdf) {
+    public BaseObjectPropertyDataPostProcessor(ObjectPropertyTemplateModel optm,
+                                               WebappDaoFactory wdf) {
         this.objectPropertyTemplateModel = optm;
         this.wdf = wdf;
     }
@@ -27,7 +27,8 @@ public abstract class BaseObjectPropertyDataPostProcessor implements
     public void process(List<Map<String, String>> data) {
 
         if (data.isEmpty()) {
-            log.debug("No data to postprocess for property " + objectPropertyTemplateModel.getUri());
+            log.debug(
+                "No data to postprocess for property " + objectPropertyTemplateModel.getUri());
             return;
         }
 
@@ -38,12 +39,16 @@ public abstract class BaseObjectPropertyDataPostProcessor implements
         }
     }
 
-    /** Postprocessing that applies to the list as a whole - reordering, removing duplicates, etc. */
+    /**
+     * Postprocessing that applies to the list as a whole - reordering, removing duplicates, etc.
+     */
     protected void processList(List<Map<String, String>> data) {
         objectPropertyTemplateModel.removeDuplicates(data);
     }
 
-    /** Postprocessing that applies to individual list items */
+    /**
+     * Postprocessing that applies to individual list items
+     */
     protected abstract void process(Map<String, String> map);
 
 

@@ -6,9 +6,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.auth.policy.PolicyHelper;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.propstmt.DropObjectPropertyStatement;
@@ -18,6 +15,8 @@ import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder.ParamMap;
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class ObjectPropertyStatementTemplateModel extends PropertyStatementTemplateModel {
     private static final Log log = LogFactory.getLog(ObjectPropertyStatementTemplateModel.class);
@@ -30,8 +29,10 @@ public class ObjectPropertyStatementTemplateModel extends PropertyStatementTempl
     private final String editUrl;
     private final String deleteUrl;
 
-    public ObjectPropertyStatementTemplateModel(String subjectUri, ObjectProperty property, String objectKey,
-            Map<String, String> data, String templateName, VitroRequest vreq) {
+    public ObjectPropertyStatementTemplateModel(String subjectUri, ObjectProperty property,
+                                                String objectKey,
+                                                Map<String, String> data, String templateName,
+                                                VitroRequest vreq) {
         super(subjectUri, property, vreq);
 
         this.data = Collections.unmodifiableMap(new HashMap<String, String>(data));
@@ -45,16 +46,16 @@ public class ObjectPropertyStatementTemplateModel extends PropertyStatementTempl
         this.editUrl = makeEditUrl();
     }
 
-	private String makeDeleteUrl() {
-    	// Is the delete link suppressed for this property?
-    	if (property.isDeleteLinkSuppressed()) {
-    		return "";
-    	}
+    private String makeDeleteUrl() {
+        // Is the delete link suppressed for this property?
+        if (property.isDeleteLinkSuppressed()) {
+            return "";
+        }
 
         // Determine whether the statement can be deleted
-		RequestedAction action = new DropObjectPropertyStatement(
-				vreq.getJenaOntModel(), subjectUri, property, objectUri);
-        if ( ! PolicyHelper.isAuthorizedForActions(vreq, action) ) {
+        RequestedAction action = new DropObjectPropertyStatement(
+            vreq.getJenaOntModel(), subjectUri, property, objectUri);
+        if (!PolicyHelper.isAuthorizedForActions(vreq, action)) {
             return "";
         }
 
@@ -63,17 +64,18 @@ public class ObjectPropertyStatementTemplateModel extends PropertyStatementTempl
         }
         //If object is a File but not associated with main image
         if (ObjectPropertyTemplateModel.isFileStoreProperty(property)) {
-          return ObjectPropertyTemplateModel.getDeleteFileUrl(subjectUri, property.getURI(), objectUri);
+            return ObjectPropertyTemplateModel
+                .getDeleteFileUrl(subjectUri, property.getURI(), objectUri);
         }
 
         ParamMap params = new ParamMap(
-                "subjectUri", subjectUri,
-                "predicateUri", property.getURI(),
-                "objectUri", objectUri,
-                "cmd", "delete",
-                "objectKey", objectKey);
+            "subjectUri", subjectUri,
+            "predicateUri", property.getURI(),
+            "objectUri", objectUri,
+            "cmd", "delete",
+            "objectKey", objectKey);
 
-        for ( String key : data.keySet() ) {
+        for (String key : data.keySet()) {
             String value = data.get(key);
             // Remove an entry with a null value instead of letting it get passed
             // as a param with an empty value, in order to align with behavior on
@@ -85,10 +87,10 @@ public class ObjectPropertyStatementTemplateModel extends PropertyStatementTempl
             }
         }
 
-        if (property!= null && property.getDomainVClassURI() != null) {
+        if (property != null && property.getDomainVClassURI() != null) {
             params.put("domainUri", property.getDomainVClassURI());
         }
-        if (property!= null && property.getRangeVClassURI() != null) {
+        if (property != null && property.getRangeVClassURI() != null) {
             params.put("rangeUri", property.getRangeVClassURI());
         }
 
@@ -96,17 +98,19 @@ public class ObjectPropertyStatementTemplateModel extends PropertyStatementTempl
         params.putAll(UrlBuilder.getModelParams(vreq));
 
         return UrlBuilder.getUrl(EDIT_PATH, params);
-	}
+    }
 
-	private String makeEditUrl() {
-    	// Is the edit link suppressed for this property?
-    	if (property.isEditLinkSuppressed()) {
-    		return "";
-    	}
+    private String makeEditUrl() {
+        // Is the edit link suppressed for this property?
+        if (property.isEditLinkSuppressed()) {
+            return "";
+        }
 
-       // Determine whether the statement can be edited
-        RequestedAction action =  new EditObjectPropertyStatement(vreq.getJenaOntModel(), subjectUri, property, objectUri);
-        if ( ! PolicyHelper.isAuthorizedForActions(vreq, action) ) {
+        // Determine whether the statement can be edited
+        RequestedAction action =
+            new EditObjectPropertyStatement(vreq.getJenaOntModel(), subjectUri, property,
+                objectUri);
+        if (!PolicyHelper.isAuthorizedForActions(vreq, action)) {
             return "";
         }
 
@@ -114,54 +118,54 @@ public class ObjectPropertyStatementTemplateModel extends PropertyStatementTempl
             return ObjectPropertyTemplateModel.getImageUploadUrl(subjectUri, "edit");
         }
         if (ObjectPropertyTemplateModel.isFileStoreProperty(property)) {
-          //Disable file editing
-        	return "";
+            //Disable file editing
+            return "";
         }
 
         ParamMap params = new ParamMap(
-                "subjectUri", subjectUri,
-                "predicateUri", property.getURI(),
-                "objectUri", objectUri);
+            "subjectUri", subjectUri,
+            "predicateUri", property.getURI(),
+            "objectUri", objectUri);
 
-        if ( deleteUrl.isEmpty() ) {
+        if (deleteUrl.isEmpty()) {
             params.put("deleteProhibited", "prohibited");
         }
 
-        if (property!= null && property.getDomainVClassURI() != null) {
+        if (property != null && property.getDomainVClassURI() != null) {
             params.put("domainUri", property.getDomainVClassURI());
         }
-        if (property!= null && property.getRangeVClassURI() != null) {
+        if (property != null && property.getRangeVClassURI() != null) {
             params.put("rangeUri", property.getRangeVClassURI());
         }
 
         params.putAll(UrlBuilder.getModelParams(vreq));
 
         return UrlBuilder.getUrl(EDIT_PATH, params);
-	}
+    }
 
     /* Template methods */
 
     public Object get(String key) {
-        return cleanTextForDisplay( data.get(key) );
+        return cleanTextForDisplay(data.get(key));
     }
 
     public String uri(String key) {
-    	return cleanURIForDisplay(data.get(key));
+        return cleanURIForDisplay(data.get(key));
     }
 
     //Adding this method to enable retrieval of the entire data map
     public Map<String, String> getAllData() {
-    	return data;
+        return data;
     }
 
-	@Override
-	public String getDeleteUrl() {
-		return deleteUrl;
-	}
+    @Override
+    public String getDeleteUrl() {
+        return deleteUrl;
+    }
 
-	@Override
-	public String getEditUrl() {
-		return editUrl;
-	}
+    @Override
+    public String getEditUrl() {
+        return editUrl;
+    }
 
 }

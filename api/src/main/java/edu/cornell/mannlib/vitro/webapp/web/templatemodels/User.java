@@ -27,42 +27,42 @@ public class User extends BaseTemplateModel {
         this.profileUrl = figureAssociatedProfileUrl();
     }
 
-	private String figureAssociatedProfileUrl() {
+    private String figureAssociatedProfileUrl() {
         IdentifierBundle ids = RequestIdentifiers.getIdBundleForRequest(vreq);
-		Collection<String> uris = HasProfile.getProfileUris(ids);
+        Collection<String> uris = HasProfile.getProfileUris(ids);
         if (uris.isEmpty()) {
-        	return "";
+            return "";
         }
 
         String uri = uris.iterator().next();
         String url = UrlBuilder.getIndividualProfileUrl(uri, vreq);
         if (url == null) {
-        	return "";
+            return "";
         }
 
         return url;
-	}
+    }
 
-	/* Template properties */
+    /* Template properties */
 
-	public boolean isLoggedIn() {
+    public boolean isLoggedIn() {
         return currentUser != null;
     }
 
     public String getEmailAddress() {
-		return (currentUser == null) ? "" : currentUser.getEmailAddress();
+        return (currentUser == null) ? "" : currentUser.getEmailAddress();
     }
 
     public String getLoginName() {
-    	if (currentUser == null) {
-    		return "";
-    	}
+        if (currentUser == null) {
+            return "";
+        }
 
-    	if (currentUser.getFirstName().isEmpty()) {
-    		return currentUser.getEmailAddress();
-    	}
+        if (currentUser.getFirstName().isEmpty()) {
+            return currentUser.getEmailAddress();
+        }
 
-    	return currentUser.getFirstName();
+        return currentUser.getFirstName();
     }
 
     public String getFirstName() {
@@ -74,11 +74,11 @@ public class User extends BaseTemplateModel {
     }
 
     public boolean getHasSiteAdminAccess() {
-    	return PolicyHelper.isAuthorizedForActions(vreq, SiteAdminController.REQUIRED_ACTIONS);
+        return PolicyHelper.isAuthorizedForActions(vreq, SiteAdminController.REQUIRED_ACTIONS);
     }
 
     public boolean getHasRevisionInfoAccess() {
-    	return PolicyHelper.isAuthorizedForActions(vreq, RevisionInfoController.REQUIRED_ACTIONS);
+        return PolicyHelper.isAuthorizedForActions(vreq, RevisionInfoController.REQUIRED_ACTIONS);
     }
 
     public boolean isAuthorizedToRebuildSearchIndex() {
@@ -86,10 +86,10 @@ public class User extends BaseTemplateModel {
     }
 
     public boolean getHasProfile() {
-    	return !profileUrl.isEmpty();
+        return !profileUrl.isEmpty();
     }
 
     public String getProfileUrl() {
-    	return profileUrl;
+        return profileUrl;
     }
 }

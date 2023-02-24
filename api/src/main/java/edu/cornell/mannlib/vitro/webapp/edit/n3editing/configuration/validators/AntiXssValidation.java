@@ -7,18 +7,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
-import org.owasp.validator.html.AntiSamy;
-import org.owasp.validator.html.CleanResults;
-import org.owasp.validator.html.PolicyException;
-import org.owasp.validator.html.ScanException;
-
-import org.apache.jena.rdf.model.Literal;
-
 import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.EditConfigurationVTwo;
 import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.MultiValueEditSubmission;
 import edu.cornell.mannlib.vitro.webapp.edit.n3editing.VTwo.N3ValidatorVTwo;
 import edu.cornell.mannlib.vitro.webapp.web.AntiScript;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.jena.rdf.model.Literal;
+import org.owasp.validator.html.AntiSamy;
+import org.owasp.validator.html.CleanResults;
+import org.owasp.validator.html.PolicyException;
+import org.owasp.validator.html.ScanException;
 
 /**
  * Check if the submitted text has potential XSS problems.
@@ -26,99 +24,107 @@ import edu.cornell.mannlib.vitro.webapp.web.AntiScript;
  *
  * @author bdc34
  */
-public class AntiXssValidation implements N3ValidatorVTwo{
+public class AntiXssValidation implements N3ValidatorVTwo {
+    private static final Map<String, String> NO_ERROR = Collections.emptyMap();
+    //value indicates that all fields should be validated.
+    private static final List<String> ALL_FIELDS = null;
+    /**
+     * All error messages will start with this string.
+     */
+    public static String XSS_ERROR_MESSAGE = "Field contains unacceptable markup";
     List<String> fieldNamesToValidate;
-
 
     /**
      * Validate all fields on submission.
      */
-    public AntiXssValidation(){
+    public AntiXssValidation() {
         this.fieldNamesToValidate = ALL_FIELDS;
     }
 
     /**
      * Validate only fields specified in fieldNamesToValidate.
      */
-    public AntiXssValidation(List<String> fieldNamesToValidate){
+    public AntiXssValidation(List<String> fieldNamesToValidate) {
         this.fieldNamesToValidate = fieldNamesToValidate;
     }
 
     @Override
     public Map<String, String> validate(EditConfigurationVTwo editConfig,
-            MultiValueEditSubmission editSub) {
+                                        MultiValueEditSubmission editSub) {
 
-        if( editSub == null ) {
+        if (editSub == null) {
             return null;
         }
 
-        Map<String,String>varToErrMsg = new HashMap<String,String>();
-        if( fieldNamesToValidate == null ){
-            if( editSub.getLiteralsFromForm() != null ){
-                for( String name : editSub.getLiteralsFromForm().keySet()){
-                    varToErrMsg.putAll( checkSubmissionForField( name, editSub));
+        Map<String, String> varToErrMsg = new HashMap<String, String>();
+        if (fieldNamesToValidate == null) {
+            if (editSub.getLiteralsFromForm() != null) {
+                for (String name : editSub.getLiteralsFromForm().keySet()) {
+                    varToErrMsg.putAll(checkSubmissionForField(name, editSub));
                 }
             }
-            if( editSub.getUrisFromForm() != null ){
-                for( String name : editSub.getUrisFromForm().keySet()){
-                    varToErrMsg.putAll( checkSubmissionForField( name, editSub));
+            if (editSub.getUrisFromForm() != null) {
+                for (String name : editSub.getUrisFromForm().keySet()) {
+                    varToErrMsg.putAll(checkSubmissionForField(name, editSub));
                 }
             }
-        }else{
-            for( String fieldName : fieldNamesToValidate){
-                varToErrMsg.putAll( checkSubmissionForField(fieldName, editSub));
+        } else {
+            for (String fieldName : fieldNamesToValidate) {
+                varToErrMsg.putAll(checkSubmissionForField(fieldName, editSub));
             }
         }
 
-        if( varToErrMsg.isEmpty() )
+        if (varToErrMsg.isEmpty()) {
             return null;
-        else
+        } else {
             return varToErrMsg;
+        }
     }
 
     /**
      * Check for XSS for a single field. Returns NO_ERROR if there
      * are no errors so it can be added to a map with putAll()
      */
-    protected Map<String,String> checkSubmissionForField(
-            String fieldName, MultiValueEditSubmission editSub){
+    protected Map<String, String> checkSubmissionForField(
+        String fieldName, MultiValueEditSubmission editSub) {
 
-        if( fieldName == null || fieldName.isEmpty() || editSub == null)
+        if (fieldName == null || fieldName.isEmpty() || editSub == null) {
             return NO_ERROR;
+        }
 
-        if( editSub.getLiteralsFromForm() != null &&
-            editSub.getLiteralsFromForm().containsKey(fieldName) ){
+        if (editSub.getLiteralsFromForm() != null &&
+            editSub.getLiteralsFromForm().containsKey(fieldName)) {
 
             String error = null;
             try {
-                error = literalHasXSS( editSub.getLiteralsFromForm().get(fieldName) );
+                error = literalHasXSS(editSub.getLiteralsFromForm().get(fieldName));
             } catch (ScanException | PolicyException e) {
                 error = e.getMessage();
             }
-            if( error != null ){
+            if (error != null) {
                 return Collections.singletonMap(fieldName, XSS_ERROR_MESSAGE + " " + error);
-            }else{
+            } else {
                 return NO_ERROR;
             }
 
         } else if (editSub.getUrisFromForm() != null &&
-                   editSub.getUrisFromForm().containsKey(fieldName)){
+            editSub.getUrisFromForm().containsKey(fieldName)) {
 
             String error;
             try {
-                error = uriHasXSS( editSub.getUrisFromForm().get(fieldName));
+                error = uriHasXSS(editSub.getUrisFromForm().get(fieldName));
             } catch (ScanException | PolicyException e) {
                 error = e.getMessage();
             }
-            if( error != null ){
+            if (error != null) {
                 return Collections.singletonMap(fieldName, XSS_ERROR_MESSAGE + " " + error);
-            }else{
+            } else {
                 return NO_ERROR;
             }
 
-        }else{
+        } else {
             //field wasn't in submission
-            return  NO_ERROR;
+            return NO_ERROR;
         }
     }
 
@@ -130,18 +136,17 @@ public class AntiXssValidation implements N3ValidatorVTwo{
         AntiSamy antiSamy = AntiScript.getAntiSamyScanner();
         ArrayList errorMsgs = new ArrayList();
 
-        for( String uri : uriList ){
-            CleanResults cr = antiSamy.scan( uri );
-            errorMsgs.addAll( cr.getErrorMessages() );
+        for (String uri : uriList) {
+            CleanResults cr = antiSamy.scan(uri);
+            errorMsgs.addAll(cr.getErrorMessages());
         }
 
-        if( errorMsgs.isEmpty() ){
+        if (errorMsgs.isEmpty()) {
             return null;
-        }else{
+        } else {
             return StringUtils.join(errorMsgs, ", ");
         }
     }
-
 
     /**
      * Check if a List of Literals has any XSS problems.
@@ -151,40 +156,30 @@ public class AntiXssValidation implements N3ValidatorVTwo{
         AntiSamy antiSamy = AntiScript.getAntiSamyScanner();
 
         ArrayList errorMsgs = new ArrayList();
-        for( Literal literal : list ){
-        	if(literal != null) {
-	            CleanResults cr = antiSamy.scan(literal.getLexicalForm());
-	            errorMsgs.addAll( cr.getErrorMessages() );
+        for (Literal literal : list) {
+            if (literal != null) {
+                CleanResults cr = antiSamy.scan(literal.getLexicalForm());
+                errorMsgs.addAll(cr.getErrorMessages());
 
-	            String dt = literal.getDatatypeURI();
-	            if( dt != null ){
-	                cr = antiSamy.scan( dt );
-	                errorMsgs.addAll( cr.getErrorMessages() );
-	            }
+                String dt = literal.getDatatypeURI();
+                if (dt != null) {
+                    cr = antiSamy.scan(dt);
+                    errorMsgs.addAll(cr.getErrorMessages());
+                }
 
-	            String lang = literal.getLanguage() ;
-	            if( lang != null ){
-	                cr = antiSamy.scan( lang );
-	                errorMsgs.addAll( cr.getErrorMessages() );
-	            }
-        	}
+                String lang = literal.getLanguage();
+                if (lang != null) {
+                    cr = antiSamy.scan(lang);
+                    errorMsgs.addAll(cr.getErrorMessages());
+                }
+            }
         }
 
-        if( errorMsgs.isEmpty() )
+        if (errorMsgs.isEmpty()) {
             return null;
-        else
-            return StringUtils.join(errorMsgs,", ");
+        } else {
+            return StringUtils.join(errorMsgs, ", ");
+        }
 
     }
-
-
-    /**
-     * All error messages will start with this string.
-     */
-    public static String XSS_ERROR_MESSAGE = "Field contains unacceptable markup";
-
-    private static final Map<String,String>NO_ERROR = Collections.emptyMap();
-
-    //value indicates that all fields should be validated.
-    private static final List<String> ALL_FIELDS = null;
 }

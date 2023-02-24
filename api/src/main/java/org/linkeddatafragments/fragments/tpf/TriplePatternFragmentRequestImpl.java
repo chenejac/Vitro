@@ -5,33 +5,31 @@ import org.linkeddatafragments.fragments.LinkedDataFragmentRequestBase;
 /**
  * An implementation of {@link ITriplePatternFragmentRequest}.
  *
- * @author <a href="http://olafhartig.de">Olaf Hartig</a>
  * @param <CTT>
  * @param <NVT>
  * @param <AVT>
+ * @author <a href="http://olafhartig.de">Olaf Hartig</a>
  */
-public class TriplePatternFragmentRequestImpl<CTT,NVT,AVT>
+public class TriplePatternFragmentRequestImpl<CTT, NVT, AVT>
     extends LinkedDataFragmentRequestBase
-    implements ITriplePatternFragmentRequest<CTT,NVT,AVT>
-{
+    implements ITriplePatternFragmentRequest<CTT, NVT, AVT> {
 
     /**
      *
      */
-    public final ITriplePatternElement<CTT,NVT,AVT> subject;
+    public final ITriplePatternElement<CTT, NVT, AVT> subject;
 
     /**
      *
      */
-    public final ITriplePatternElement<CTT,NVT,AVT> predicate;
+    public final ITriplePatternElement<CTT, NVT, AVT> predicate;
 
     /**
      *
      */
-    public final ITriplePatternElement<CTT,NVT,AVT> object;
+    public final ITriplePatternElement<CTT, NVT, AVT> object;
 
     /**
-     *
      * @param fragmentURL
      * @param datasetURL
      * @param pageNumberWasRequested
@@ -40,24 +38,26 @@ public class TriplePatternFragmentRequestImpl<CTT,NVT,AVT>
      * @param predicate
      * @param object
      */
-    public TriplePatternFragmentRequestImpl( final String fragmentURL,
-                                             final String datasetURL,
-                                             final boolean pageNumberWasRequested,
-                                             final long pageNumber,
-                                             final ITriplePatternElement<CTT,NVT,AVT> subject,
-                                             final ITriplePatternElement<CTT,NVT,AVT> predicate,
-                                             final ITriplePatternElement<CTT,NVT,AVT> object )
-    {
-        super( fragmentURL, datasetURL, pageNumberWasRequested, pageNumber );
+    public TriplePatternFragmentRequestImpl(final String fragmentURL,
+                                            final String datasetURL,
+                                            final boolean pageNumberWasRequested,
+                                            final long pageNumber,
+                                            final ITriplePatternElement<CTT, NVT, AVT> subject,
+                                            final ITriplePatternElement<CTT, NVT, AVT> predicate,
+                                            final ITriplePatternElement<CTT, NVT, AVT> object) {
+        super(fragmentURL, datasetURL, pageNumberWasRequested, pageNumber);
 
-        if ( subject == null )
+        if (subject == null) {
             throw new IllegalArgumentException();
+        }
 
-        if ( predicate == null )
+        if (predicate == null) {
             throw new IllegalArgumentException();
+        }
 
-        if ( object == null )
+        if (object == null) {
             throw new IllegalArgumentException();
+        }
 
         this.subject = subject;
         this.predicate = predicate;
@@ -65,32 +65,31 @@ public class TriplePatternFragmentRequestImpl<CTT,NVT,AVT>
     }
 
     @Override
-    public ITriplePatternElement<CTT,NVT,AVT> getSubject() {
+    public ITriplePatternElement<CTT, NVT, AVT> getSubject() {
         return subject;
     }
 
     @Override
-    public ITriplePatternElement<CTT,NVT,AVT> getPredicate() {
+    public ITriplePatternElement<CTT, NVT, AVT> getPredicate() {
         return predicate;
     }
 
     @Override
-    public ITriplePatternElement<CTT,NVT,AVT> getObject() {
+    public ITriplePatternElement<CTT, NVT, AVT> getObject() {
         return object;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "TriplePatternFragmentRequest(" +
-               "class: " + getClass().getName() +
-               ", subject: " + subject.toString() +
-               ", predicate: " + predicate.toString() +
-               ", object: " + object.toString() +
-               ", fragmentURL: " + fragmentURL +
-               ", isPageRequest: " + pageNumberWasRequested +
-               ", pageNumber: " + pageNumber +
-               ")";
+            "class: " + getClass().getName() +
+            ", subject: " + subject.toString() +
+            ", predicate: " + predicate.toString() +
+            ", object: " + object.toString() +
+            ", fragmentURL: " + fragmentURL +
+            ", isPageRequest: " + pageNumberWasRequested +
+            ", pageNumber: " + pageNumber +
+            ")";
     }
 
 }

@@ -8,5 +8,5 @@ import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
 
 public interface FilterFactory {
 
-    public VitroFilters getFilters(HttpServletRequest request,WebappDaoFactory wdf);
+    public VitroFilters getFilters(HttpServletRequest request, WebappDaoFactory wdf);
 }

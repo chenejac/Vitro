@@ -9,7 +9,7 @@ import javax.servlet.ServletContext;
  * simply create a fresh copy every time someone asks for one.
  */
 public class FreemarkerProcessingServiceSetup {
-	public static FreemarkerProcessingService getService(ServletContext ctx) {
-		return new FreemarkerProcessingServiceImpl();
-	}
+    public static FreemarkerProcessingService getService(ServletContext ctx) {
+        return new FreemarkerProcessingServiceImpl();
+    }
 }

@@ -5,12 +5,10 @@ package edu.cornell.mannlib.vitro.webapp.searchengine.elasticsearch;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
 
 /**
  * The nuts and bolts of getting the number of documents in the Elasticsearch
@@ -31,11 +29,11 @@ public class ESCounter {
 
             @SuppressWarnings("unchecked")
             Map<String, Object> map = new ObjectMapper().readValue(json,
-                    HashMap.class);
+                HashMap.class);
             return (Integer) map.get("count");
         } catch (Exception e) {
             throw new SearchEngineException("Failed to put to Elasticsearch",
-                    e);
+                e);
         }
     }
 

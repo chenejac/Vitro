@@ -13,9 +13,9 @@ public interface ResourceBean {
 
     String getURI();
 
-    boolean isAnonymous();
-
     void setURI(String URI);
+
+    boolean isAnonymous();
 
     String getNamespace();
 
@@ -27,23 +27,23 @@ public interface ResourceBean {
 
     String getLabel();
 
-    public RoleLevel getHiddenFromDisplayBelowRoleLevel() ;
+    public RoleLevel getHiddenFromDisplayBelowRoleLevel();
 
-    public void setHiddenFromDisplayBelowRoleLevel(RoleLevel eR) ;
+    public void setHiddenFromDisplayBelowRoleLevel(RoleLevel eR);
 
-    public void setHiddenFromDisplayBelowRoleLevelUsingRoleUri(String roleUri) ;
+    public void setHiddenFromDisplayBelowRoleLevelUsingRoleUri(String roleUri);
 
-    public RoleLevel getProhibitedFromUpdateBelowRoleLevel() ;
+    public RoleLevel getProhibitedFromUpdateBelowRoleLevel();
 
-    public void setProhibitedFromUpdateBelowRoleLevel(RoleLevel eR) ;
+    public void setProhibitedFromUpdateBelowRoleLevel(RoleLevel eR);
 
-    public void setProhibitedFromUpdateBelowRoleLevelUsingRoleUri(String roleUri) ;
+    public void setProhibitedFromUpdateBelowRoleLevelUsingRoleUri(String roleUri);
 
-    public RoleLevel getHiddenFromPublishBelowRoleLevel() ;
+    public RoleLevel getHiddenFromPublishBelowRoleLevel();
 
-    public void setHiddenFromPublishBelowRoleLevel(RoleLevel eR) ;
+    public void setHiddenFromPublishBelowRoleLevel(RoleLevel eR);
 
-    public void setHiddenFromPublishBelowRoleLevelUsingRoleUri(String roleUri) ;
+    public void setHiddenFromPublishBelowRoleLevelUsingRoleUri(String roleUri);
 
     public String getPickListName();
 

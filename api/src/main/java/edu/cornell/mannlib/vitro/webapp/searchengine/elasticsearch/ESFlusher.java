@@ -2,12 +2,11 @@
 
 package edu.cornell.mannlib.vitro.webapp.searchengine.elasticsearch;
 
+import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
-
-import edu.cornell.mannlib.vitro.webapp.modules.searchEngine.SearchEngineException;
 
 /**
  * Just does a "commit" or "flush" to the index.
@@ -28,13 +27,13 @@ public class ESFlusher {
     public void flush(boolean wait) throws SearchEngineException {
         try {
             String url = baseUrl + "/_flush"
-                    + (wait ? "?wait_for_ongoing" : "");
+                + (wait ? "?wait_for_ongoing" : "");
             Response response = Request.Get(url).execute();
             String json = response.returnContent().asString();
             log.debug("flush response: " + json);
         } catch (Exception e) {
             throw new SearchEngineException("Failed to put to Elasticsearch",
-                    e);
+                e);
         }
     }
 

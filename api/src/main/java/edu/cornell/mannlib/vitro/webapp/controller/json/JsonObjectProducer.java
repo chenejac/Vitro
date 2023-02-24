@@ -2,71 +2,69 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.json;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletResponse;
-
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 
 /**
  * A base for classes that produce a JSON object, based on the parameters in the
  * request.
- *
+ * <p>
  * The result is never empty. At worst, it is an object that contains only an
  * "errorMessage" field.
- *
+ * <p>
  * If an exception occurrs during processing, The "errorMessage" field will
  * contain the exception message and the response status will be set to 500
  * (server error). Normally, "errorMessage" will be empty, and the status will
  * default to 200 (OK).
  */
 public abstract class JsonObjectProducer extends JsonProducer {
-	private static final Log log = LogFactory.getLog(JsonObjectProducer.class);
+    private static final Log log = LogFactory.getLog(JsonObjectProducer.class);
 
-	protected final VitroRequest vreq;
-	protected final ServletContext ctx;
+    protected final VitroRequest vreq;
+    protected final ServletContext ctx;
 
-	protected JsonObjectProducer(VitroRequest vreq) {
-		this.vreq = vreq;
-		this.ctx = vreq.getSession().getServletContext();
-	}
+    protected JsonObjectProducer(VitroRequest vreq) {
+        this.vreq = vreq;
+        this.ctx = vreq.getSession().getServletContext();
+    }
 
-	/**
-	 * Sub-classes implement this method. Given the request, produce a JSON
-	 * object as the result.
-	 */
-	protected abstract ObjectNode process() throws Exception;
+    /**
+     * Sub-classes implement this method. Given the request, produce a JSON
+     * object as the result.
+     */
+    protected abstract ObjectNode process() throws Exception;
 
-	public final void process(HttpServletResponse resp) throws IOException {
-		ObjectNode jsonObject = null;
-		String errorMessage = "";
+    public final void process(HttpServletResponse resp) throws IOException {
+        ObjectNode jsonObject = null;
+        String errorMessage = "";
 
-		try {
-			jsonObject = process();
-		} catch (Exception e) {
-			log.error("Failed to create JSON response", e);
-			errorMessage = e.toString();
-			resp.setStatus(500 /* HttpURLConnection.HTTP_SERVER_ERROR */);
-		}
+        try {
+            jsonObject = process();
+        } catch (Exception e) {
+            log.error("Failed to create JSON response", e);
+            errorMessage = e.toString();
+            resp.setStatus(500 /* HttpURLConnection.HTTP_SERVER_ERROR */);
+        }
 
-		if (jsonObject == null) {
-			jsonObject = JsonNodeFactory.instance.objectNode();
-		}
+        if (jsonObject == null) {
+            jsonObject = JsonNodeFactory.instance.objectNode();
+        }
 
-		log.debug("Response to JSON request: " + jsonObject.toString());
+        log.debug("Response to JSON request: " + jsonObject.toString());
 
-		resp.setCharacterEncoding("UTF-8");
-		resp.setContentType("application/json;charset=UTF-8");
-		Writer writer = resp.getWriter();
+        resp.setCharacterEncoding("UTF-8");
+        resp.setContentType("application/json;charset=UTF-8");
+        Writer writer = resp.getWriter();
 
-		jsonObject.put("errorMessage", errorMessage);
-		writer.write(jsonObject.toString());
-	}
+        jsonObject.put("errorMessage", errorMessage);
+        writer.write(jsonObject.toString());
+    }
 }

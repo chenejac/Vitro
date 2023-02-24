@@ -2,21 +2,14 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.edit.listing;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.text.Collator;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.controller.BaseEditController;
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
@@ -27,6 +20,10 @@ import edu.cornell.mannlib.vitro.webapp.beans.PropertyGroup;
 import edu.cornell.mannlib.vitro.webapp.controller.Controllers;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.dao.PropertyGroupDao;
+import edu.cornell.mannlib.vitro.webapp.utils.JSPPageHandler;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class PropertyGroupsListingController extends BaseEditController {
 
@@ -35,11 +32,11 @@ public class PropertyGroupsListingController extends BaseEditController {
     private static final boolean WITH_PROPERTIES = true;
 
     @Override
-	public void doGet(HttpServletRequest request, HttpServletResponse response) {
-		if (!isAuthorizedToDisplayPage(request, response,
-				SimplePermission.EDIT_ONTOLOGY.ACTION)) {
-    		return;
-    	}
+    public void doGet(HttpServletRequest request, HttpServletResponse response) {
+        if (!isAuthorizedToDisplayPage(request, response,
+            SimplePermission.EDIT_ONTOLOGY.ACTION)) {
+            return;
+        }
 
         VitroRequest vreq = new VitroRequest(request);
 
@@ -57,14 +54,16 @@ public class PropertyGroupsListingController extends BaseEditController {
         results.add("XX");
 
         if (groups != null) {
-        	for(PropertyGroup pg: groups) {
+            for (PropertyGroup pg : groups) {
                 results.add("XX");
                 String publicName = pg.getName();
-                if ( StringUtils.isBlank(publicName) ) {
+                if (StringUtils.isBlank(publicName)) {
                     publicName = "(unnamed group)";
                 }
                 try {
-                    results.add("<a href=\"./editForm?uri="+URLEncoder.encode(pg.getURI(),"UTF-8")+"&amp;controller=PropertyGroup\">"+publicName+"</a>");
+                    results.add(
+                        "<a href=\"./editForm?uri=" + URLEncoder.encode(pg.getURI(), "UTF-8") +
+                            "&amp;controller=PropertyGroup\">" + publicName + "</a>");
                 } catch (Exception e) {
                     results.add(publicName);
                 }
@@ -74,7 +73,7 @@ public class PropertyGroupsListingController extends BaseEditController {
                 results.add("XX");
                 List<Property> propertyList = pg.getPropertyList();
                 if (propertyList != null && propertyList.size() > 0) {
-                	propertyList.sort(comparator);
+                    propertyList.sort(comparator);
                     results.add("+");
                     results.add("XX");
                     results.add("property");
@@ -87,21 +86,21 @@ public class PropertyGroupsListingController extends BaseEditController {
                         results.add("XX");
                         String controllerStr = "propertyEdit";
                         String nameStr =
-                        	   (prop.getLabel() == null)
-                        	           ? ""
-                        	           : prop.getLabel();
+                            (prop.getLabel() == null)
+                                ? ""
+                                : prop.getLabel();
                         if (prop instanceof ObjectProperty) {
-                        	nameStr = ((ObjectProperty) prop).getDomainPublic();
+                            nameStr = ((ObjectProperty) prop).getDomainPublic();
                         } else if (prop instanceof DataProperty) {
-                        	controllerStr = "datapropEdit";
-                        	nameStr = ((DataProperty) prop).getName();
+                            controllerStr = "datapropEdit";
+                            nameStr = ((DataProperty) prop).getName();
                         }
                         if (prop.getURI() != null) {
                             try {
                                 results.add("<a href=\"" + controllerStr +
-                                		"?uri="+URLEncoder.encode(
-                                				prop.getURI(),"UTF-8") +
-                                				"\">" + nameStr +"</a>");
+                                    "?uri=" + URLEncoder.encode(
+                                    prop.getURI(), "UTF-8") +
+                                    "\">" + nameStr + "</a>");
                             } catch (Exception e) {
                                 results.add(nameStr);
                             }
@@ -112,17 +111,18 @@ public class PropertyGroupsListingController extends BaseEditController {
                         results.add(exampleStr);
                         String descriptionStr = "";
                         results.add(descriptionStr);
-                        if (propIt.hasNext())
+                        if (propIt.hasNext()) {
                             results.add("@@entities");
+                        }
                     }
                 }
             }
-            request.setAttribute("results",results);
+            request.setAttribute("results", results);
         }
 
-        request.setAttribute("columncount",new Integer(5));
-        request.setAttribute("suppressquery","true");
-        request.setAttribute("title","Property Groups");
+        request.setAttribute("columncount", new Integer(5));
+        request.setAttribute("suppressquery", "true");
+        request.setAttribute("title", "Property Groups");
         request.setAttribute("horizontalJspAddButtonUrl", Controllers.RETRY_URL);
         request.setAttribute("horizontalJspAddButtonText", "Add new property group");
         request.setAttribute("horizontalJspAddButtonControllerParam", "PropertyGroup");
@@ -142,28 +142,28 @@ public class PropertyGroupsListingController extends BaseEditController {
             this.collator = collator;
         }
 
-    	public int compare(Property p1, Property p2) {
-    		String name1 = getName(p1);
-    		String name2 = getName(p2);
-    		if (name1 == null && name2 != null) {
-    			return 1;
-    		} else if (name2 == null && name1 != null) {
-    			return -1;
-    		} else if (name1 == null && name2 == null) {
-    			return 0;
-    		}
-    		return collator.compare(name1, name2);
-    	}
+        public int compare(Property p1, Property p2) {
+            String name1 = getName(p1);
+            String name2 = getName(p2);
+            if (name1 == null && name2 != null) {
+                return 1;
+            } else if (name2 == null && name1 != null) {
+                return -1;
+            } else if (name1 == null && name2 == null) {
+                return 0;
+            }
+            return collator.compare(name1, name2);
+        }
 
-    	private String getName(Property prop) {
-    		if (prop instanceof ObjectProperty) {
-    			return ((ObjectProperty) prop).getDomainPublic();
-    		} else if (prop instanceof DataProperty) {
-    			return ((DataProperty) prop).getName();
-    		} else {
-    			return prop.getLabel();
-    		}
-    	}
+        private String getName(Property prop) {
+            if (prop instanceof ObjectProperty) {
+                return ((ObjectProperty) prop).getDomainPublic();
+            } else if (prop instanceof DataProperty) {
+                return ((DataProperty) prop).getName();
+            } else {
+                return prop.getLabel();
+            }
+        }
     }
 
 }

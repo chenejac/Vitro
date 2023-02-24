@@ -9,117 +9,117 @@ import edu.cornell.mannlib.vitro.webapp.auth.policy.ifaces.PolicyIface;
 
 /**
  * A base class for RequestedAction that permits boolean operations on them.
- *
+ * <p>
  * A null request is ignored, so in "and" it is equivalent to true, while in
  * "or" it is equivalent to false.
  */
 public abstract class AuthorizationRequest {
-	// ----------------------------------------------------------------------
-	// Constants
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // Constants
+    // ----------------------------------------------------------------------
 
-	public static final AuthorizationRequest AUTHORIZED = new AuthorizationRequest() {
-		@Override
-		public boolean isAuthorized(IdentifierBundle ids, PolicyIface policy) {
-			return true;
-		}
-	};
+    public static final AuthorizationRequest AUTHORIZED = new AuthorizationRequest() {
+        @Override
+        public boolean isAuthorized(IdentifierBundle ids, PolicyIface policy) {
+            return true;
+        }
+    };
 
-	public static final AuthorizationRequest UNAUTHORIZED = new AuthorizationRequest() {
-		@Override
-		public boolean isAuthorized(IdentifierBundle ids, PolicyIface policy) {
-			return false;
-		}
-	};
+    public static final AuthorizationRequest UNAUTHORIZED = new AuthorizationRequest() {
+        @Override
+        public boolean isAuthorized(IdentifierBundle ids, PolicyIface policy) {
+            return false;
+        }
+    };
 
-	// ----------------------------------------------------------------------
-	// Static convenience methods
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // Static convenience methods
+    // ----------------------------------------------------------------------
 
-	public static AuthorizationRequest andAll(AuthorizationRequest... ars) {
-		return andAll(Arrays.asList(ars));
-	}
+    public static AuthorizationRequest andAll(AuthorizationRequest... ars) {
+        return andAll(Arrays.asList(ars));
+    }
 
-	public static AuthorizationRequest andAll(
-			Iterable<? extends AuthorizationRequest> ars) {
-		AuthorizationRequest result = AUTHORIZED;
-		for (AuthorizationRequest ar : ars) {
-			result = result.and(ar);
-		}
-		return result;
-	}
+    public static AuthorizationRequest andAll(
+        Iterable<? extends AuthorizationRequest> ars) {
+        AuthorizationRequest result = AUTHORIZED;
+        for (AuthorizationRequest ar : ars) {
+            result = result.and(ar);
+        }
+        return result;
+    }
 
-	// ----------------------------------------------------------------------
-	// The abstract class
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // The abstract class
+    // ----------------------------------------------------------------------
 
-	public AuthorizationRequest and(AuthorizationRequest that) {
-		if (that == null) {
-			return this;
-		} else {
-			return new AndAuthorizationRequest(this, that);
-		}
-	}
+    public AuthorizationRequest and(AuthorizationRequest that) {
+        if (that == null) {
+            return this;
+        } else {
+            return new AndAuthorizationRequest(this, that);
+        }
+    }
 
-	public AuthorizationRequest or(AuthorizationRequest that) {
-		if (that == null) {
-			return this;
-		} else {
-			return new OrAuthorizationRequest(this, that);
-		}
-	}
+    public AuthorizationRequest or(AuthorizationRequest that) {
+        if (that == null) {
+            return this;
+        } else {
+            return new OrAuthorizationRequest(this, that);
+        }
+    }
 
-	public abstract boolean isAuthorized(IdentifierBundle ids,
-			PolicyIface policy);
+    public abstract boolean isAuthorized(IdentifierBundle ids,
+                                         PolicyIface policy);
 
-	// ----------------------------------------------------------------------
-	// Subclasses for boolean operations
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // Subclasses for boolean operations
+    // ----------------------------------------------------------------------
 
-	private static class AndAuthorizationRequest extends AuthorizationRequest {
-		private final AuthorizationRequest ar1;
-		private final AuthorizationRequest ar2;
+    private static class AndAuthorizationRequest extends AuthorizationRequest {
+        private final AuthorizationRequest ar1;
+        private final AuthorizationRequest ar2;
 
-		private AndAuthorizationRequest(AuthorizationRequest ar1,
-				AuthorizationRequest ar2) {
-			this.ar1 = ar1;
-			this.ar2 = ar2;
-		}
+        private AndAuthorizationRequest(AuthorizationRequest ar1,
+                                        AuthorizationRequest ar2) {
+            this.ar1 = ar1;
+            this.ar2 = ar2;
+        }
 
-		@Override
-		public boolean isAuthorized(IdentifierBundle ids, PolicyIface policy) {
-			return ar1.isAuthorized(ids, policy)
-					&& ar2.isAuthorized(ids, policy);
-		}
+        @Override
+        public boolean isAuthorized(IdentifierBundle ids, PolicyIface policy) {
+            return ar1.isAuthorized(ids, policy)
+                && ar2.isAuthorized(ids, policy);
+        }
 
-		@Override
-		public String toString() {
-			return "(" + ar1 + " && " + ar2 + ")";
-		}
+        @Override
+        public String toString() {
+            return "(" + ar1 + " && " + ar2 + ")";
+        }
 
-	}
+    }
 
-	private static class OrAuthorizationRequest extends AuthorizationRequest {
-		private final AuthorizationRequest ar1;
-		private final AuthorizationRequest ar2;
+    private static class OrAuthorizationRequest extends AuthorizationRequest {
+        private final AuthorizationRequest ar1;
+        private final AuthorizationRequest ar2;
 
-		private OrAuthorizationRequest(AuthorizationRequest ar1,
-				AuthorizationRequest ar2) {
-			this.ar1 = ar1;
-			this.ar2 = ar2;
-		}
+        private OrAuthorizationRequest(AuthorizationRequest ar1,
+                                       AuthorizationRequest ar2) {
+            this.ar1 = ar1;
+            this.ar2 = ar2;
+        }
 
-		@Override
-		public boolean isAuthorized(IdentifierBundle ids, PolicyIface policy) {
-			return ar1.isAuthorized(ids, policy)
-					|| ar2.isAuthorized(ids, policy);
-		}
+        @Override
+        public boolean isAuthorized(IdentifierBundle ids, PolicyIface policy) {
+            return ar1.isAuthorized(ids, policy)
+                || ar2.isAuthorized(ids, policy);
+        }
 
-		@Override
-		public String toString() {
-			return "(" + ar1 + " || " + ar2 + ")";
-		}
+        @Override
+        public String toString() {
+            return "(" + ar1 + " || " + ar2 + ")";
+        }
 
-	}
+    }
 
 }

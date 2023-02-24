@@ -5,18 +5,29 @@ package edu.cornell.mannlib.vitro.webapp.dao.jena;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
+import edu.cornell.mannlib.vitro.webapp.beans.BaseResourceBean;
+import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
+import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
+import edu.cornell.mannlib.vitro.webapp.beans.Individual;
+import edu.cornell.mannlib.vitro.webapp.beans.PropertyInstance;
+import edu.cornell.mannlib.vitro.webapp.beans.VClass;
+import edu.cornell.mannlib.vitro.webapp.dao.DataPropertyDao;
+import edu.cornell.mannlib.vitro.webapp.dao.InsertException;
+import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
+import edu.cornell.mannlib.vitro.webapp.dao.jena.event.EditEvent;
+import edu.cornell.mannlib.vitro.webapp.modules.tboxreasoner.TBoxReasonerStatus;
+import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
 import edu.cornell.mannlib.vitro.webapp.rdfservice.ResultSetConsumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.jena.ontology.AllValuesFromRestriction;
 import org.apache.jena.ontology.DatatypeProperty;
 import org.apache.jena.ontology.OntModel;
@@ -42,35 +53,69 @@ import org.apache.jena.vocabulary.OWL;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 
-import edu.cornell.mannlib.vitro.webapp.application.ApplicationUtils;
-import edu.cornell.mannlib.vitro.webapp.beans.BaseResourceBean;
-import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
-import edu.cornell.mannlib.vitro.webapp.beans.DataPropertyStatement;
-import edu.cornell.mannlib.vitro.webapp.beans.Individual;
-import edu.cornell.mannlib.vitro.webapp.beans.PropertyInstance;
-import edu.cornell.mannlib.vitro.webapp.beans.VClass;
-import edu.cornell.mannlib.vitro.webapp.dao.DataPropertyDao;
-import edu.cornell.mannlib.vitro.webapp.dao.InsertException;
-import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
-import edu.cornell.mannlib.vitro.webapp.dao.jena.event.EditEvent;
-import edu.cornell.mannlib.vitro.webapp.modules.tboxreasoner.TBoxReasonerStatus;
-import edu.cornell.mannlib.vitro.webapp.rdfservice.RDFService;
-
 public class DataPropertyDaoJena extends PropertyDaoJena implements
-        DataPropertyDao {
+    DataPropertyDao {
 
     protected static final Log log = LogFactory.getLog(DataPropertyDaoJena.class.getName());
+    /* This may be the intent behind JenaBaseDao.NONUSER_NAMESPACES, but that
+     * value does not contain all of these namespaces.
+     */
+    protected static final List<String> EXCLUDED_NAMESPACES = Arrays.asList(
+        // Don't need to exclude these, because they are not owl:DatatypeProperty
+        //"http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        //"http://www.w3.org/2000/01/rdf-schema#",
+        "http://www.w3.org/2002/07/owl#",
+        //"http://vitro.mannlib.cornell.edu/ns/vitro/0.7#",
+        "http://vitro.mannlib.cornell.edu/ns/vitro/public#"
+    );
+    /*
+     * This is a hack to throw out properties in the vitro, rdf, rdfs, and owl namespaces.
+     * It will be implemented in a better way in v1.3 (Editing and Display Configuration).
+     */
+    protected static final String PROPERTY_FILTERS;
+    protected static final String DATA_PROPERTY_QUERY_STRING =
+        PREFIXES + "\n" +
+            "SELECT DISTINCT ?property WHERE { \n" +
+            "   ?subject ?property ?object . \n" +
+            //"   ?property a owl:DatatypeProperty . \n" +
+            "   FILTER ( \n" +
+            "       isLiteral(?object) && \n" +
+            "       ( !regex(str(?property), \"^" + VitroVocabulary.PUBLIC + "\" )) && \n" +
+            "       ( !regex(str(?property), \"^" + VitroVocabulary.OWL + "\" )) && \n" +
+            // NIHVIVO-2790 vitro:moniker has been deprecated, but display existing values for editorial management (deletion is encouraged).
+            // This property will be hidden from public display by default.
+            "       ( ?property = <" + VitroVocabulary.MONIKER + "> || !regex(str(?property), \"^" +
+            VitroVocabulary.vitroURI + "\" )) \n" +
+            "   ) \n" +
+            "}";
+    protected static final String LIST_VIEW_CONFIG_FILE_QUERY_STRING =
+        "PREFIX display: <http://vitro.mannlib.cornell.edu/ontologies/display/1.1#>" +
+            "SELECT ?property ?filename WHERE { \n" +
+            "    ?property display:listViewConfigFile ?filename . \n" +
+            "}";
+    protected static Query listViewConfigFileQuery = null;
 
-    private class DataPropertyRanker implements Comparator<DataProperty> {
-        @Override
-		public int compare (DataProperty dp1, DataProperty dp2) {
-            int diff = dp1.getDisplayTier() - dp2.getDisplayTier();
-            if (diff==0)
-                return dp1.getPublicName().compareTo(dp2.getPublicName());
-            else
-                return diff;
+    static {
+        List<String> namespaceFilters = new ArrayList<String>();
+        for (String namespace : EXCLUDED_NAMESPACES) {
+            namespaceFilters.add("( !regex(str(?property), \"^" + namespace + "\" ))");
+        }
+        PROPERTY_FILTERS = StringUtils.join(namespaceFilters, " && ");
+    }
+
+    static {
+        try {
+            listViewConfigFileQuery = QueryFactory.create(LIST_VIEW_CONFIG_FILE_QUERY_STRING);
+        } catch (Throwable th) {
+            log.error("could not create SPARQL query for LIST_VIEW_CONFIG_FILE_QUERY_STRING " +
+                th.getMessage());
+            log.error(LIST_VIEW_CONFIG_FILE_QUERY_STRING);
         }
     }
+
+    Map<DataProperty, String> customListViewConfigFileMap = null;
+    private boolean DIRECT = true;
+    private boolean INDIRECT = !DIRECT;
 
     public DataPropertyDaoJena(RDFService rdfService,
                                DatasetWrapperFactory dwf,
@@ -87,79 +132,84 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
     }
 
     public boolean annotateDataPropertyAsExternalIdentifier(String dataPropertyURI) {
-    	OntModel ontModel = getOntModelSelector().getTBoxModel();
-    	ontModel.enterCriticalSection(Lock.WRITE);
-    	try {
-	        org.apache.jena.ontology.OntResource ind = ontModel.getOntResource(dataPropertyURI);
-	        if( ind != null ){
-	            ontModel.add(ind, DATAPROPERTY_ISEXTERNALID, "TRUE");
-	            return true;
-	        }else{
-	            return false;
-	        }
-    	} finally {
-    		ontModel.leaveCriticalSection();
-    	}
+        OntModel ontModel = getOntModelSelector().getTBoxModel();
+        ontModel.enterCriticalSection(Lock.WRITE);
+        try {
+            org.apache.jena.ontology.OntResource ind = ontModel.getOntResource(dataPropertyURI);
+            if (ind != null) {
+                ontModel.add(ind, DATAPROPERTY_ISEXTERNALID, "TRUE");
+                return true;
+            } else {
+                return false;
+            }
+        } finally {
+            ontModel.leaveCriticalSection();
+        }
     }
 
     public void deleteDataProperty(String URI, OntModel ontModel) {
-    	// TODO check if used as onProperty of restriction
-    	ontModel.enterCriticalSection(Lock.WRITE);
-    	try {
-    		getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
-	        DatatypeProperty dp = ontModel.getDatatypeProperty(URI);
-	        if (dp != null) {
-	           	Iterator<Resource> restIt = ontModel.listSubjectsWithProperty(OWL.onProperty, dp);
-            	while(restIt.hasNext()) {
-            		Resource restRes = restIt.next();
-            		if (restRes.canAs(OntResource.class)) {
-            			OntResource restOntRes = restRes.as(OntResource.class);
-            			smartRemove(restOntRes, ontModel);
-            		}
-            	}
-            	removeRulesMentioningResource(dp, ontModel);
+        // TODO check if used as onProperty of restriction
+        ontModel.enterCriticalSection(Lock.WRITE);
+        try {
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
+            DatatypeProperty dp = ontModel.getDatatypeProperty(URI);
+            if (dp != null) {
+                Iterator<Resource> restIt = ontModel.listSubjectsWithProperty(OWL.onProperty, dp);
+                while (restIt.hasNext()) {
+                    Resource restRes = restIt.next();
+                    if (restRes.canAs(OntResource.class)) {
+                        OntResource restOntRes = restRes.as(OntResource.class);
+                        smartRemove(restOntRes, ontModel);
+                    }
+                }
+                removeRulesMentioningResource(dp, ontModel);
                 dp.remove();
-	        }
-	        getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
-    	} finally {
-    		ontModel.leaveCriticalSection();
-    	}
+            }
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
+        } finally {
+            ontModel.leaveCriticalSection();
+        }
         // remove ABox statements after removing property
         // so dependentResource deletion test will pass
         removeABoxStatementsWithPredicate(URI);
     }
 
     @Override
-	public void fillDataPropertiesForIndividual(Individual entity) {
-        if( entity == null ) return;
+    public void fillDataPropertiesForIndividual(Individual entity) {
+        if (entity == null) {
+            return;
+        }
         List<DataProperty> dataprops = new ArrayList<DataProperty>();
-        dataprops.addAll( getDataPropertyStatements(entity.getDataPropertyStatements()) );
+        dataprops.addAll(getDataPropertyStatements(entity.getDataPropertyStatements()));
         entity.setDatatypePropertyList(dataprops);
     }
 
-    private List<DataProperty> getDataPropertyStatements(List<DataPropertyStatement> dataPropertyStmts) {
-		if (dataPropertyStmts == null || dataPropertyStmts.isEmpty()) {
-			return new ArrayList<DataProperty>();
-		}
+    private List<DataProperty> getDataPropertyStatements(
+        List<DataPropertyStatement> dataPropertyStmts) {
+        if (dataPropertyStmts == null || dataPropertyStmts.isEmpty()) {
+            return new ArrayList<DataProperty>();
+        }
 
-		HashMap<String, DataProperty> hash = new HashMap<String, DataProperty>();
-        for (DataPropertyStatement dataPropertyStmt: dataPropertyStmts) {
+        HashMap<String, DataProperty> hash = new HashMap<String, DataProperty>();
+        for (DataPropertyStatement dataPropertyStmt : dataPropertyStmts) {
             if (hash.containsKey(dataPropertyStmt.getDatapropURI())) {
                 DataProperty p = hash.get(dataPropertyStmt.getDatapropURI());
                 p.addDataPropertyStatement(dataPropertyStmt);
             } else {
-            	OntModel ontModel = getOntModelSelector().getTBoxModel();
-            	ontModel.enterCriticalSection(Lock.READ);
-	            try {
-	                OntProperty op = ontModel.getOntProperty(dataPropertyStmt.getDatapropURI());
-	                if (op != null) {
-	                    DataProperty p = datapropFromOntProperty(op);
-	                    hash.put(p.getURI(),p);
-	                    p.addDataPropertyStatement(dataPropertyStmt);
-	                }
-            	} finally {
-            		ontModel.leaveCriticalSection();
-            	}
+                OntModel ontModel = getOntModelSelector().getTBoxModel();
+                ontModel.enterCriticalSection(Lock.READ);
+                try {
+                    OntProperty op = ontModel.getOntProperty(dataPropertyStmt.getDatapropURI());
+                    if (op != null) {
+                        DataProperty p = datapropFromOntProperty(op);
+                        hash.put(p.getURI(), p);
+                        p.addDataPropertyStatement(dataPropertyStmt);
+                    }
+                } finally {
+                    ontModel.leaveCriticalSection();
+                }
             }
         }
 
@@ -169,10 +219,10 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
     }
 
     private DataProperty datapropFromOntProperty(OntProperty op) {
-	if (op==null) {
-	    return null;
-	}
-        if (op.getURI()==null) {
+        if (op == null) {
+            return null;
+        }
+        if (op.getURI() == null) {
             return null;
         } else {
             DataProperty dp = new DataProperty();
@@ -185,34 +235,39 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
             dp.setPickListName(getWebappDaoFactory().makePickListName(dp));
             Resource dRes = op.getDomain();
             if (dRes != null) {
-                dp.setDomainClassURI(dRes.isAnon()? PSEUDO_BNODE_NS + dRes.getId().toString() : dRes.getURI());
+                dp.setDomainClassURI(
+                    dRes.isAnon() ? PSEUDO_BNODE_NS + dRes.getId().toString() : dRes.getURI());
             }
             Resource rRes = op.getRange();
             if (rRes != null) {
                 dp.setRangeDatatypeURI(rRes.getURI());
             }
             if (op.isFunctionalProperty()) {
-            	dp.setFunctional(true);
+                dp.setFunctional(true);
             }
-            dp.setExample(getPropertyStringValue(op,EXAMPLE_ANNOT));
-            dp.setDescription(getPropertyStringValue(op,DESCRIPTION_ANNOT));
-            dp.setPublicDescription(getPropertyStringValue(op,PUBLIC_DESCRIPTION_ANNOT));
-            dp.setEditing(getPropertyStringValue(op,EDITING));
-            dp.setDisplayTier((getWebappDaoFactory()).getJenaBaseDao().getPropertyNonNegativeIntValue(op, DISPLAY_RANK_ANNOT));
-            dp.setDisplayLimit((getWebappDaoFactory()).getJenaBaseDao().getPropertyNonNegativeIntValue(op, DISPLAY_LIMIT));
+            dp.setExample(getPropertyStringValue(op, EXAMPLE_ANNOT));
+            dp.setDescription(getPropertyStringValue(op, DESCRIPTION_ANNOT));
+            dp.setPublicDescription(getPropertyStringValue(op, PUBLIC_DESCRIPTION_ANNOT));
+            dp.setEditing(getPropertyStringValue(op, EDITING));
+            dp.setDisplayTier((getWebappDaoFactory()).getJenaBaseDao()
+                .getPropertyNonNegativeIntValue(op, DISPLAY_RANK_ANNOT));
+            dp.setDisplayLimit((getWebappDaoFactory()).getJenaBaseDao()
+                .getPropertyNonNegativeIntValue(op, DISPLAY_LIMIT));
 
             //There might be multiple HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT properties, only use the highest
             StmtIterator it = op.listProperties(HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT);
             BaseResourceBean.RoleLevel hiddenRoleLevel = null;
-            while( it.hasNext() ){
+            while (it.hasNext()) {
                 Statement stmt = it.nextStatement();
                 RDFNode obj;
-                if( stmt != null && (obj = stmt.getObject()) != null && obj.isURIResource() ){
+                if (stmt != null && (obj = stmt.getObject()) != null && obj.isURIResource()) {
                     Resource res = obj.as(Resource.class);
-                    if( res != null && res.getURI() != null ){
-                        BaseResourceBean.RoleLevel roleFromModel =  BaseResourceBean.RoleLevel.getRoleByUri(res.getURI());
-                        if( roleFromModel != null &&
-                            (hiddenRoleLevel == null || roleFromModel.compareTo(hiddenRoleLevel) > 0 )){
+                    if (res != null && res.getURI() != null) {
+                        BaseResourceBean.RoleLevel roleFromModel =
+                            BaseResourceBean.RoleLevel.getRoleByUri(res.getURI());
+                        if (roleFromModel != null &&
+                            (hiddenRoleLevel == null ||
+                                roleFromModel.compareTo(hiddenRoleLevel) > 0)) {
                             hiddenRoleLevel = roleFromModel;
                         }
                     }
@@ -223,34 +278,39 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
             //There might be multiple PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT properties, only use the highest
             it = op.listProperties(PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT);
             BaseResourceBean.RoleLevel prohibitedRoleLevel = null;
-            while( it.hasNext() ){
+            while (it.hasNext()) {
                 Statement stmt = it.nextStatement();
                 RDFNode obj;
-                if( stmt != null && (obj = stmt.getObject()) != null && obj.isURIResource() ){
+                if (stmt != null && (obj = stmt.getObject()) != null && obj.isURIResource()) {
                     Resource res = obj.as(Resource.class);
-                    if( res != null && res.getURI() != null ){
-                        BaseResourceBean.RoleLevel roleFromModel =  BaseResourceBean.RoleLevel.getRoleByUri(res.getURI());
-                        if( roleFromModel != null &&
-                            (prohibitedRoleLevel == null || roleFromModel.compareTo(prohibitedRoleLevel) > 0 )){
+                    if (res != null && res.getURI() != null) {
+                        BaseResourceBean.RoleLevel roleFromModel =
+                            BaseResourceBean.RoleLevel.getRoleByUri(res.getURI());
+                        if (roleFromModel != null &&
+                            (prohibitedRoleLevel == null ||
+                                roleFromModel.compareTo(prohibitedRoleLevel) > 0)) {
                             prohibitedRoleLevel = roleFromModel;
                         }
                     }
                 }
             }
-            dp.setProhibitedFromUpdateBelowRoleLevel(prohibitedRoleLevel);//this might get set to null
+            dp.setProhibitedFromUpdateBelowRoleLevel(
+                prohibitedRoleLevel);//this might get set to null
 
             //There might be multiple HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT properties, only use the highest
             it = op.listProperties(HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT);
             BaseResourceBean.RoleLevel publishRoleLevel = null;
-            while( it.hasNext() ){
+            while (it.hasNext()) {
                 Statement stmt = it.nextStatement();
                 RDFNode obj;
-                if( stmt != null && (obj = stmt.getObject()) != null && obj.isURIResource() ){
+                if (stmt != null && (obj = stmt.getObject()) != null && obj.isURIResource()) {
                     Resource res = obj.as(Resource.class);
-                    if( res != null && res.getURI() != null ){
-                        BaseResourceBean.RoleLevel roleFromModel =  BaseResourceBean.RoleLevel.getRoleByUri(res.getURI());
-                        if( roleFromModel != null &&
-                            (publishRoleLevel == null || roleFromModel.compareTo(publishRoleLevel) > 0 )){
+                    if (res != null && res.getURI() != null) {
+                        BaseResourceBean.RoleLevel roleFromModel =
+                            BaseResourceBean.RoleLevel.getRoleByUri(res.getURI());
+                        if (roleFromModel != null &&
+                            (publishRoleLevel == null ||
+                                roleFromModel.compareTo(publishRoleLevel) > 0)) {
                             publishRoleLevel = roleFromModel;
                         }
                     }
@@ -258,9 +318,10 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
             }
             dp.setHiddenFromPublishBelowRoleLevel(publishRoleLevel);//this might get set to null
 
-            dp.setCustomEntryForm(getPropertyStringValue(op,PROPERTY_CUSTOMENTRYFORMANNOT));
+            dp.setCustomEntryForm(getPropertyStringValue(op, PROPERTY_CUSTOMENTRYFORMANNOT));
 
-            dp.setExternalId( getOntModelSelector().getTBoxModel().contains(op, DATAPROPERTY_ISEXTERNALID, "TRUE") );
+            dp.setExternalId(getOntModelSelector().getTBoxModel()
+                .contains(op, DATAPROPERTY_ISEXTERNALID, "TRUE"));
             Resource groupRes = (Resource) op.getPropertyValue(PROPERTY_INPROPERTYGROUPANNOT);
             if (groupRes != null) {
                 dp.setGroupURI(groupRes.getURI());
@@ -273,25 +334,28 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
         List allDataprops = new ArrayList();
         OntModel ontModel = getOntModelSelector().getTBoxModel();
         try {
-	        ontModel.enterCriticalSection(Lock.READ);
-	        try {
-	            ClosableIterator dataprops = ontModel.listDatatypeProperties();
-	            try {
-	                while (dataprops.hasNext()) {
-	                    org.apache.jena.ontology.DatatypeProperty jDataprop = (org.apache.jena.ontology.DatatypeProperty) dataprops.next();
-	                    DataProperty dataprop = datapropFromOntProperty(jDataprop);
-	                    if (dataprop != null && !(NONUSER_NAMESPACES.contains(dataprop.getNamespace())))
-	                        allDataprops.add(dataprop);
-	                }
-	            } finally {
-	                dataprops.close();
-	            }
-	        } finally {
-	            ontModel.leaveCriticalSection();
-	        }
+            ontModel.enterCriticalSection(Lock.READ);
+            try {
+                ClosableIterator dataprops = ontModel.listDatatypeProperties();
+                try {
+                    while (dataprops.hasNext()) {
+                        org.apache.jena.ontology.DatatypeProperty jDataprop =
+                            (org.apache.jena.ontology.DatatypeProperty) dataprops.next();
+                        DataProperty dataprop = datapropFromOntProperty(jDataprop);
+                        if (dataprop != null &&
+                            !(NONUSER_NAMESPACES.contains(dataprop.getNamespace()))) {
+                            allDataprops.add(dataprop);
+                        }
+                    }
+                } finally {
+                    dataprops.close();
+                }
+            } finally {
+                ontModel.leaveCriticalSection();
+            }
         } catch (ProfileException pe) {
-        	// TODO language profile doesn't support data properties.
-        	// With RDFS, we might like to return properties with rdfs:range containing a datatype
+            // TODO language profile doesn't support data properties.
+            // With RDFS, we might like to return properties with rdfs:range containing a datatype
         }
         return allDataprops;
     }
@@ -304,10 +368,13 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
             ClosableIterator dataprops = ontModel.listDatatypeProperties();
             try {
                 while (dataprops.hasNext()) {
-                    org.apache.jena.ontology.DatatypeProperty jDataprop = (org.apache.jena.ontology.DatatypeProperty) dataprops.next();
+                    org.apache.jena.ontology.DatatypeProperty jDataprop =
+                        (org.apache.jena.ontology.DatatypeProperty) dataprops.next();
                     DataProperty dataprop = datapropFromOntProperty(jDataprop);
-                    if (dataprop != null && ontModel.contains(jDataprop, DATAPROPERTY_ISEXTERNALID, ResourceFactory.createTypedLiteral(true)))
+                    if (dataprop != null && ontModel.contains(jDataprop, DATAPROPERTY_ISEXTERNALID,
+                        ResourceFactory.createTypedLiteral(true))) {
                         allDataprops.add(dataprop);
+                    }
                 }
             } finally {
                 dataprops.close();
@@ -315,10 +382,11 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
         } finally {
             ontModel.leaveCriticalSection();
         }
-        if (allDataprops.size() < 0)
+        if (allDataprops.size() < 0) {
             return null;
-        else
+        } else {
             return allDataprops;
+        }
     }
 
     public List<DataProperty> getDataPropertiesForVClass(String vclassURI) {
@@ -330,38 +398,39 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
     }
 
     public Collection<DataProperty> getAllPossibleDatapropsForIndividual(String individualURI) {
-    	return filterAndConvertToDataProperties(getAllPossiblePropInstForIndividual(individualURI));
+        return filterAndConvertToDataProperties(getAllPossiblePropInstForIndividual(individualURI));
     }
 
     private List<DataProperty> filterAndConvertToDataProperties(
-    		                                List<PropertyInstance> propInsts) {
-    	List<DataProperty> dataprops = new ArrayList<DataProperty>();
-    	for (PropertyInstance propInst : propInsts) {
-       		OntModel tboxModel = getOntModel();
-    		tboxModel.enterCriticalSection(Lock.READ);
-    		boolean add = false;
-    		try {
-    			add = (propInst.getPropertyURI() != null
-    					&& tboxModel.contains(
-    							tboxModel.getResource(
-    									propInst.getPropertyURI()),
-    									RDF.type,
-    									OWL.DatatypeProperty));
-	    	} finally {
-	    		tboxModel.leaveCriticalSection();
-	    	}
-	    	if (add) {
-	    		DataProperty dataprop = getDataPropertyByURI(propInst.getPropertyURI());
-	    		dataprop.setRangeDatatypeURI(propInst.getRangeClassURI());
-	    		dataprops.add(dataprop);
-	    	}
-    	}
+        List<PropertyInstance> propInsts) {
+        List<DataProperty> dataprops = new ArrayList<DataProperty>();
+        for (PropertyInstance propInst : propInsts) {
+            OntModel tboxModel = getOntModel();
+            tboxModel.enterCriticalSection(Lock.READ);
+            boolean add = false;
+            try {
+                add = (propInst.getPropertyURI() != null
+                    && tboxModel.contains(
+                    tboxModel.getResource(
+                        propInst.getPropertyURI()),
+                    RDF.type,
+                    OWL.DatatypeProperty));
+            } finally {
+                tboxModel.leaveCriticalSection();
+            }
+            if (add) {
+                DataProperty dataprop = getDataPropertyByURI(propInst.getPropertyURI());
+                dataprop.setRangeDatatypeURI(propInst.getRangeClassURI());
+                dataprops.add(dataprop);
+            }
+        }
         return dataprops;
     }
 
     protected boolean reasoningAvailable() {
         try {
-            TBoxReasonerStatus status = ApplicationUtils.instance().getTBoxReasonerModule().getStatus();
+            TBoxReasonerStatus status =
+                ApplicationUtils.instance().getTBoxReasonerModule().getStatus();
             return status.isConsistent() && !status.isInErrorState();
         } catch (IllegalStateException e) {
             log.debug("Status of reasoner could not be determined. It is likely disabled.", e);
@@ -369,14 +438,16 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
         }
     }
 
-    private String getRequiredDatatypeURI(Individual individual, DataProperty dataprop, List<String> vclassURIs) {
+    private String getRequiredDatatypeURI(Individual individual, DataProperty dataprop,
+                                          List<String> vclassURIs) {
         OntModel ontModel = getOntModelSelector().getTBoxModel();
         String datatypeURI = dataprop.getRangeDatatypeURI();
 
         ontModel.enterCriticalSection(Lock.READ);
         try {
             // get universal restrictions applicable to data property
-            Iterator<Resource> restIt = ontModel.listSubjectsWithProperty(OWL.onProperty, ontModel.getResource(dataprop.getURI()));
+            Iterator<Resource> restIt = ontModel
+                .listSubjectsWithProperty(OWL.onProperty, ontModel.getResource(dataprop.getURI()));
             while (restIt.hasNext()) {
                 Resource restRes = restIt.next();
                 if (restRes.canAs(Restriction.class)) {
@@ -387,21 +458,26 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
                             // check if the individual has the restriction as one of its types
                             if (!individual.isAnonymous() &&
                                 ontModel.contains(ontModel.getResource(individual.getURI()),
-                                                  RDF.type,
-                                                  rest)
-                                ) {
-                                        datatypeURI = convertRequiredDatatypeURI(
-                                                avfrest.getAllValuesFrom().getURI());
-                                        break;
+                                    RDF.type,
+                                    rest)
+                            ) {
+                                datatypeURI = convertRequiredDatatypeURI(
+                                    avfrest.getAllValuesFrom().getURI());
+                                break;
                             } else {
                                 // check if the restriction applies to one of the individual's types
                                 List<Resource> equivOrSubResources = new ArrayList<Resource>();
-                                equivOrSubResources.addAll(ontModel.listSubjectsWithProperty(RDFS.subClassOf, rest).toList());
-                                equivOrSubResources.addAll(ontModel.listSubjectsWithProperty(OWL.equivalentClass, rest).toList());
-                                for(Resource equivOrSubRes : equivOrSubResources) {
-                                    if (!equivOrSubRes.isAnon() && vclassURIs.contains(equivOrSubRes.getURI())) {
+                                equivOrSubResources.addAll(
+                                    ontModel.listSubjectsWithProperty(RDFS.subClassOf, rest)
+                                        .toList());
+                                equivOrSubResources.addAll(
+                                    ontModel.listSubjectsWithProperty(OWL.equivalentClass, rest)
+                                        .toList());
+                                for (Resource equivOrSubRes : equivOrSubResources) {
+                                    if (!equivOrSubRes.isAnon() &&
+                                        vclassURIs.contains(equivOrSubRes.getURI())) {
                                         datatypeURI = convertRequiredDatatypeURI(
-                                                avfrest.getAllValuesFrom().getURI());
+                                            avfrest.getAllValuesFrom().getURI());
                                         break;
                                     }
                                 }
@@ -424,15 +500,15 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
      */
     private String convertRequiredDatatypeURI(String datatypeURI) {
         return (RDFS.Literal.getURI().equals(datatypeURI))
-                ? null
-                : datatypeURI;
+            ? null
+            : datatypeURI;
     }
 
     public String getRequiredDatatypeURI(Individual individual, DataProperty dataprop) {
-    	return getRequiredDatatypeURI(individual,dataprop,getVClassURIs(individual));
+        return getRequiredDatatypeURI(individual, dataprop, getVClassURIs(individual));
     }
 
-    private List<String> getVClassURIs(Individual individual){
+    private List<String> getVClassURIs(Individual individual) {
         List<String> vclassURIs = null;
         if (reasoningAvailable()) {
             vclassURIs = new ArrayList<String>();
@@ -447,33 +523,38 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
         return vclassURIs;
     }
 
-    private boolean DIRECT = true;
-    private boolean INDIRECT = !DIRECT;
+    /*
+     * SPARQL-based methods for getting the individual's data properties.
+     * Ideally this implementation should replace the existing way of getting
+     * the data property list, but the consequences of this may be far-reaching,
+     * so we are implementing a new method now and will merge the old approach
+     * into the new one in a future release.
+     */
 
     /**
      * This method will iterate through each of an individual's direct types
      * and get the URIs of all supertypes.
      */
     protected List<String> getSupertypeURIs(Individual ind) {
-    	List<String> supertypeURIs = new ArrayList<String>();
-    	if (ind.getVClasses() != null) {
-	    	for (VClass vc : ind.getVClasses(DIRECT)) {
-	    		String vcURI = vc.getURI();
-	    		if (vcURI != null) {
-	    			supertypeURIs.add(vcURI);
-	    			supertypeURIs.addAll(
-	    				getWebappDaoFactory().getVClassDao().getAllSuperClassURIs(vcURI)
-	    			);
-	    		}
+        List<String> supertypeURIs = new ArrayList<String>();
+        if (ind.getVClasses() != null) {
+            for (VClass vc : ind.getVClasses(DIRECT)) {
+                String vcURI = vc.getURI();
+                if (vcURI != null) {
+                    supertypeURIs.add(vcURI);
+                    supertypeURIs.addAll(
+                        getWebappDaoFactory().getVClassDao().getAllSuperClassURIs(vcURI)
+                    );
+                }
 
-	    	}
-    	} else if (ind.getVClassURI() != null) {
-    		supertypeURIs.add(ind.getVClassURI());
-    		supertypeURIs.addAll(
-    		    getWebappDaoFactory().getVClassDao().getAllSuperClassURIs(ind.getVClassURI())
-    		);
-    	}
-    	return supertypeURIs;
+            }
+        } else if (ind.getVClassURI() != null) {
+            supertypeURIs.add(ind.getVClassURI());
+            supertypeURIs.addAll(
+                getWebappDaoFactory().getVClassDao().getAllSuperClassURIs(ind.getVClassURI())
+            );
+        }
+        return supertypeURIs;
     }
 
     public DataProperty getDataPropertyByURI(String dataPropertyURI) {
@@ -486,54 +567,67 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
         }
     }
 
-    public String insertDataProperty(DataProperty dtp) throws InsertException{
+    public String insertDataProperty(DataProperty dtp) throws InsertException {
         return insertDataProperty(dtp, getOntModelSelector().getTBoxModel());
     }
 
     public String insertDataProperty(DataProperty dtp, OntModel ontModel) throws InsertException {
         ontModel.enterCriticalSection(Lock.WRITE);
         try {
-        	getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
-        	String errMsgStr = getWebappDaoFactory().checkURIForEditableEntity(dtp.getURI());
-        	if (errMsgStr != null) {
-        		throw new InsertException(errMsgStr);
-        	}
-            org.apache.jena.ontology.DatatypeProperty jDataprop = ontModel.createDatatypeProperty(dtp.getURI());
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
+            String errMsgStr = getWebappDaoFactory().checkURIForEditableEntity(dtp.getURI());
+            if (errMsgStr != null) {
+                throw new InsertException(errMsgStr);
+            }
+            org.apache.jena.ontology.DatatypeProperty jDataprop =
+                ontModel.createDatatypeProperty(dtp.getURI());
             if (dtp.getPublicName() != null && dtp.getPublicName().length() > 0) {
-            	jDataprop.setLabel(dtp.getPublicName(), getDefaultLanguage());
+                jDataprop.setLabel(dtp.getPublicName(), getDefaultLanguage());
             } else {
-            	jDataprop.removeAll(RDFS.label);
+                jDataprop.removeAll(RDFS.label);
             }
             jDataprop.removeAll(RDFS.domain);
-            if ( (dtp.getDomainClassURI() != null) && (dtp.getDomainClassURI().length()>0) ) {
-            	jDataprop.setDomain(ontModel.getResource(dtp.getDomainClassURI()));
+            if ((dtp.getDomainClassURI() != null) && (dtp.getDomainClassURI().length() > 0)) {
+                jDataprop.setDomain(ontModel.getResource(dtp.getDomainClassURI()));
             }
             if (dtp.getRangeDatatypeURI() != null && !dtp.getRangeDatatypeURI().equals("")) {
                 Resource rangeResource = ontModel.getResource(dtp.getRangeDatatypeURI());
-                if (rangeResource != null)
+                if (rangeResource != null) {
                     jDataprop.setRange(rangeResource);
+                }
             }
             if (dtp.getFunctional()) {
-               	ontModel.add(jDataprop,RDF.type,OWL.FunctionalProperty);
+                ontModel.add(jDataprop, RDF.type, OWL.FunctionalProperty);
             }
             updatePlainLiteralValue(jDataprop, EXAMPLE, dtp.getExample());
             updatePlainLiteralValue(jDataprop, DESCRIPTION_ANNOT, dtp.getDescription());
-            updatePlainLiteralValue(jDataprop, PUBLIC_DESCRIPTION_ANNOT, dtp.getPublicDescription());
+            updatePlainLiteralValue(jDataprop, PUBLIC_DESCRIPTION_ANNOT,
+                dtp.getPublicDescription());
             addPropertyStringValue(jDataprop, EDITING, dtp.getEditing(), ontModel);
-            addPropertyNonNegativeIntValue(jDataprop, DISPLAY_RANK_ANNOT, dtp.getDisplayTier(), ontModel);
-            addPropertyNonNegativeIntValue(jDataprop, DISPLAY_LIMIT, dtp.getDisplayLimit(), ontModel);
+            addPropertyNonNegativeIntValue(jDataprop, DISPLAY_RANK_ANNOT, dtp.getDisplayTier(),
+                ontModel);
+            addPropertyNonNegativeIntValue(jDataprop, DISPLAY_LIMIT, dtp.getDisplayLimit(),
+                ontModel);
             //addPropertyStringValue(jDataprop, HIDDEN_ANNOT, dtp.getHidden(), ontModel);
             jDataprop.removeAll(HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT);
-            if (HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT != null && dtp.getHiddenFromDisplayBelowRoleLevel() != null) { // only need to add if present
-                jDataprop.addProperty(HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory.createResource(dtp.getHiddenFromDisplayBelowRoleLevel().getURI()));
+            if (HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT != null &&
+                dtp.getHiddenFromDisplayBelowRoleLevel() != null) { // only need to add if present
+                jDataprop.addProperty(HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory
+                    .createResource(dtp.getHiddenFromDisplayBelowRoleLevel().getURI()));
             }
             jDataprop.removeAll(PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT);
-            if (PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT != null && dtp.getProhibitedFromUpdateBelowRoleLevel() != null) { // only need to add if present
-                jDataprop.addProperty(PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory.createResource(dtp.getProhibitedFromUpdateBelowRoleLevel().getURI()));
+            if (PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT != null &&
+                dtp.getProhibitedFromUpdateBelowRoleLevel() !=
+                    null) { // only need to add if present
+                jDataprop.addProperty(PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory
+                    .createResource(dtp.getProhibitedFromUpdateBelowRoleLevel().getURI()));
             }
             jDataprop.removeAll(HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT);
-            if (HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT != null && dtp.getHiddenFromPublishBelowRoleLevel() != null) { // only need to add if present
-            	jDataprop.addProperty(HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory.createResource(dtp.getHiddenFromPublishBelowRoleLevel().getURI()));
+            if (HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT != null &&
+                dtp.getHiddenFromPublishBelowRoleLevel() != null) { // only need to add if present
+                jDataprop.addProperty(HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT, ResourceFactory
+                    .createResource(dtp.getHiddenFromPublishBelowRoleLevel().getURI()));
             }
             /*
             if (dtp.isSelfEditProhibited()) { // only add the property if it's true
@@ -543,19 +637,22 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
                 addPropertyBooleanValue(jDataprop, PROPERTY_CURATOREDITPROHIBITEDANNOT, dtp.isCuratorEditProhibited(), ontModel);
             } */
             try {
-            	if (dtp.getGroupURI() != null && dtp.getGroupURI().length()>0) {
-                	String badURIErrorStr = checkURI(dtp.getGroupURI());
-                	if (badURIErrorStr == null) {
-                		jDataprop.addProperty(PROPERTY_INPROPERTYGROUPANNOT, ontModel.getResource(dtp.getGroupURI()));
-                	} else {
-                		log.error(badURIErrorStr);
-                	}
-            	}
+                if (dtp.getGroupURI() != null && dtp.getGroupURI().length() > 0) {
+                    String badURIErrorStr = checkURI(dtp.getGroupURI());
+                    if (badURIErrorStr == null) {
+                        jDataprop.addProperty(PROPERTY_INPROPERTYGROUPANNOT,
+                            ontModel.getResource(dtp.getGroupURI()));
+                    } else {
+                        log.error(badURIErrorStr);
+                    }
+                }
             } catch (Exception e) {
-                log.error("error linking data property "+dtp.getURI()+" to property group");
+                log.error("error linking data property " + dtp.getURI() + " to property group");
             }
-            addPropertyStringValue(jDataprop,PROPERTY_CUSTOMENTRYFORMANNOT,dtp.getCustomEntryForm(),ontModel);
-            getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            addPropertyStringValue(jDataprop, PROPERTY_CUSTOMENTRYFORMANNOT,
+                dtp.getCustomEntryForm(), ontModel);
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
         } finally {
             ontModel.leaveCriticalSection();
         }
@@ -569,49 +666,65 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
     public void updateDataProperty(DataProperty dtp, OntModel ontModel) {
         ontModel.enterCriticalSection(Lock.WRITE);
         try {
-        	getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),true));
-            org.apache.jena.ontology.DatatypeProperty jDataprop = ontModel.getDatatypeProperty(dtp.getURI());
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), true));
+            org.apache.jena.ontology.DatatypeProperty jDataprop =
+                ontModel.getDatatypeProperty(dtp.getURI());
 
             updateRDFSLabel(jDataprop, dtp.getPublicName());
 
-            updatePropertyResourceURIValue(jDataprop, RDFS.domain,dtp.getDomainClassURI(),ontModel);
-            updatePropertyResourceURIValue(jDataprop, RDFS.range,dtp.getRangeDatatypeURI(),ontModel);
+            updatePropertyResourceURIValue(jDataprop, RDFS.domain, dtp.getDomainClassURI(),
+                ontModel);
+            updatePropertyResourceURIValue(jDataprop, RDFS.range, dtp.getRangeDatatypeURI(),
+                ontModel);
 
             if (dtp.getFunctional()) {
-               	if (!ontModel.contains(jDataprop,RDF.type,OWL.FunctionalProperty)) {
-            		ontModel.add(jDataprop,RDF.type,OWL.FunctionalProperty);
-            	}
+                if (!ontModel.contains(jDataprop, RDF.type, OWL.FunctionalProperty)) {
+                    ontModel.add(jDataprop, RDF.type, OWL.FunctionalProperty);
+                }
             } else {
-            	if (ontModel.contains(jDataprop,RDF.type,OWL.FunctionalProperty)) {
-            		ontModel.remove(jDataprop,RDF.type,OWL.FunctionalProperty);
-            	}
+                if (ontModel.contains(jDataprop, RDF.type, OWL.FunctionalProperty)) {
+                    ontModel.remove(jDataprop, RDF.type, OWL.FunctionalProperty);
+                }
             }
 
             updatePlainLiteralValue(jDataprop, EXAMPLE, dtp.getExample());
             updatePlainLiteralValue(jDataprop, DESCRIPTION_ANNOT, dtp.getDescription());
-            updatePlainLiteralValue(jDataprop, PUBLIC_DESCRIPTION_ANNOT, dtp.getPublicDescription());
+            updatePlainLiteralValue(jDataprop, PUBLIC_DESCRIPTION_ANNOT,
+                dtp.getPublicDescription());
             updatePropertyStringValue(jDataprop, EDITING, dtp.getEditing(), ontModel);
-            updatePropertyNonNegativeIntValue(jDataprop, DISPLAY_RANK_ANNOT, dtp.getDisplayTier(), ontModel);
-            updatePropertyNonNegativeIntValue(jDataprop, DISPLAY_LIMIT, dtp.getDisplayLimit(), ontModel);
+            updatePropertyNonNegativeIntValue(jDataprop, DISPLAY_RANK_ANNOT, dtp.getDisplayTier(),
+                ontModel);
+            updatePropertyNonNegativeIntValue(jDataprop, DISPLAY_LIMIT, dtp.getDisplayLimit(),
+                ontModel);
 
             if (dtp.getHiddenFromDisplayBelowRoleLevel() != null) {
-              updatePropertyResourceURIValue(jDataprop,HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT,dtp.getHiddenFromDisplayBelowRoleLevel().getURI(),ontModel);
+                updatePropertyResourceURIValue(jDataprop,
+                    HIDDEN_FROM_DISPLAY_BELOW_ROLE_LEVEL_ANNOT,
+                    dtp.getHiddenFromDisplayBelowRoleLevel().getURI(), ontModel);
             }
 
             if (dtp.getProhibitedFromUpdateBelowRoleLevel() != null) {
-                updatePropertyResourceURIValue(jDataprop,PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT,dtp.getProhibitedFromUpdateBelowRoleLevel().getURI(),ontModel);
+                updatePropertyResourceURIValue(jDataprop,
+                    PROHIBITED_FROM_UPDATE_BELOW_ROLE_LEVEL_ANNOT,
+                    dtp.getProhibitedFromUpdateBelowRoleLevel().getURI(), ontModel);
             }
 
             if (dtp.getHiddenFromPublishBelowRoleLevel() != null) {
-            	updatePropertyResourceURIValue(jDataprop,HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT,dtp.getHiddenFromPublishBelowRoleLevel().getURI(),ontModel);
+                updatePropertyResourceURIValue(jDataprop,
+                    HIDDEN_FROM_PUBLISH_BELOW_ROLE_LEVEL_ANNOT,
+                    dtp.getHiddenFromPublishBelowRoleLevel().getURI(), ontModel);
             }
 
             if (dtp.getGroupURI() != null) {
-                updatePropertyResourceURIValue(jDataprop,PROPERTY_INPROPERTYGROUPANNOT,dtp.getGroupURI(),ontModel);
+                updatePropertyResourceURIValue(jDataprop, PROPERTY_INPROPERTYGROUPANNOT,
+                    dtp.getGroupURI(), ontModel);
             }
 
-            updatePropertyStringValue(jDataprop,PROPERTY_CUSTOMENTRYFORMANNOT,dtp.getCustomEntryForm(),ontModel);
-            getOntModel().getBaseModel().notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(),false));
+            updatePropertyStringValue(jDataprop, PROPERTY_CUSTOMENTRYFORMANNOT,
+                dtp.getCustomEntryForm(), ontModel);
+            getOntModel().getBaseModel()
+                .notifyEvent(new EditEvent(getWebappDaoFactory().getUserURI(), false));
         } finally {
             ontModel.leaveCriticalSection();
         }
@@ -625,30 +738,33 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
             ClosableIterator propIt = ontModel.listDatatypeProperties();
             try {
                 while (propIt.hasNext()) {
-                    org.apache.jena.ontology.DatatypeProperty op = (org.apache.jena.ontology.DatatypeProperty) propIt.next();
+                    org.apache.jena.ontology.DatatypeProperty op =
+                        (org.apache.jena.ontology.DatatypeProperty) propIt.next();
                     boolean isRoot = false;
                     Iterator parentIt = op.listSuperProperties();
                     if (parentIt != null) {
-                    	List<Property> parentList = new ArrayList<Property>();
-                    	Iterator<RDFNode> parentNodeIt = op.listPropertyValues(RDFS.subPropertyOf);
-                    	while (parentNodeIt.hasNext()) {
-                    		RDFNode parentNode = parentNodeIt.next();
-                    		if (parentNode.canAs(Property.class)) {
-                    			parentList.add(parentNode.as(Property.class));
-                    		}
-                    	}
-                    	if (parentList.size()==0) {
-                    		isRoot = true;
-                    	} else {
-                    		isRoot = true;
+                        List<Property> parentList = new ArrayList<Property>();
+                        Iterator<RDFNode> parentNodeIt = op.listPropertyValues(RDFS.subPropertyOf);
+                        while (parentNodeIt.hasNext()) {
+                            RDFNode parentNode = parentNodeIt.next();
+                            if (parentNode.canAs(Property.class)) {
+                                parentList.add(parentNode.as(Property.class));
+                            }
+                        }
+                        if (parentList.size() == 0) {
+                            isRoot = true;
+                        } else {
+                            isRoot = true;
                             for (Property pt : parentList) {
-                                if ((!pt.equals(op)) && (!(ontModel.contains(op, OWL.equivalentProperty, pt)) || (ontModel.contains(pt, OWL.equivalentProperty, op)))) {
+                                if ((!pt.equals(op)) &&
+                                    (!(ontModel.contains(op, OWL.equivalentProperty, pt)) ||
+                                        (ontModel.contains(pt, OWL.equivalentProperty, op)))) {
                                     isRoot = false;
                                 }
                             }
-                    	}
+                        }
                     } else {
-                    	isRoot = true;
+                        isRoot = true;
                     }
 
                     if (isRoot) {
@@ -663,59 +779,12 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
         } finally {
             ontModel.leaveCriticalSection();
         }
-        if (rootProperties.size()==0)
+        if (rootProperties.size() == 0) {
             return null;
-        else
+        } else {
             return rootProperties;
-    }
-
-    /*
-     * SPARQL-based methods for getting the individual's data properties.
-     * Ideally this implementation should replace the existing way of getting
-     * the data property list, but the consequences of this may be far-reaching,
-     * so we are implementing a new method now and will merge the old approach
-     * into the new one in a future release.
-     */
-
-    /* This may be the intent behind JenaBaseDao.NONUSER_NAMESPACES, but that
-     * value does not contain all of these namespaces.
-     */
-    protected static final List<String> EXCLUDED_NAMESPACES = Arrays.asList(
-            // Don't need to exclude these, because they are not owl:DatatypeProperty
-            //"http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-            //"http://www.w3.org/2000/01/rdf-schema#",
-            "http://www.w3.org/2002/07/owl#",
-            //"http://vitro.mannlib.cornell.edu/ns/vitro/0.7#",
-            "http://vitro.mannlib.cornell.edu/ns/vitro/public#"
-        );
-
-    /*
-     * This is a hack to throw out properties in the vitro, rdf, rdfs, and owl namespaces.
-     * It will be implemented in a better way in v1.3 (Editing and Display Configuration).
-     */
-    protected static final String PROPERTY_FILTERS;
-    static {
-        List<String> namespaceFilters = new ArrayList<String>();
-        for (String namespace : EXCLUDED_NAMESPACES) {
-            namespaceFilters.add("( !regex(str(?property), \"^" + namespace + "\" ))");
         }
-        PROPERTY_FILTERS = StringUtils.join(namespaceFilters, " && ");
     }
-
-    protected static final String DATA_PROPERTY_QUERY_STRING =
-        PREFIXES + "\n" +
-        "SELECT DISTINCT ?property WHERE { \n" +
-        "   ?subject ?property ?object . \n" +
-        //"   ?property a owl:DatatypeProperty . \n" +
-        "   FILTER ( \n" +
-        "       isLiteral(?object) && \n" +
-        "       ( !regex(str(?property), \"^" + VitroVocabulary.PUBLIC + "\" )) && \n" +
-        "       ( !regex(str(?property), \"^" + VitroVocabulary.OWL + "\" )) && \n" +
-        // NIHVIVO-2790 vitro:moniker has been deprecated, but display existing values for editorial management (deletion is encouraged).
-        // This property will be hidden from public display by default.
-        "       ( ?property = <" + VitroVocabulary.MONIKER + "> || !regex(str(?property), \"^" + VitroVocabulary.vitroURI + "\" )) \n" +
-        "   ) \n" +
-        "}";
 
     @Override
     public List<DataProperty> getDataPropertyList(Individual subject) {
@@ -729,13 +798,14 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
         // filter causes the query to fail. Insert the subjectUri manually instead.
         // QuerySolutionMap initialBindings = new QuerySolutionMap();
         // initialBindings.add("subject", ResourceFactory.createResource(subjectUri));
-        String queryString = QueryUtils.subUriForQueryVar(DATA_PROPERTY_QUERY_STRING, "subject", subjectUri);
+        String queryString =
+            QueryUtils.subUriForQueryVar(DATA_PROPERTY_QUERY_STRING, "subject", subjectUri);
         log.debug(queryString);
 
         Query query = null;
         try {
             query = QueryFactory.create(queryString);
-        } catch(Throwable th){
+        } catch (Throwable th) {
             log.error("could not create SPARQL query for query string " + th.getMessage());
             log.error(queryString);
             return null;
@@ -756,23 +826,6 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
         });
         return properties;
     }
-    protected static final String LIST_VIEW_CONFIG_FILE_QUERY_STRING =
-        "PREFIX display: <http://vitro.mannlib.cornell.edu/ontologies/display/1.1#>" +
-        "SELECT ?property ?filename WHERE { \n" +
-        "    ?property display:listViewConfigFile ?filename . \n" +
-        "}";
-
-    protected static Query listViewConfigFileQuery = null;
-    static {
-        try {
-            listViewConfigFileQuery = QueryFactory.create(LIST_VIEW_CONFIG_FILE_QUERY_STRING);
-        } catch(Throwable th){
-            log.error("could not create SPARQL query for LIST_VIEW_CONFIG_FILE_QUERY_STRING " + th.getMessage());
-            log.error(LIST_VIEW_CONFIG_FILE_QUERY_STRING);
-        }
-    }
-
-    Map<DataProperty, String> customListViewConfigFileMap = null;
 
     @Override
     public String getCustomListViewConfigFileName(DataProperty dp) {
@@ -780,7 +833,8 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
             customListViewConfigFileMap = new HashMap<DataProperty, String>();
             OntModel displayModel = getOntModelSelector().getDisplayModel();
             //Get all property to list view config file mappings in the system
-            QueryExecution qexec = QueryExecutionFactory.create(listViewConfigFileQuery, displayModel);
+            QueryExecution qexec =
+                QueryExecutionFactory.create(listViewConfigFileQuery, displayModel);
             ResultSet results = qexec.execSelect();
             //Iterate through mappings looking for the current property and setting up a hashmap for subsequent retrieval
             while (results.hasNext()) {
@@ -788,12 +842,12 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
                 String propertyUri = soln.getResource("property").getURI();
                 DataProperty prop = getDataPropertyByURI(propertyUri);
                 if (prop == null) {
-                	//This is a warning only if this property is the one for which we're searching
-                	if(dp.getURI().equals(propertyUri)){
-                		log.warn("Can't find property for uri " + propertyUri);
-                	} else {
-                		log.debug("Can't find property for uri " + propertyUri);
-                	}
+                    //This is a warning only if this property is the one for which we're searching
+                    if (dp.getURI().equals(propertyUri)) {
+                        log.warn("Can't find property for uri " + propertyUri);
+                    } else {
+                        log.debug("Can't find property for uri " + propertyUri);
+                    }
                 } else {
                     String filename = soln.getLiteral("filename").getLexicalForm();
                     customListViewConfigFileMap.put(prop, filename);
@@ -802,6 +856,18 @@ public class DataPropertyDaoJena extends PropertyDaoJena implements
             qexec.close();
         }
         return customListViewConfigFileMap.get(dp);
+    }
+
+    private class DataPropertyRanker implements Comparator<DataProperty> {
+        @Override
+        public int compare(DataProperty dp1, DataProperty dp2) {
+            int diff = dp1.getDisplayTier() - dp2.getDisplayTier();
+            if (diff == 0) {
+                return dp1.getPublicName().compareTo(dp2.getPublicName());
+            } else {
+                return diff;
+            }
+        }
     }
 
 }

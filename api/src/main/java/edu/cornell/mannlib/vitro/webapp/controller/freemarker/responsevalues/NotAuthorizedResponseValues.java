@@ -10,22 +10,22 @@ import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
  * redirection.
  */
 public class NotAuthorizedResponseValues extends BaseResponseValues {
-	/**
-	 * If logging is turned on, this will be written to the log as a reason for
-	 * rejecting the servlet.
-	 */
-	private final String logMessage;
+    /**
+     * If logging is turned on, this will be written to the log as a reason for
+     * rejecting the servlet.
+     */
+    private final String logMessage;
 
-	public NotAuthorizedResponseValues(String logMessage) {
-		this.logMessage = logMessage;
-	}
+    public NotAuthorizedResponseValues(String logMessage) {
+        this.logMessage = logMessage;
+    }
 
-	public RequestedAction getUnauthorizedAction() {
-		return new RequestedAction() {
-			@Override
-			public String toString() {
-				return "Servlet not authorized: " + logMessage;
-			}
-		};
-	}
+    public RequestedAction getUnauthorizedAction() {
+        return new RequestedAction() {
+            @Override
+            public String toString() {
+                return "Servlet not authorized: " + logMessage;
+            }
+        };
+    }
 }

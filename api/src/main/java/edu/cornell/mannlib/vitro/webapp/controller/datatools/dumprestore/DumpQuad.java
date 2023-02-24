@@ -6,20 +6,20 @@ package edu.cornell.mannlib.vitro.webapp.controller.datatools.dumprestore;
  * TODO
  */
 public class DumpQuad {
-	private final DumpTriple triple;
-	private final DumpNode g;
+    private final DumpTriple triple;
+    private final DumpNode g;
 
-	public DumpQuad(DumpNode s, DumpNode p, DumpNode o, DumpNode g) {
-		this.triple = new DumpTriple(s, p, o);
-		this.g = g;
-	}
+    public DumpQuad(DumpNode s, DumpNode p, DumpNode o, DumpNode g) {
+        this.triple = new DumpTriple(s, p, o);
+        this.g = g;
+    }
 
-	public DumpTriple getTriple() {
-		return triple;
-	}
+    public DumpTriple getTriple() {
+        return triple;
+    }
 
-	public DumpNode getG() {
-		return g;
-	}
+    public DumpNode getG() {
+        return g;
+    }
 
 }

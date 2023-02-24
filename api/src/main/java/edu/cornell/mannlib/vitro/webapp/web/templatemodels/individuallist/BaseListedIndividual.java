@@ -6,14 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.beans.Individual;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
 import edu.cornell.mannlib.vitro.webapp.dao.ObjectPropertyStatementDao;
 import edu.cornell.mannlib.vitro.webapp.web.templatemodels.BaseTemplateModel;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public abstract class BaseListedIndividual extends BaseTemplateModel {
 
@@ -27,10 +26,11 @@ public abstract class BaseListedIndividual extends BaseTemplateModel {
         this.individual = individual;
     }
 
-    public static List<ListedIndividual> getIndividualTemplateModels(List<Individual> individuals, VitroRequest vreq) {
+    public static List<ListedIndividual> getIndividualTemplateModels(List<Individual> individuals,
+                                                                     VitroRequest vreq) {
         List<ListedIndividual> models = new ArrayList<ListedIndividual>(individuals.size());
         for (Individual individual : individuals) {
-          models.add(ListedIndividualBuilder.build(individual, vreq));
+            models.add(ListedIndividualBuilder.build(individual, vreq));
         }
         return models;
     }
@@ -38,7 +38,7 @@ public abstract class BaseListedIndividual extends BaseTemplateModel {
     /* Template properties */
 
     public String getProfileUrl() {
-        return cleanURIForDisplay( UrlBuilder.getIndividualProfileUrl(individual, vreq) );
+        return cleanURIForDisplay(UrlBuilder.getIndividualProfileUrl(individual, vreq));
     }
 
     public String getImageUrl() {
@@ -52,21 +52,23 @@ public abstract class BaseListedIndividual extends BaseTemplateModel {
     }
 
     public String getName() {
-        return cleanTextForDisplay( individual.getName() );
+        return cleanTextForDisplay(individual.getName());
     }
 
     public String getUri() {
-        return cleanURIForDisplay( individual.getURI() );
+        return cleanURIForDisplay(individual.getURI());
     }
 
     public List<String> getMostSpecificTypes() {
-        ObjectPropertyStatementDao opsDao = vreq.getWebappDaoFactory().getObjectPropertyStatementDao();
-        Map<String, String> types = opsDao.getMostSpecificTypesInClassgroupsForIndividual(individual.getURI());
+        ObjectPropertyStatementDao opsDao =
+            vreq.getWebappDaoFactory().getObjectPropertyStatementDao();
+        Map<String, String> types =
+            opsDao.getMostSpecificTypesInClassgroupsForIndividual(individual.getURI());
         List<String> typeLabels = new ArrayList<String>(types.size());
         String displayedType = (String) vreq.getAttribute("displayType");
         for (String type : types.keySet()) {
             // Don't display a mostSpecificType that is the same as the type being displayed on the page
-            if ( ! type.equals(displayedType) ) {
+            if (!type.equals(displayedType)) {
                 typeLabels.add(types.get(type));
             }
         }

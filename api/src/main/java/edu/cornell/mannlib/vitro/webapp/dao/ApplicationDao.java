@@ -12,8 +12,8 @@ public interface ApplicationDao {
 
     public void updateApplicationBean(ApplicationBean appBean);
 
-	public List<String> getExternallyLinkedNamespaces();
+    public List<String> getExternallyLinkedNamespaces();
 
-	public boolean isExternallyLinkedNamespace(String namespace);
+    public boolean isExternallyLinkedNamespace(String namespace);
 
 }

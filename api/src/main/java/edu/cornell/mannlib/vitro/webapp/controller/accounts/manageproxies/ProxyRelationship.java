@@ -8,35 +8,35 @@ import java.util.List;
 
 /**
  * An immutable relationship between Proxies and Profiles.
- *
+ * <p>
  * In most cases, this will either be between one Proxy and many Profiles (view
  * by Proxy), or between on Profile and many Proxies (view by Profile). However,
  * we can imagine it being a many-to-many relationship.
  */
 public class ProxyRelationship {
-	private final List<ProxyItemInfo> proxyInfos;
-	private final List<ProxyItemInfo> profileInfos;
+    private final List<ProxyItemInfo> proxyInfos;
+    private final List<ProxyItemInfo> profileInfos;
 
-	public ProxyRelationship(List<ProxyItemInfo> proxyInfos,
-			List<ProxyItemInfo> profileInfos) {
-		this.proxyInfos = Collections
-				.unmodifiableList(new ArrayList<ProxyItemInfo>(proxyInfos));
-		this.profileInfos = Collections
-				.unmodifiableList(new ArrayList<ProxyItemInfo>(profileInfos));
-	}
+    public ProxyRelationship(List<ProxyItemInfo> proxyInfos,
+                             List<ProxyItemInfo> profileInfos) {
+        this.proxyInfos = Collections
+            .unmodifiableList(new ArrayList<ProxyItemInfo>(proxyInfos));
+        this.profileInfos = Collections
+            .unmodifiableList(new ArrayList<ProxyItemInfo>(profileInfos));
+    }
 
-	public List<ProxyItemInfo> getProxyInfos() {
-		return proxyInfos;
-	}
+    public List<ProxyItemInfo> getProxyInfos() {
+        return proxyInfos;
+    }
 
-	public List<ProxyItemInfo> getProfileInfos() {
-		return profileInfos;
-	}
+    public List<ProxyItemInfo> getProfileInfos() {
+        return profileInfos;
+    }
 
-	@Override
-	public String toString() {
-		return "ProxyRelationship[proxyInfos=" + proxyInfos + ", profileInfos="
-				+ profileInfos + "]";
-	}
+    @Override
+    public String toString() {
+        return "ProxyRelationship[proxyInfos=" + proxyInfos + ", profileInfos="
+            + profileInfos + "]";
+    }
 
 }

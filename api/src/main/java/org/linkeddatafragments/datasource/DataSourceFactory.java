@@ -5,7 +5,6 @@ import org.linkeddatafragments.exceptions.DataSourceCreationException;
 import org.linkeddatafragments.exceptions.UnknownDataSourceTypeException;
 
 /**
- *
  * @author Miel Vander Sande
  * @author Bart Hanssens
  * @author <a href="http://olafhartig.de">Olaf Hartig</a>
@@ -26,10 +25,11 @@ public class DataSourceFactory {
         JsonNode settings = config.get("settings");
 
         final IDataSourceType type = DataSourceTypesRegistry.getType(typeName);
-        if ( type == null )
+        if (type == null) {
             throw new UnknownDataSourceTypeException(typeName);
+        }
 
-        return type.createDataSource( title, description, settings );
+        return type.createDataSource(title, description, settings);
     }
 
 }

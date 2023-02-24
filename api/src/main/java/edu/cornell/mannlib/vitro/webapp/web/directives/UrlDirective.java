@@ -10,9 +10,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
 import freemarker.core.Environment;
 import freemarker.template.SimpleScalar;
@@ -20,12 +17,14 @@ import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Template directive to be used to get image src values.
  * Parameters are not needed, therefore not supported.
- * @author rjy7
  *
+ * @author rjy7
  */
 public class UrlDirective extends BaseTemplateDirectiveModel {
 
@@ -33,7 +32,7 @@ public class UrlDirective extends BaseTemplateDirectiveModel {
 
     @Override
     public void execute(Environment env, Map params, TemplateModel[] loopVars,
-            TemplateDirectiveBody body) throws TemplateException, IOException {
+                        TemplateDirectiveBody body) throws TemplateException, IOException {
 
         if (loopVars.length != 0) {
             throw new TemplateModelException(
@@ -51,7 +50,7 @@ public class UrlDirective extends BaseTemplateDirectiveModel {
                 "The url directive requires a value for parameter 'path'.");
         }
 
-        if (! ( o instanceof SimpleScalar)) {
+        if (!(o instanceof SimpleScalar)) {
             throw new TemplateModelException(
                 "The url directive requires a string value for parameter 'path'.");
         }
@@ -72,7 +71,8 @@ public class UrlDirective extends BaseTemplateDirectiveModel {
     public Map<String, Object> help(String name) {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
 
-        map.put("effect", "Generate a full url from a path by prepending the servlet context path. Use for generating src attribute of image tags, href attribute of anchor tags, etc.");
+        map.put("effect",
+            "Generate a full url from a path by prepending the servlet context path. Use for generating src attribute of image tags, href attribute of anchor tags, etc.");
 
         map.put("comments", "The path should be an absolute path, starting with \"/\".");
 
@@ -81,7 +81,8 @@ public class UrlDirective extends BaseTemplateDirectiveModel {
         map.put("parameters", params);
 
         List<String> examples = new ArrayList<String>();
-        examples.add("&lt;img src=\"<@url path=\"/images/placeholders/person.thumbnail.jpg\" />\" /&gt;" );
+        examples.add(
+            "&lt;img src=\"<@url path=\"/images/placeholders/person.thumbnail.jpg\" />\" /&gt;");
         map.put("examples", examples);
 
         return map;

@@ -13,29 +13,29 @@ import edu.cornell.mannlib.vitro.webapp.auth.identifier.IdentifierBundle;
  * self-editing rights relating to it.
  */
 public class HasProfile extends HasAssociatedIndividual {
-	private static Collection<HasProfile> getIdentifiers(IdentifierBundle ids) {
-		return getIdentifiersForClass(ids, HasProfile.class);
-	}
+    public HasProfile(String associatedIndividualUri) {
+        super(associatedIndividualUri);
+    }
 
-	public static Collection<String> getProfileUris(IdentifierBundle ids) {
-		Set<String> set = new HashSet<String>();
-		for (HasProfile id : getIdentifiers(ids)) {
-			set.add(id.getAssociatedIndividualUri());
-		}
-		return set;
-	}
+    private static Collection<HasProfile> getIdentifiers(IdentifierBundle ids) {
+        return getIdentifiersForClass(ids, HasProfile.class);
+    }
 
-	public HasProfile(String associatedIndividualUri) {
-		super(associatedIndividualUri);
-	}
+    public static Collection<String> getProfileUris(IdentifierBundle ids) {
+        Set<String> set = new HashSet<String>();
+        for (HasProfile id : getIdentifiers(ids)) {
+            set.add(id.getAssociatedIndividualUri());
+        }
+        return set;
+    }
 
-	public String getProfileUri() {
-		return getAssociatedIndividualUri();
-	}
+    public String getProfileUri() {
+        return getAssociatedIndividualUri();
+    }
 
-	@Override
-	public String toString() {
-		return "HasProfile[" + getAssociatedIndividualUri() + "]";
-	}
+    @Override
+    public String toString() {
+        return "HasProfile[" + getAssociatedIndividualUri() + "]";
+    }
 
 }

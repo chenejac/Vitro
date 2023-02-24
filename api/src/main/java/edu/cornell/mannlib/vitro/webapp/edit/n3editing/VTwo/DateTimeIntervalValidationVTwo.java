@@ -7,14 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.jena.datatypes.xsd.XSDDateTime;
-import org.apache.jena.rdf.model.Literal;
-
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary;
 import edu.cornell.mannlib.vitro.webapp.dao.VitroVocabulary.Precision;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.jena.datatypes.xsd.XSDDateTime;
+import org.apache.jena.rdf.model.Literal;
 
 /*
  * Assumption for date time interval validation: Only one start field/end field/and precision.
@@ -35,7 +33,7 @@ public class DateTimeIntervalValidationVTwo implements N3ValidatorVTwo {
     private String startPrecisionName;
     private String endPrecisionName;
 
-    public DateTimeIntervalValidationVTwo(String startFieldName, String endFieldName){
+    public DateTimeIntervalValidationVTwo(String startFieldName, String endFieldName) {
         this.startFieldName = startFieldName;
         this.endFieldName = endFieldName;
         startValueName = startFieldName + "-value";
@@ -44,7 +42,8 @@ public class DateTimeIntervalValidationVTwo implements N3ValidatorVTwo {
         endPrecisionName = endFieldName + "-precision";
     }
 
-    public DateTimeIntervalValidationVTwo(String startFieldName, String endFieldName, String template){
+    public DateTimeIntervalValidationVTwo(String startFieldName, String endFieldName,
+                                          String template) {
         this.templateName = template;
         this.startFieldName = startFieldName;
         this.endFieldName = endFieldName;
@@ -55,7 +54,7 @@ public class DateTimeIntervalValidationVTwo implements N3ValidatorVTwo {
     }
 
     public Map<String, String> validate(EditConfigurationVTwo editConfig,
-            MultiValueEditSubmission editSub) {
+                                        MultiValueEditSubmission editSub) {
         Map<String, List<Literal>> existingLiterals = editConfig.getLiteralsInScope();
         List<Literal> existingStartYear = existingLiterals.get(startValueName);
         List<Literal> existingEndYear = existingLiterals.get(endValueName);
@@ -64,8 +63,10 @@ public class DateTimeIntervalValidationVTwo implements N3ValidatorVTwo {
         List<Literal> formStartYear = literalsFromForm.get(startValueName);
         List<Literal> formEndYear = literalsFromForm.get(endValueName);
 
-        VitroVocabulary.Precision startPrecision = getPrecision(startPrecisionName, editConfig, editSub);
-        VitroVocabulary.Precision endPrecision = getPrecision(endPrecisionName, editConfig, editSub);
+        VitroVocabulary.Precision startPrecision =
+            getPrecision(startPrecisionName, editConfig, editSub);
+        VitroVocabulary.Precision endPrecision =
+            getPrecision(endPrecisionName, editConfig, editSub);
 
         Map<String, String> errors = new HashMap<String, String>();
 
@@ -75,101 +76,119 @@ public class DateTimeIntervalValidationVTwo implements N3ValidatorVTwo {
 //            return errors;
 //        }
         // We need to ensure that the user has entered a start year or end year -- tlw72
-        if ( templateName != null && templateName.equals("dateTimeIntervalForm.ftl")) {
-            if ( literalListIsNull(formStartYear) && literalListIsNull(formEndYear) ) {
-                errors.put(startFieldName, "Date/time intervals must begin with a year. Please enter a start year, an end year or both.");
+        if (templateName != null && templateName.equals("dateTimeIntervalForm.ftl")) {
+            if (literalListIsNull(formStartYear) && literalListIsNull(formEndYear)) {
+                errors.put(startFieldName,
+                    "Date/time intervals must begin with a year. Please enter a start year, an end year or both.");
                 return errors;
             }
         }
         //Assuming form start year and form end year are working in conjunction with multiple values
         int index;
         if (!literalListIsNull(formStartYear) && !literalListIsNull(formEndYear)) {
-        	int numberStartYears = formStartYear.size();
-        	int numberEndYears = formEndYear.size();
-        	if(numberStartYears > 1 && numberEndYears > 1) {
-        		errors.put(startFieldName, "DateTimeIntervalValidationVTwo does not support multiple start years or end years");
-        		return errors;
-        	}
+            int numberStartYears = formStartYear.size();
+            int numberEndYears = formEndYear.size();
+            if (numberStartYears > 1 && numberEndYears > 1) {
+                errors.put(startFieldName,
+                    "DateTimeIntervalValidationVTwo does not support multiple start years or end years");
+                return errors;
+            }
 
-        	if(numberStartYears > 0 && numberEndYears > 0) {
-        		errors.putAll(checkDateLiterals(formStartYear.get(0), formEndYear.get(0), startPrecision, endPrecision));
-        	}
+            if (numberStartYears > 0 && numberEndYears > 0) {
+                errors.putAll(
+                    checkDateLiterals(formStartYear.get(0), formEndYear.get(0), startPrecision,
+                        endPrecision));
+            }
         } else if (!literalListIsNull(formStartYear) && !literalListIsNull(existingEndYear)) {
-        	int numberStartYears = formStartYear.size();
-        	int numberEndYears = existingEndYear.size();
-        	if(numberStartYears > 1 && numberEndYears > 1) {
-        		errors.put(startFieldName, "DateTimeIntervalValidationVTwo does not support multiple start years or end years");
-        		return errors;
-        	}
+            int numberStartYears = formStartYear.size();
+            int numberEndYears = existingEndYear.size();
+            if (numberStartYears > 1 && numberEndYears > 1) {
+                errors.put(startFieldName,
+                    "DateTimeIntervalValidationVTwo does not support multiple start years or end years");
+                return errors;
+            }
 
-        	if(numberStartYears > 0 && numberEndYears > 0) {
-        		errors.putAll(checkDateLiterals(formStartYear.get(0), existingEndYear.get(0), startPrecision, endPrecision));
-        	}
-        } else if (!literalListIsNull(existingStartYear)  && !literalListIsNull(formEndYear)) {
+            if (numberStartYears > 0 && numberEndYears > 0) {
+                errors.putAll(
+                    checkDateLiterals(formStartYear.get(0), existingEndYear.get(0), startPrecision,
+                        endPrecision));
+            }
+        } else if (!literalListIsNull(existingStartYear) && !literalListIsNull(formEndYear)) {
 
-        	int numberStartYears = existingStartYear.size();
-        	int numberEndYears = formEndYear.size();
-        	if(numberStartYears > 1 && numberEndYears > 1) {
-        		errors.put(startFieldName, "DateTimeIntervalValidationVTwo does not support multiple start years or end years");
-        		return errors;
-        	}
+            int numberStartYears = existingStartYear.size();
+            int numberEndYears = formEndYear.size();
+            if (numberStartYears > 1 && numberEndYears > 1) {
+                errors.put(startFieldName,
+                    "DateTimeIntervalValidationVTwo does not support multiple start years or end years");
+                return errors;
+            }
 
-        	if(numberStartYears > 0 && numberEndYears > 0) {
-        		errors.putAll(checkDateLiterals(existingStartYear.get(0), formEndYear.get(0), startPrecision, endPrecision));
-        	}
+            if (numberStartYears > 0 && numberEndYears > 0) {
+                errors.putAll(
+                    checkDateLiterals(existingStartYear.get(0), formEndYear.get(0), startPrecision,
+                        endPrecision));
+            }
         } else if (!literalListIsNull(existingStartYear) && !literalListIsNull(existingEndYear)) {
-        	int numberStartYears = existingStartYear.size();
-        	int numberEndYears = existingEndYear.size();
-        	if(numberStartYears > 1 && numberEndYears > 1) {
-        		errors.put(startFieldName, "DateTimeIntervalValidationVTwo does not support multiple start years or end years");
-        		return errors;
-        	}
+            int numberStartYears = existingStartYear.size();
+            int numberEndYears = existingEndYear.size();
+            if (numberStartYears > 1 && numberEndYears > 1) {
+                errors.put(startFieldName,
+                    "DateTimeIntervalValidationVTwo does not support multiple start years or end years");
+                return errors;
+            }
 
-        	if(numberStartYears > 0 && numberEndYears > 0) {
-        		errors.putAll(checkDateLiterals(existingStartYear.get(0), existingEndYear.get(0), startPrecision, endPrecision));
-        	}
+            if (numberStartYears > 0 && numberEndYears > 0) {
+                errors.putAll(checkDateLiterals(existingStartYear.get(0), existingEndYear.get(0),
+                    startPrecision, endPrecision));
+            }
         }
 
-        if (errors.size() != 0)
+        if (errors.size() != 0) {
             return errors;
-        else
+        } else {
             return null;
+        }
     }
 
     private Precision getPrecision(String precisionVarName,
-            EditConfigurationVTwo editConfig, MultiValueEditSubmission editSub) {
-        if( editSub != null
-                && editSub.getUrisFromForm() != null
-                && editSub.getUrisFromForm().containsKey(precisionVarName)){
+                                   EditConfigurationVTwo editConfig,
+                                   MultiValueEditSubmission editSub) {
+        if (editSub != null
+            && editSub.getUrisFromForm() != null
+            && editSub.getUrisFromForm().containsKey(precisionVarName)) {
             List<String> precisionStr = editSub.getUrisFromForm().get(precisionVarName);
             //TODO: Check if we need to handle multiple precision strings and what to do then
             //Currently checks first precision str and then returns response
-            if(precisionStr.size() > 0) {
-            	String precisionString = precisionStr.get(0);
-            	VitroVocabulary.Precision precision = DateTimeWithPrecisionVTwo.toPrecision( precisionString );
-                if( precision == null )
+            if (precisionStr.size() > 0) {
+                String precisionString = precisionStr.get(0);
+                VitroVocabulary.Precision precision =
+                    DateTimeWithPrecisionVTwo.toPrecision(precisionString);
+                if (precision == null) {
                     log.debug("cannot convert " + precisionStr + " to a precision");
-                else
+                } else {
                     return precision;
+                }
             } else {
-            	log.error("No precision strings returned");
+                log.error("No precision strings returned");
             }
 
-        }else if( editConfig != null
-                && editConfig.getUrisInScope() != null
-                && editConfig.getUrisInScope().containsKey(precisionVarName)){
+        } else if (editConfig != null
+            && editConfig.getUrisInScope() != null
+            && editConfig.getUrisInScope().containsKey(precisionVarName)) {
             List<String> precisionStr = editConfig.getUrisInScope().get(precisionVarName);
             //TODO: Check if we need to handle multiple precision strings and what to do then
             //Currently checks first precision str and then returns response
-            if(precisionStr.size() > 0) {
-            	String precisionString = precisionStr.get(0);
-            	VitroVocabulary.Precision precision = DateTimeWithPrecisionVTwo.toPrecision( precisionString );
-                if( precision == null )
+            if (precisionStr.size() > 0) {
+                String precisionString = precisionStr.get(0);
+                VitroVocabulary.Precision precision =
+                    DateTimeWithPrecisionVTwo.toPrecision(precisionString);
+                if (precision == null) {
                     log.warn("cannot convert " + precisionString + " to a precision");
-                else
+                } else {
                     return precision;
+                }
             } else {
-            	log.error("No precision strings returned");
+                log.error("No precision strings returned");
             }
 
         }
@@ -178,35 +197,35 @@ public class DateTimeIntervalValidationVTwo implements N3ValidatorVTwo {
     }
 
     private Map<String, String> checkDateLiterals(
-            Literal startLit, Literal endLit,
-            VitroVocabulary.Precision startPrecision, VitroVocabulary.Precision endPrecision) {
+        Literal startLit, Literal endLit,
+        VitroVocabulary.Precision startPrecision, VitroVocabulary.Precision endPrecision) {
         Map<String, String> errors = new HashMap<String, String>();
 
-        if( endPrecision == null ){
+        if (endPrecision == null) {
             //there is no end date, nothing to check
             return errors;
         }
 
-        try{
-             XSDDateTime startDate = (XSDDateTime)startLit.getValue();
-             XSDDateTime endDate = (XSDDateTime)endLit.getValue();
-             if( startDate != null && endDate!= null ){
-                 Calendar startCal = startDate.asCalendar();
-                 Calendar endCal = endDate.asCalendar();
+        try {
+            XSDDateTime startDate = (XSDDateTime) startLit.getValue();
+            XSDDateTime endDate = (XSDDateTime) endLit.getValue();
+            if (startDate != null && endDate != null) {
+                Calendar startCal = startDate.asCalendar();
+                Calendar endCal = endDate.asCalendar();
 
-                 if( endCal != null ){
-                     if( !startCal.before( endCal ) ){
-                         if( startPrecision == VitroVocabulary.Precision.YEAR
-                             && endPrecision == VitroVocabulary.Precision.YEAR ){
-                             errors.putAll( checkYears(startCal,endCal));
-                         }else{
-                             errors.put(startFieldName, "Start must be before end");
-                             errors.put(endFieldName, "End must be after start");
-                         }
-                     }
-                 }
-             }
-        }catch(ClassCastException cce){
+                if (endCal != null) {
+                    if (!startCal.before(endCal)) {
+                        if (startPrecision == VitroVocabulary.Precision.YEAR
+                            && endPrecision == VitroVocabulary.Precision.YEAR) {
+                            errors.putAll(checkYears(startCal, endCal));
+                        } else {
+                            errors.put(startFieldName, "Start must be before end");
+                            errors.put(endFieldName, "End must be after start");
+                        }
+                    }
+                }
+            }
+        } catch (ClassCastException cce) {
             errors.put(startFieldName, "could not format start or end date");
             errors.put(endFieldName, "could not format start or end date");
             log.debug("could not format dates " + cce);
@@ -216,11 +235,11 @@ public class DateTimeIntervalValidationVTwo implements N3ValidatorVTwo {
     }
 
     private Map<? extends String, ? extends String> checkYears(
-            Calendar startCal, Calendar endCal) {
+        Calendar startCal, Calendar endCal) {
 
         Map<String, String> errors = new HashMap<String, String>();
 
-        if( ! (endCal.get(Calendar.YEAR) >=  startCal.get(Calendar.YEAR) )){
+        if (!(endCal.get(Calendar.YEAR) >= startCal.get(Calendar.YEAR))) {
             errors.put(startFieldName, "Start must be before end");
             errors.put(endFieldName, "End must be after start");
         }
@@ -230,13 +249,15 @@ public class DateTimeIntervalValidationVTwo implements N3ValidatorVTwo {
 
     //MEthod that checks whether list of literals is null or contains only null
     private boolean literalListIsNull(List<Literal> literalList) {
-    	if(literalList == null)
-    		return true;
-    	boolean allNulls = true;
-    	for(Literal l: literalList) {
-    		if(l != null)
-    			allNulls = false;
-    	}
-    	return allNulls;
+        if (literalList == null) {
+            return true;
+        }
+        boolean allNulls = true;
+        for (Literal l : literalList) {
+            if (l != null) {
+                allNulls = false;
+            }
+        }
+        return allNulls;
     }
 }

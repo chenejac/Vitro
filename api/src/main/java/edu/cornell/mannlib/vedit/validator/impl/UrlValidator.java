@@ -4,29 +4,28 @@ package edu.cornell.mannlib.vedit.validator.impl;
 
 import java.util.Iterator;
 
+import edu.cornell.mannlib.vedit.validator.ValidationObject;
+import edu.cornell.mannlib.vedit.validator.Validator;
 import org.apache.jena.iri.IRI;
 import org.apache.jena.iri.IRIFactory;
 import org.apache.jena.iri.Violation;
 
-import edu.cornell.mannlib.vedit.validator.ValidationObject;
-import edu.cornell.mannlib.vedit.validator.Validator;
-
 public class UrlValidator implements Validator {
 
-    public ValidationObject validate (Object obj) throws IllegalArgumentException {
+    public ValidationObject validate(Object obj) throws IllegalArgumentException {
 
         ValidationObject vo = new ValidationObject();
 
-        if (!(obj instanceof String)){
+        if (!(obj instanceof String)) {
             throw new IllegalArgumentException("Expected instance of String");
         }
 
         IRIFactory factory = IRIFactory.jenaImplementation();
         IRI iri = factory.create((String) obj);
-        if (iri.hasViolation(false) ) {
+        if (iri.hasViolation(false)) {
             StringBuilder errorStr = new StringBuilder();
             Iterator<Violation> violIt = iri.violations(false);
-            while(violIt.hasNext()) {
+            while (violIt.hasNext()) {
                 errorStr.append(violIt.next().getShortMessage()).append("  ");
             }
             vo.setValid(false);

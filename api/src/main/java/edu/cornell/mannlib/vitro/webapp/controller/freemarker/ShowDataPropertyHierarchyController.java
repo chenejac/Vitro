@@ -2,15 +2,13 @@
 
 package edu.cornell.mannlib.vitro.webapp.controller.freemarker;
 
+import javax.servlet.annotation.WebServlet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vitro.webapp.auth.permissions.SimplePermission;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.AuthorizationRequest;
@@ -27,13 +25,15 @@ import edu.cornell.mannlib.vitro.webapp.dao.PropertyGroupDao;
 import edu.cornell.mannlib.vitro.webapp.dao.VClassDao;
 import edu.cornell.mannlib.vitro.webapp.utils.json.JacksonUtils;
 import edu.cornell.mannlib.vitro.webapp.web.URLEncoder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import javax.servlet.annotation.WebServlet;
-
-@WebServlet(name = "ShowDataPropertyHierarchyController", urlPatterns = {"/showDataPropertyHierarchy"} )
+@WebServlet(name = "ShowDataPropertyHierarchyController", urlPatterns = {
+    "/showDataPropertyHierarchy"})
 public class ShowDataPropertyHierarchyController extends FreemarkerHttpServlet {
 
-	private static final Log log = LogFactory.getLog(ShowDataPropertyHierarchyController.class.getName());
+    private static final Log log =
+        LogFactory.getLog(ShowDataPropertyHierarchyController.class.getName());
 
     private static final String TEMPLATE_NAME = "siteAdmin-objectPropHierarchy.ftl";
     private int MAXDEPTH = 5;
@@ -48,9 +48,9 @@ public class ShowDataPropertyHierarchyController extends FreemarkerHttpServlet {
     private int previous_posn = 0;
 
     @Override
-	protected AuthorizationRequest requiredActions(VitroRequest vreq) {
-		return SimplePermission.EDIT_ONTOLOGY.ACTION;
-	}
+    protected AuthorizationRequest requiredActions(VitroRequest vreq) {
+        return SimplePermission.EDIT_ONTOLOGY.ACTION;
+    }
 
     @Override
     protected ResponseValues processRequest(VitroRequest vreq) {
@@ -60,18 +60,16 @@ public class ShowDataPropertyHierarchyController extends FreemarkerHttpServlet {
 
             String displayOption = "";
 
-            if ( vreq.getParameter("displayOption") != null ) {
+            if (vreq.getParameter("displayOption") != null) {
                 displayOption = vreq.getParameter("displayOption");
-            }
-            else {
+            } else {
                 displayOption = "hierarchy";
             }
             body.put("displayOption", displayOption);
 
-            if ( displayOption.equals("all") ) {
+            if (displayOption.equals("all")) {
                 body.put("pageTitle", "All Data Properties");
-            }
-            else {
+            } else {
                 body.put("pageTitle", "Data Property Hierarchy");
             }
 
@@ -92,18 +90,18 @@ public class ShowDataPropertyHierarchyController extends FreemarkerHttpServlet {
             List<DataProperty> roots = null;
 
             if (startPropertyUri != null) {
-        	    roots = new LinkedList<DataProperty>();
-        	    roots.add(dpDao.getDataPropertyByURI(startPropertyUri));
+                roots = new LinkedList<DataProperty>();
+                roots.add(dpDao.getDataPropertyByURI(startPropertyUri));
             } else {
                 roots = dpDao.getRootDataProperties();
-                if (roots!=null){
+                if (roots != null) {
                     sortForPickList(roots, vreq);
                 }
             }
 
             int counter = 0;
 
-            if (roots!=null) {
+            if (roots != null) {
                 Iterator<DataProperty> rootIt = roots.iterator();
                 if (!rootIt.hasNext()) {
                     DataProperty dp = new DataProperty();
@@ -115,13 +113,15 @@ public class ShowDataPropertyHierarchyController extends FreemarkerHttpServlet {
                 } else {
                     while (rootIt.hasNext()) {
                         DataProperty root = rootIt.next();
-                        if ( (ontologyUri==null) || ( (ontologyUri!=null) && (root.getNamespace()!=null) && (ontologyUri.equals(root.getNamespace())) ) ) {
-                    	    json.append(addChildren(root, 0, ontologyUri, counter, vreq));
-                    	    counter += 1;
-                	    }
+                        if ((ontologyUri == null) ||
+                            ((ontologyUri != null) && (root.getNamespace() != null) &&
+                                (ontologyUri.equals(root.getNamespace())))) {
+                            json.append(addChildren(root, 0, ontologyUri, counter, vreq));
+                            counter += 1;
+                        }
                     }
                     int length = json.length();
-                    if ( length > 0 ) {
+                    if (length > 0) {
                         json.append(" }");
                     }
                 }
@@ -136,16 +136,16 @@ public class ShowDataPropertyHierarchyController extends FreemarkerHttpServlet {
     }
 
     private String addChildren(DataProperty parent, int position, String ontologyUri,
-            int counter, VitroRequest vreq) {
-    	if (parent == null) {
-    		return "";
-    	}
+                               int counter, VitroRequest vreq) {
+        if (parent == null) {
+            return "";
+        }
         String details = addDataPropertyDataToResultsList(parent, position, ontologyUri, counter);
         int length = details.length();
         StringBuilder leaves = new StringBuilder();
         leaves.append(details);
         List<String> childURIstrs = dpDao.getSubPropertyURIs(parent.getURI());
-        if ( (childURIstrs.size() > 0) && (position < MAXDEPTH) ) {
+        if ((childURIstrs.size() > 0) && (position < MAXDEPTH)) {
             List<DataProperty> childProps = new ArrayList<DataProperty>();
             for (String URIstr : childURIstrs) {
                 DataProperty child = dpDao.getDataPropertyByURI(URIstr);
@@ -157,10 +157,9 @@ public class ShowDataPropertyHierarchyController extends FreemarkerHttpServlet {
                 DataProperty child = childPropIt.next();
                 leaves.append(addChildren(child, position + 1, ontologyUri, counter, vreq));
                 if (!childPropIt.hasNext()) {
-                    if ( ontologyUri == null ) {
+                    if (ontologyUri == null) {
                         leaves.append(" }] ");
-                    }
-                    else if ( ontologyUri != null && length > 0 ) {
+                    } else if (ontologyUri != null && length > 0) {
                         // need this for when we show the classes associated with an ontology
                         String ending = leaves.substring(leaves.length() - 2, leaves.length());
                         switch (ending) {
@@ -177,89 +176,91 @@ public class ShowDataPropertyHierarchyController extends FreemarkerHttpServlet {
                     }
                 }
             }
-        }
-        else {
-            if ( ontologyUri == null ) {
-                 leaves.append("] ");
-            }
-            else if ( ontologyUri != null && length > 0 ) {
-                 leaves.append("] ");
+        } else {
+            if (ontologyUri == null) {
+                leaves.append("] ");
+            } else if (ontologyUri != null && length > 0) {
+                leaves.append("] ");
             }
         }
         return leaves.toString();
     }
 
-    private String addDataPropertyDataToResultsList(DataProperty dp, int position, String ontologyUri, int counter) {
+    private String addDataPropertyDataToResultsList(DataProperty dp, int position,
+                                                    String ontologyUri, int counter) {
         String tempString = "";
         if (dp == null) {
-        	return tempString;
+            return tempString;
         }
-        if (ontologyUri == null || ( (dp.getNamespace()!=null) && (dp.getNamespace().equals(ontologyUri)) ) ) {
-            if ( counter < 1 && position < 1 ) {
-                 tempString += "{ \"name\": ";
-            }
-            else if ( position == previous_posn ) {
-                        tempString += "}, { \"name\": ";
-            }
-            else if ( position > previous_posn ) {
+        if (ontologyUri == null ||
+            ((dp.getNamespace() != null) && (dp.getNamespace().equals(ontologyUri)))) {
+            if (counter < 1 && position < 1) {
+                tempString += "{ \"name\": ";
+            } else if (position == previous_posn) {
+                tempString += "}, { \"name\": ";
+            } else if (position > previous_posn) {
                 tempString += " { \"name\": ";
-            }
-            else if ( position < previous_posn ) {
+            } else if (position < previous_posn) {
                 tempString += "}, { \"name\": ";
             }
 
             String nameStr = dp.getPickListName() == null
-                    ? dp.getName() == null
-                            ? dp.getURI() == null
-                                    ? "(no name)" : dp.getURI() : dp.getName() : dp.getPickListName();
+                ? dp.getName() == null
+                ? dp.getURI() == null
+                ? "(no name)" : dp.getURI() : dp.getName() : dp.getPickListName();
 
             tempString += JacksonUtils.quote(
-                    "<a href='datapropEdit?uri=" + URLEncoder.encode(
-                            dp.getURI()) + "'>" + nameStr + "</a>") + ", ";
+                "<a href='datapropEdit?uri=" + URLEncoder.encode(
+                    dp.getURI()) + "'>" + nameStr + "</a>") + ", ";
 
             tempString += "\"data\": { \"internalName\": " + JacksonUtils.quote(
-                    dp.getPickListName()) + ", ";
+                dp.getPickListName()) + ", ";
 
             DataProperty dpLangNeut = dpDaoLangNeut.getDataPropertyByURI(dp.getURI());
-            if(dpLangNeut == null) {
+            if (dpLangNeut == null) {
                 dpLangNeut = dp;
             }
-            String domainStr = getVClassNameFromURI(dpLangNeut.getDomainVClassURI(), vcDao, vcDaoLangNeut);
+            String domainStr =
+                getVClassNameFromURI(dpLangNeut.getDomainVClassURI(), vcDao, vcDaoLangNeut);
 
             try {
-            	tempString += "\"domainVClass\": " + JacksonUtils.quote(domainStr) + ", " ;
+                tempString += "\"domainVClass\": " + JacksonUtils.quote(domainStr) + ", ";
             } catch (NullPointerException e) {
-            	tempString += "\"domainVClass\": \"\",";
+                tempString += "\"domainVClass\": \"\",";
             }
             try {
-            	Datatype rangeDatatype = dDao.getDatatypeByURI(dp.getRangeDatatypeURI());
-                String rangeDatatypeStr = (rangeDatatype==null)?dp.getRangeDatatypeURI():rangeDatatype.getName();
-            	tempString += "\"rangeVClass\": " + JacksonUtils.quote((rangeDatatypeStr != null) ? rangeDatatypeStr : "") + ", " ;
+                Datatype rangeDatatype = dDao.getDatatypeByURI(dp.getRangeDatatypeURI());
+                String rangeDatatypeStr =
+                    (rangeDatatype == null) ? dp.getRangeDatatypeURI() : rangeDatatype.getName();
+                tempString += "\"rangeVClass\": " +
+                    JacksonUtils.quote((rangeDatatypeStr != null) ? rangeDatatypeStr : "") + ", ";
             } catch (NullPointerException e) {
-            	tempString += "\"rangeVClass\": \"\",";
+                tempString += "\"rangeVClass\": \"\",";
             }
             if (dp.getGroupURI() != null) {
                 PropertyGroup pGroup = pgDao.getGroupByURI(dp.getGroupURI());
-                tempString += "\"group\": " + JacksonUtils.quote((pGroup == null) ? "unknown group" : pGroup.getName());
+                tempString += "\"group\": " +
+                    JacksonUtils.quote((pGroup == null) ? "unknown group" : pGroup.getName());
             } else {
                 tempString += "\"group\": \"unspecified\"";
             }
             tempString += "}, \"children\": [";
 
             previous_posn = position;
-       }
+        }
         return tempString;
     }
 
-    private String getVClassNameFromURI(String vclassURI, VClassDao vcDao, VClassDao vcDaoLangNeut) {
-        if(vclassURI == null) {
+    private String getVClassNameFromURI(String vclassURI, VClassDao vcDao,
+                                        VClassDao vcDaoLangNeut) {
+        if (vclassURI == null) {
             return "";
         }
         VClass vclass = vcDaoLangNeut.getVClassByURI(vclassURI);
-        if(vclass == null) {
+        if (vclass == null) {
             return "";
         }
-        if(vclass.isAnonymous()) {
+        if (vclass.isAnonymous()) {
             return vclass.getPickListName();
         } else {
             VClass vclassWLang = vcDao.getVClassByURI(vclassURI);

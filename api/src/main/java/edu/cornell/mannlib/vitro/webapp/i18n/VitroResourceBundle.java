@@ -8,28 +8,27 @@ import java.util.List;
 /**
  * If you use 3 tier architecture with custom prefix for properties files
  * you can add it with {@link #addAppPrefix(String)}
- * 
  */
-public class VitroResourceBundle  {
-	
-	private static final List<String> appPrefixes = new ArrayList<>();
+public class VitroResourceBundle {
 
-	static {
-		addAppPrefix("vitro");
-	}
+    private static final List<String> appPrefixes = new ArrayList<>();
 
-	public static List<String> getAppPrefixes(){
-		return appPrefixes;
-	}
-	
-	public static void addAppPrefix(String prefix) {
-		if (!prefix.endsWith("-") && !prefix.endsWith("_")) {
-			prefix = prefix + "_";
-		}
+    static {
+        addAppPrefix("vitro");
+    }
 
-		if (!appPrefixes.contains(prefix)) {
-			appPrefixes.add(prefix);
-		}
-	}
+    public static List<String> getAppPrefixes() {
+        return appPrefixes;
+    }
+
+    public static void addAppPrefix(String prefix) {
+        if (!prefix.endsWith("-") && !prefix.endsWith("_")) {
+            prefix = prefix + "_";
+        }
+
+        if (!appPrefixes.contains(prefix)) {
+            appPrefixes.add(prefix);
+        }
+    }
 
 }

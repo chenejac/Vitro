@@ -6,9 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.cornell.mannlib.vedit.beans.Option;
-import edu.cornell.mannlib.vitro.webapp.beans.ResourceBean;
 import edu.cornell.mannlib.vitro.webapp.beans.BaseResourceBean;
-
+import edu.cornell.mannlib.vitro.webapp.beans.ResourceBean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -20,16 +19,16 @@ public class RoleLevelOptionsSetup {
         try {
             BaseResourceBean.RoleLevel currentLevel = b.getHiddenFromDisplayBelowRoleLevel();
             BaseResourceBean.RoleLevel roles[] = BaseResourceBean.RoleLevel.values();
-            boolean someLevelSet=false;
+            boolean someLevelSet = false;
             Option publicOption = null;
             for (BaseResourceBean.RoleLevel level : roles) {
-                Option option = new Option (level.getURI(),level.getDisplayLabel(),false);
-                if (level==BaseResourceBean.RoleLevel.PUBLIC) {
+                Option option = new Option(level.getURI(), level.getDisplayLabel(), false);
+                if (level == BaseResourceBean.RoleLevel.PUBLIC) {
                     publicOption = option;
                 }
-                if (level==currentLevel) {
+                if (level == currentLevel) {
                     option.setSelected(true);
-                    someLevelSet=true;
+                    someLevelSet = true;
                 }
                 hiddenFromDisplayList.add(option);
             }
@@ -47,16 +46,16 @@ public class RoleLevelOptionsSetup {
         try {
             BaseResourceBean.RoleLevel currentLevel = b.getProhibitedFromUpdateBelowRoleLevel();
             BaseResourceBean.RoleLevel roles[] = BaseResourceBean.RoleLevel.values();
-            boolean someLevelSet=false;
+            boolean someLevelSet = false;
             Option publicOption = null;
             for (BaseResourceBean.RoleLevel level : roles) {
-                Option option = new Option (level.getURI(),level.getUpdateLabel(),false);
-                if (level==BaseResourceBean.RoleLevel.PUBLIC) {
+                Option option = new Option(level.getURI(), level.getUpdateLabel(), false);
+                if (level == BaseResourceBean.RoleLevel.PUBLIC) {
                     publicOption = option;
                 }
-                if (level==currentLevel) {
+                if (level == currentLevel) {
                     option.setSelected(true);
-                    someLevelSet=true;
+                    someLevelSet = true;
                 }
                 prohibitedFromUpdateList.add(option);
             }
@@ -74,16 +73,16 @@ public class RoleLevelOptionsSetup {
         try {
             BaseResourceBean.RoleLevel currentLevel = b.getHiddenFromPublishBelowRoleLevel();
             BaseResourceBean.RoleLevel roles[] = BaseResourceBean.RoleLevel.values();
-            boolean someLevelSet=false;
+            boolean someLevelSet = false;
             Option publicOption = null;
             for (BaseResourceBean.RoleLevel level : roles) {
-                Option option = new Option (level.getURI(),level.getDisplayLabel(),false);
-                if (level==BaseResourceBean.RoleLevel.PUBLIC) {
+                Option option = new Option(level.getURI(), level.getDisplayLabel(), false);
+                if (level == BaseResourceBean.RoleLevel.PUBLIC) {
                     publicOption = option;
                 }
-                if (level==currentLevel) {
+                if (level == currentLevel) {
                     option.setSelected(true);
-                    someLevelSet=true;
+                    someLevelSet = true;
                 }
                 hiddenFromPublishList.add(option);
             }

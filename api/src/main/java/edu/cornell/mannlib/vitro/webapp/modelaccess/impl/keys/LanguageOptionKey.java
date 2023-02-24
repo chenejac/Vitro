@@ -9,13 +9,13 @@ import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess.LanguageOption;
  * result.
  */
 public final class LanguageOptionKey extends ModelAccessKey {
-	public LanguageOptionKey(LanguageOption... options) {
-		super(options);
-	}
+    public LanguageOptionKey(LanguageOption... options) {
+        super(options);
+    }
 
-	@Override
-	public LanguageOption getLanguageOption() {
-		return super.getLanguageOption();
-	}
+    @Override
+    public LanguageOption getLanguageOption() {
+        return super.getLanguageOption();
+    }
 
 }

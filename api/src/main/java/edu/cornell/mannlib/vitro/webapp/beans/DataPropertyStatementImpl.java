@@ -4,10 +4,8 @@ package edu.cornell.mannlib.vitro.webapp.beans;
 
 /**
  * a class representing an particular instance of a data property
- *
  */
-public class DataPropertyStatementImpl implements DataPropertyStatement
-{
+public class DataPropertyStatementImpl implements DataPropertyStatement {
     private Individual individual = null;
     private String individualURI = null;
     private String data = null;
@@ -15,16 +13,16 @@ public class DataPropertyStatementImpl implements DataPropertyStatement
     private String datatypeURI = null;
     private String language = null;
 
-    public DataPropertyStatementImpl(){
+    public DataPropertyStatementImpl() {
     }
 
-    public DataPropertyStatementImpl(Individual individual){
-        if( individual != null ){
+    public DataPropertyStatementImpl(Individual individual) {
+        if (individual != null) {
             this.individualURI = individual.getURI();
         }
     }
 
-    public DataPropertyStatementImpl(String individualUri, String propertyUri, String data){
+    public DataPropertyStatementImpl(String individualUri, String propertyUri, String data) {
         individualURI = individualUri;
         datapropURI = propertyUri;
         this.data = data;
@@ -78,15 +76,16 @@ public class DataPropertyStatementImpl implements DataPropertyStatement
         this.language = language;
     }
 
-    public String getString(){
+    public String getString() {
         String out = "instance of dataprop: " + datapropURI;
 
-        if( data == null )
+        if (data == null) {
             out = out + " data is null";
-        else if( data.length() > 20 )
-            out = out + " data (truncated): '" + data.substring(0,19) + "'...";
-        else
-            out = out + " data: '" + data ;
+        } else if (data.length() > 20) {
+            out = out + " data (truncated): '" + data.substring(0, 19) + "'...";
+        } else {
+            out = out + " data: '" + data;
+        }
         return out;
     }
 }

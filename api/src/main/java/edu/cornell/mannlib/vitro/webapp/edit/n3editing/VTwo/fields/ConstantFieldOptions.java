@@ -16,35 +16,40 @@ public class ConstantFieldOptions implements FieldOptions {
 
     List<List<String>> options;
 
-    public ConstantFieldOptions(String ... optionPairs) throws Exception {
+    public ConstantFieldOptions(String... optionPairs) throws Exception {
         super();
 
-        if (optionPairs==null)
+        if (optionPairs == null) {
             throw new Exception("Must specify option pairs in ConstantFieldOptions constructor");
+        }
 
-        if( optionPairs.length % 2 != 0)
+        if (optionPairs.length % 2 != 0) {
             throw new Exception("options must be in pairs of (value,lable)");
+        }
 
-        options = new ArrayList<List<String>>( optionPairs.length / 2 );
-        for(int i=0; i< optionPairs.length ; i=i+2){
+        options = new ArrayList<List<String>>(optionPairs.length / 2);
+        for (int i = 0; i < optionPairs.length; i = i + 2) {
             List<String> pair = new ArrayList<String>(2);
             pair.add(optionPairs[i]);
-            pair.add(optionPairs[i+1]);
-            options.add( pair );
+            pair.add(optionPairs[i + 1]);
+            options.add(pair);
         }
     }
 
 
     public ConstantFieldOptions(String fieldName2,
-            List<List<String>> optionPairs) throws Exception {
+                                List<List<String>> optionPairs) throws Exception {
 
-        for(List<String> literalPair: optionPairs ){
-            if( literalPair == null)
+        for (List<String> literalPair : optionPairs) {
+            if (literalPair == null) {
                 throw new Exception("no items in optionPairs may be null.");
-            if( literalPair.size() == 0 )
+            }
+            if (literalPair.size() == 0) {
                 throw new Exception("no items in optionPairs  may be empty lists.");
-            if( literalPair.size() > 2)
+            }
+            if (literalPair.size() > 2) {
                 throw new Exception("no items in optionPairs  may be lists longer than 2 items.");
+            }
         }
 
         options = optionPairs;
@@ -53,20 +58,20 @@ public class ConstantFieldOptions implements FieldOptions {
 
     @Override
     public Map<String, String> getOptions(
-            EditConfigurationVTwo editConfig,
-            String fieldName,
-            WebappDaoFactory wDaoFact,
-            I18nBundle i18n) throws Exception {
+        EditConfigurationVTwo editConfig,
+        String fieldName,
+        WebappDaoFactory wDaoFact,
+        I18nBundle i18n) throws Exception {
         // originally not auto-sorted but sorted now, and empty values not removed or replaced
-        HashMap <String,String> optionsMap = new LinkedHashMap<String,String>();
+        HashMap<String, String> optionsMap = new LinkedHashMap<String, String>();
 
-        for(Object obj: ((Iterable)options)){
-            List<String> literalPair = (List)obj;
-            String value=(String)literalPair.get(0);
-            if( value != null){  // allow empty string as a value
-                String label=(String)literalPair.get(1);
-                if (label!=null) {
-                    optionsMap.put(value,label);
+        for (Object obj : ((Iterable) options)) {
+            List<String> literalPair = (List) obj;
+            String value = (String) literalPair.get(0);
+            if (value != null) {  // allow empty string as a value
+                String label = (String) literalPair.get(1);
+                if (label != null) {
+                    optionsMap.put(value, label);
                 } else {
                     optionsMap.put(value, value);
                 }
@@ -77,7 +82,7 @@ public class ConstantFieldOptions implements FieldOptions {
     }
 
     public Comparator<String[]> getCustomComparator() {
-    	return null;
+        return null;
     }
 
 }

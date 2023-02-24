@@ -2,9 +2,6 @@
 
 package edu.cornell.mannlib.vitro.webapp.auth.permissions;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import edu.cornell.mannlib.vitro.webapp.auth.policy.bean.PropertyRestrictionBean;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.publish.PublishDataProperty;
@@ -13,113 +10,113 @@ import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.publish.PublishObje
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.publish.PublishObjectPropertyStatement;
 import edu.cornell.mannlib.vitro.webapp.beans.BaseResourceBean.RoleLevel;
 import edu.cornell.mannlib.vitro.webapp.beans.Property;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Is the user authorized to publish properties that are marked as restricted to
  * a certain "Role Level"?
  */
 public class PublishByRolePermission extends Permission {
-	private static final Log log = LogFactory
-			.getLog(PublishByRolePermission.class);
+    public static final String NAMESPACE = "java:"
+        + PublishByRolePermission.class.getName() + "#";
+    private static final Log log = LogFactory
+        .getLog(PublishByRolePermission.class);
+    private final String roleName;
+    private final RoleLevel roleLevel;
 
-	public static final String NAMESPACE = "java:"
-			+ PublishByRolePermission.class.getName() + "#";
+    public PublishByRolePermission(String roleName, RoleLevel roleLevel) {
+        super(NAMESPACE + roleName);
 
-	private final String roleName;
-	private final RoleLevel roleLevel;
+        if (roleName == null) {
+            throw new NullPointerException("role may not be null.");
+        }
+        if (roleLevel == null) {
+            throw new NullPointerException("roleLevel may not be null.");
+        }
 
-	public PublishByRolePermission(String roleName, RoleLevel roleLevel) {
-		super(NAMESPACE + roleName);
+        this.roleName = roleName;
+        this.roleLevel = roleLevel;
+    }
 
-		if (roleName == null) {
-			throw new NullPointerException("role may not be null.");
-		}
-		if (roleLevel == null) {
-			throw new NullPointerException("roleLevel may not be null.");
-		}
+    @Override
+    public boolean isAuthorized(RequestedAction whatToAuth) {
+        boolean result;
 
-		this.roleName = roleName;
-		this.roleLevel = roleLevel;
-	}
+        if (whatToAuth instanceof PublishDataProperty) {
+            result = isAuthorized((PublishDataProperty) whatToAuth);
+        } else if (whatToAuth instanceof PublishObjectProperty) {
+            result = isAuthorized((PublishObjectProperty) whatToAuth);
+        } else if (whatToAuth instanceof PublishDataPropertyStatement) {
+            result = isAuthorized((PublishDataPropertyStatement) whatToAuth);
+        } else if (whatToAuth instanceof PublishObjectPropertyStatement) {
+            result = isAuthorized((PublishObjectPropertyStatement) whatToAuth);
+        } else {
+            result = false;
+        }
 
-	@Override
-	public boolean isAuthorized(RequestedAction whatToAuth) {
-		boolean result;
+        if (result) {
+            log.debug(this + " authorizes " + whatToAuth);
+        } else {
+            log.debug(this + " does not authorize " + whatToAuth);
+        }
 
-		if (whatToAuth instanceof PublishDataProperty) {
-			result = isAuthorized((PublishDataProperty) whatToAuth);
-		} else if (whatToAuth instanceof PublishObjectProperty) {
-			result = isAuthorized((PublishObjectProperty) whatToAuth);
-		} else if (whatToAuth instanceof PublishDataPropertyStatement) {
-			result = isAuthorized((PublishDataPropertyStatement) whatToAuth);
-		} else if (whatToAuth instanceof PublishObjectPropertyStatement) {
-			result = isAuthorized((PublishObjectPropertyStatement) whatToAuth);
-		} else {
-			result = false;
-		}
+        return result;
+    }
 
-		if (result) {
-			log.debug(this + " authorizes " + whatToAuth);
-		} else {
-			log.debug(this + " does not authorize " + whatToAuth);
-		}
+    /**
+     * The user may publish this data property if they are allowed to publish
+     * its predicate.
+     */
+    private boolean isAuthorized(PublishDataProperty action) {
+        String predicateUri = action.getDataProperty().getURI();
+        return canPublishPredicate(new Property(predicateUri));
+    }
 
-		return result;
-	}
+    /**
+     * The user may publish this object property if they are allowed to publish
+     * its predicate.
+     */
+    private boolean isAuthorized(PublishObjectProperty action) {
+        return canPublishPredicate(action.getObjectProperty());
+    }
 
-	/**
-	 * The user may publish this data property if they are allowed to publish
-	 * its predicate.
-	 */
-	private boolean isAuthorized(PublishDataProperty action) {
-		String predicateUri = action.getDataProperty().getURI();
-		return canPublishPredicate(new Property(predicateUri));
-	}
+    /**
+     * The user may publish this data property if they are allowed to publish
+     * its subject and its predicate.
+     */
+    private boolean isAuthorized(PublishDataPropertyStatement action) {
+        String subjectUri = action.getSubjectUri();
+        String predicateUri = action.getPredicateUri();
+        return canPublishResource(subjectUri)
+            && canPublishPredicate(new Property(predicateUri));
+    }
 
-	/**
-	 * The user may publish this object property if they are allowed to publish
-	 * its predicate.
-	 */
-	private boolean isAuthorized(PublishObjectProperty action) {
-		return canPublishPredicate(action.getObjectProperty());
-	}
+    /**
+     * The user may publish this data property if they are allowed to publish
+     * its subject, its predicate, and its object.
+     */
+    private boolean isAuthorized(PublishObjectPropertyStatement action) {
+        String subjectUri = action.getSubjectUri();
+        Property predicate = action.getPredicate();
+        String objectUri = action.getObjectUri();
+        return canPublishResource(subjectUri) && canPublishPredicate(predicate)
+            && canPublishResource(objectUri);
+    }
 
-	/**
-	 * The user may publish this data property if they are allowed to publish
-	 * its subject and its predicate.
-	 */
-	private boolean isAuthorized(PublishDataPropertyStatement action) {
-		String subjectUri = action.getSubjectUri();
-		String predicateUri = action.getPredicateUri();
-		return canPublishResource(subjectUri)
-				&& canPublishPredicate(new Property(predicateUri));
-	}
+    private boolean canPublishResource(String resourceUri) {
+        return PropertyRestrictionBean.getBean().canPublishResource(
+            resourceUri, this.roleLevel);
+    }
 
-	/**
-	 * The user may publish this data property if they are allowed to publish
-	 * its subject, its predicate, and its object.
-	 */
-	private boolean isAuthorized(PublishObjectPropertyStatement action) {
-		String subjectUri = action.getSubjectUri();
-		Property predicate = action.getPredicate();
-		String objectUri = action.getObjectUri();
-		return canPublishResource(subjectUri) && canPublishPredicate(predicate)
-				&& canPublishResource(objectUri);
-	}
+    private boolean canPublishPredicate(Property predicate) {
+        return PropertyRestrictionBean.getBean().canPublishPredicate(predicate,
+            this.roleLevel);
+    }
 
-	private boolean canPublishResource(String resourceUri) {
-		return PropertyRestrictionBean.getBean().canPublishResource(
-				resourceUri, this.roleLevel);
-	}
-
-	private boolean canPublishPredicate(Property predicate) {
-		return PropertyRestrictionBean.getBean().canPublishPredicate(predicate,
-				this.roleLevel);
-	}
-
-	@Override
-	public String toString() {
-		return "PublishByRolePermission['" + roleName + "']";
-	}
+    @Override
+    public String toString() {
+        return "PublishByRolePermission['" + roleName + "']";
+    }
 
 }

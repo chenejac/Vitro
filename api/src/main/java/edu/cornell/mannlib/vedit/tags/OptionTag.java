@@ -2,36 +2,40 @@
 
 package edu.cornell.mannlib.vedit.tags;
 
-import org.apache.commons.collections4.map.ListOrderedMap;
-import org.apache.commons.collections4.OrderedMapIterator;
-import java.util.List;
-import java.util.Iterator;
-import java.io.IOException;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 
 import edu.cornell.mannlib.vedit.beans.Option;
-import edu.cornell.mannlib.vedit.tags.EditTag;
+import org.apache.commons.collections4.OrderedMapIterator;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 public class OptionTag extends EditTag {
     private String name = null;
 
-    public void setName( String name ) {
+    public void setName(String name) {
         this.name = name;
     }
 
     private void outputOptionsMarkup(List optList, JspWriter out) throws IOException {
         Iterator it = optList.iterator();
-        while (it.hasNext()){
+        while (it.hasNext()) {
             Option opt = (Option) it.next();
-            if (opt.getValue() == null)
+            if (opt.getValue() == null) {
                 opt.setValue("");
-            if (opt.getBody() == null)
+            }
+            if (opt.getBody() == null) {
                 opt.setBody("");
-            out.print("<option value=\""+StringEscapeUtils.ESCAPE_HTML4.translate(opt.getValue())+"\"");
-            if (opt.getSelected())
+            }
+            out.print(
+                "<option value=\"" + StringEscapeUtils.ESCAPE_HTML4.translate(opt.getValue()) +
+                    "\"");
+            if (opt.getSelected()) {
                 out.print(" selected=\"selected\"");
+            }
             out.print(">");
             out.print(StringEscapeUtils.ESCAPE_HTML4.translate(opt.getBody()));
             out.print("</option>\n");
@@ -47,21 +51,22 @@ public class OptionTag extends EditTag {
 
             try {
                 optList = (List) getFormObject().getOptionLists().get(name);
-                outputOptionsMarkup(optList,out);
-            } catch (ClassCastException e){
+                outputOptionsMarkup(optList, out);
+            } catch (ClassCastException e) {
                 // maybe it's a ListOrderedMap of optgroups
                 optGroups = (ListOrderedMap) getFormObject().getOptionLists().get(name);
                 OrderedMapIterator ogKey = optGroups.mapIterator();
                 while (ogKey.hasNext()) {
                     String optGroupName = (String) ogKey.next();
-                    out.println("<optgroup label=\""+StringEscapeUtils.ESCAPE_HTML4.translate(optGroupName)+"\">");
-                    outputOptionsMarkup((List)optGroups.get(optGroupName),out);
+                    out.println("<optgroup label=\"" +
+                        StringEscapeUtils.ESCAPE_HTML4.translate(optGroupName) + "\">");
+                    outputOptionsMarkup((List) optGroups.get(optGroupName), out);
                     out.println("</optgroup>");
                 }
             } catch (NullPointerException npe) {
-                System.out.println("OptionTag could not find option list for "+name);
+                System.out.println("OptionTag could not find option list for " + name);
             }
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             throw new JspException(ex.getMessage());
         }

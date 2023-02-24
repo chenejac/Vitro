@@ -16,11 +16,11 @@ public interface RDFServiceFactory {
      * for long periods of time.  RDFService instances returned by this method
      * should be immediately used and closed, not stored in (for example) session
      * or context attributes.
-     *
+     * <p>
      * This method exists to enable performance improvements resulting from a
      * lack of need to handle database connection or other service timeouts and
      * reconnects.
-     *
+     * <p>
      * The results provided by RDFService instances returned by this method must
      * be identical to those provided by instances returned by getRDFService().
      *
@@ -53,7 +53,8 @@ public interface RDFServiceFactory {
      *
      * @param changeListener - the change listener
      */
-    public void registerJenaModelChangedListener(ModelChangedListener changeListener) throws RDFServiceException;
+    public void registerJenaModelChangedListener(ModelChangedListener changeListener)
+        throws RDFServiceException;
 
     /**
      * Unregisters a Jena ModelChangedListener from listening to changes in the RDF store.
@@ -62,6 +63,7 @@ public interface RDFServiceFactory {
      *
      * @param changeListener - the change listener
      */
-    public void unregisterJenaModelChangedListener(ModelChangedListener changeListener) throws RDFServiceException;
+    public void unregisterJenaModelChangedListener(ModelChangedListener changeListener)
+        throws RDFServiceException;
 
 }

@@ -5,20 +5,22 @@ package edu.cornell.mannlib.vitro.webapp.auth.requestedAction.display;
 import edu.cornell.mannlib.vitro.webapp.auth.requestedAction.RequestedAction;
 import edu.cornell.mannlib.vitro.webapp.beans.DataProperty;
 
-/** Should we allow the user to see this DataProperty? */
+/**
+ * Should we allow the user to see this DataProperty?
+ */
 public class DisplayDataProperty extends RequestedAction {
-	private final DataProperty dataProperty;
+    private final DataProperty dataProperty;
 
-	public DisplayDataProperty(DataProperty dataProperty) {
-		this.dataProperty = dataProperty;
-	}
+    public DisplayDataProperty(DataProperty dataProperty) {
+        this.dataProperty = dataProperty;
+    }
 
-	public DataProperty getDataProperty() {
-		return dataProperty;
-	}
+    public DataProperty getDataProperty() {
+        return dataProperty;
+    }
 
-	@Override
-	public String toString() {
-		return "DisplayDataProperty[" + dataProperty + "]";
-	}
+    @Override
+    public String toString() {
+        return "DisplayDataProperty[" + dataProperty + "]";
+    }
 }

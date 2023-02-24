@@ -2,12 +2,13 @@
 
 package edu.cornell.mannlib.vitro.webapp.edit.n3editing.configuration.preprocessors;
 
-import org.apache.jena.rdf.model.Model;
-
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.jena.rdf.model.Model;
 
 public interface ModelChangePreprocessor {
 
-	public abstract void preprocess ( Model retractionsModel, Model additionsModel, HttpServletRequest request );
+    public abstract void preprocess(Model retractionsModel, Model additionsModel,
+                                    HttpServletRequest request);
 
 }

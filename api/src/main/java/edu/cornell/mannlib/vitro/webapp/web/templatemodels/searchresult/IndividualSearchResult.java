@@ -2,22 +2,21 @@
 
 package edu.cornell.mannlib.vitro.webapp.web.templatemodels.searchresult;
 
-import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
-import edu.cornell.mannlib.vitro.webapp.dao.ObjectPropertyStatementDao;
-import edu.cornell.mannlib.vitro.webapp.web.ViewFinder;
-import edu.cornell.mannlib.vitro.webapp.web.templatemodels.BaseTemplateModel;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import edu.cornell.mannlib.vitro.webapp.beans.Individual;
-import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import edu.cornell.mannlib.vitro.webapp.beans.Individual;
+import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
+import edu.cornell.mannlib.vitro.webapp.controller.freemarker.UrlBuilder;
+import edu.cornell.mannlib.vitro.webapp.dao.ObjectPropertyStatementDao;
+import edu.cornell.mannlib.vitro.webapp.web.ViewFinder;
+import edu.cornell.mannlib.vitro.webapp.web.templatemodels.BaseTemplateModel;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class IndividualSearchResult extends BaseTemplateModel {
 
@@ -33,19 +32,17 @@ public class IndividualSearchResult extends BaseTemplateModel {
         this.individual = individual;
     }
 
-    protected String getView(ViewFinder.ClassView view) {
-        ViewFinder vf = new ViewFinder(view);
-        return vf.findClassView(individual, vreq);
-    }
-
-    public static List<IndividualSearchResult> getIndividualTemplateModels(List<Individual> individuals, VitroRequest vreq) {
-        List<IndividualSearchResult> models = new ArrayList<IndividualSearchResult>(individuals.size());
+    public static List<IndividualSearchResult> getIndividualTemplateModels(
+        List<Individual> individuals, VitroRequest vreq) {
+        List<IndividualSearchResult> models =
+            new ArrayList<IndividualSearchResult>(individuals.size());
         for (Individual individual : individuals) {
 //            models.add(new IndividualSearchResult(individual, vreq));
 
             try {
-                Constructor ctor = resultClass.getDeclaredConstructor(Individual.class, VitroRequest.class);
-                models.add((IndividualSearchResult)ctor.newInstance(individual, vreq));
+                Constructor ctor =
+                    resultClass.getDeclaredConstructor(Individual.class, VitroRequest.class);
+                models.add((IndividualSearchResult) ctor.newInstance(individual, vreq));
             } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
                 log.error("Unable to create IndividualSearchResult", e);
             }
@@ -53,7 +50,18 @@ public class IndividualSearchResult extends BaseTemplateModel {
         return models;
     }
 
+    protected static void registerResultClass(Class clazz) {
+        if (IndividualSearchResult.class.isAssignableFrom(clazz)) {
+            resultClass = clazz;
+        }
+    }
+
     /* Template properties */
+
+    protected String getView(ViewFinder.ClassView view) {
+        ViewFinder vf = new ViewFinder(view);
+        return vf.findClassView(individual, vreq);
+    }
 
     public String getUri() {
         return individual.getURI();
@@ -68,18 +76,14 @@ public class IndividualSearchResult extends BaseTemplateModel {
     }
 
     public Collection<String> getMostSpecificTypes() {
-        ObjectPropertyStatementDao opsDao = vreq.getWebappDaoFactory().getObjectPropertyStatementDao();
-        Map<String, String> types = opsDao.getMostSpecificTypesInClassgroupsForIndividual(individual.getURI());
+        ObjectPropertyStatementDao opsDao =
+            vreq.getWebappDaoFactory().getObjectPropertyStatementDao();
+        Map<String, String> types =
+            opsDao.getMostSpecificTypesInClassgroupsForIndividual(individual.getURI());
         return types.values();
     }
 
     public String getSnippet() {
         return individual.getSearchSnippet();
-    }
-
-    protected static void registerResultClass(Class clazz) {
-        if (IndividualSearchResult.class.isAssignableFrom(clazz)) {
-            resultClass = clazz;
-        }
     }
 }

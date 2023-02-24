@@ -4,26 +4,19 @@ package edu.cornell.mannlib.vedit.controller;
 
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess.ReasoningOption.ASSERTIONS_ONLY;
 
+import javax.servlet.http.HttpServletRequest;
 import java.text.Collator;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import edu.cornell.mannlib.vedit.beans.EditProcessObject;
 import edu.cornell.mannlib.vedit.beans.Option;
@@ -31,21 +24,22 @@ import edu.cornell.mannlib.vedit.util.FormUtils;
 import edu.cornell.mannlib.vitro.webapp.controller.Controllers;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroHttpServlet;
 import edu.cornell.mannlib.vitro.webapp.controller.VitroRequest;
-import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
 import edu.cornell.mannlib.vitro.webapp.dao.WebappDaoFactory;
+import edu.cornell.mannlib.vitro.webapp.modelaccess.ModelAccess;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class BaseEditController extends VitroHttpServlet {
 
-	public static final boolean FORCE_NEW = true; // when you know you're starting a new edit process
+    public static final boolean FORCE_NEW = true;
+        // when you know you're starting a new edit process
 
     public static final String JSP_PREFIX = "/templates/edit/specific/";
-
-    protected static DateFormat DISPLAY_DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
     protected static final int BASE_10 = 10;
-
+    protected static final String MULTIPLEXED_PARAMETER_NAME = "multiplexedParam";
     private static final Log log = LogFactory.getLog(BaseEditController.class.getName());
     private static final String DEFAULT_LANDING_PAGE = Controllers.SITE_ADMIN;
-    protected static final String MULTIPLEXED_PARAMETER_NAME = "multiplexedParam";
+    protected static DateFormat DISPLAY_DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
     private final String EPO_HASH_ATTR = "epoHash";
     private final String EPO_KEYLIST_ATTR = "epoKeylist";
     private final int MAX_EPOS = 5;
@@ -55,7 +49,7 @@ public class BaseEditController extends VitroHttpServlet {
       if a previous form submission failed validation, or the edit is a multistage process. */
 
     protected EditProcessObject createEpo(HttpServletRequest request) {
-    	return createEpo(request, false);
+        return createEpo(request, false);
     }
 
     protected EditProcessObject createEpo(HttpServletRequest request, boolean forceNew) {
@@ -64,69 +58,73 @@ public class BaseEditController extends VitroHttpServlet {
         EditProcessObject epo = null;
         HashMap epoHash = getEpoHash(request);
         String existingEpoKey = request.getParameter("_epoKey");
-        if (!forceNew && existingEpoKey != null && epoHash.get(existingEpoKey) != null)  {
+        if (!forceNew && existingEpoKey != null && epoHash.get(existingEpoKey) != null) {
             epo = (EditProcessObject) epoHash.get(existingEpoKey);
             epo.setKey(existingEpoKey);
             epo.setUseRecycledBean(true);
         } else {
             LinkedList epoKeylist = getEpoKeylist(request);
             if (epoHash.size() == MAX_EPOS) {
-            	try {
-            		epoHash.remove(epoKeylist.getFirst());
-            		epoKeylist.removeFirst();
-            	} catch (Exception e) {
-            		// see JIRA issue VITRO-340, "Odd exception from backend editing"
-            		// possible rare concurrency issue here
-            		log.error("Error removing old EPO", e);
-            	}
+                try {
+                    epoHash.remove(epoKeylist.getFirst());
+                    epoKeylist.removeFirst();
+                } catch (Exception e) {
+                    // see JIRA issue VITRO-340, "Odd exception from backend editing"
+                    // possible rare concurrency issue here
+                    log.error("Error removing old EPO", e);
+                }
             }
             Random rand = new Random();
             String epoKey = createEpoKey();
             while (epoHash.get(epoKey) != null) {
-                epoKey+=Integer.toHexString(rand.nextInt());
+                epoKey += Integer.toHexString(rand.nextInt());
             }
             epo = new EditProcessObject();
-            epoHash.put (epoKey,epo);
+            epoHash.put(epoKey, epo);
             epoKeylist.add(epoKey);
             epo.setKey(epoKey);
-            epo.setReferer( (forceNew) ? request.getRequestURL().append('?').append(request.getQueryString()).toString() : request.getHeader("Referer") );
+            epo.setReferer((forceNew) ?
+                request.getRequestURL().append('?').append(request.getQueryString()).toString() :
+                request.getHeader("Referer"));
             epo.setSession(request.getSession());
         }
         return epo;
     }
 
-    private LinkedList getEpoKeylist(HttpServletRequest request){
+    private LinkedList getEpoKeylist(HttpServletRequest request) {
         return (LinkedList) request.getSession().getAttribute(EPO_KEYLIST_ATTR);
     }
 
-    private HashMap getEpoHash(HttpServletRequest request){
+    private HashMap getEpoHash(HttpServletRequest request) {
         HashMap epoHash = (HashMap) request.getSession().getAttribute(EPO_HASH_ATTR);
         if (epoHash == null) {
             epoHash = new HashMap();
-            request.getSession().setAttribute(EPO_HASH_ATTR,epoHash);
+            request.getSession().setAttribute(EPO_HASH_ATTR, epoHash);
             //since we're making a new EPO hash, we should also make a new keylist.
             LinkedList epoKeylist = new LinkedList();
-            request.getSession().setAttribute(EPO_KEYLIST_ATTR,epoKeylist);
+            request.getSession().setAttribute(EPO_KEYLIST_ATTR, epoKeylist);
         }
         return epoHash;
     }
 
-    private String createEpoKey(){
+    private String createEpoKey() {
         return Long.toHexString(cal.getTimeInMillis());
     }
 
-    protected void setRequestAttributes(HttpServletRequest request, EditProcessObject epo){
-    	VitroRequest vreq = new VitroRequest(request);
-        request.setAttribute("epoKey",epo.getKey());
-        request.setAttribute("epo",epo);
-        request.setAttribute("globalErrorMsg",epo.getAttribute("globalErrorMsg"));
-        request.setAttribute("css", "<link rel=\"stylesheet\" type=\"text/css\" href=\""+vreq.getAppBean().getThemeDir()+"css/edit.css\"/>");
+    protected void setRequestAttributes(HttpServletRequest request, EditProcessObject epo) {
+        VitroRequest vreq = new VitroRequest(request);
+        request.setAttribute("epoKey", epo.getKey());
+        request.setAttribute("epo", epo);
+        request.setAttribute("globalErrorMsg", epo.getAttribute("globalErrorMsg"));
+        request.setAttribute("css",
+            "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + vreq.getAppBean().getThemeDir() +
+                "css/edit.css\"/>");
     }
 
     protected void populateBeanFromParams(Object bean, HttpServletRequest request) {
         Map params = request.getParameterMap();
         Enumeration paramNames = request.getParameterNames();
-        while (paramNames.hasMoreElements()){
+        while (paramNames.hasMoreElements()) {
             String key = "";
             try {
                 key = (String) paramNames.nextElement();
@@ -149,7 +147,8 @@ public class BaseEditController extends VitroHttpServlet {
                     try {
                         value = ((Integer) params.get(key)).toString();
                     } catch (ClassCastException ccf) {
-                        log.error("populateBeanFromParams() could not cast parameter name to String");
+                        log.error(
+                            "populateBeanFromParams() could not cast parameter name to String");
                     }
                 }
                 FormUtils.beanSet(bean, key, value);
@@ -157,9 +156,10 @@ public class BaseEditController extends VitroHttpServlet {
         }
     }
 
-    public List<Option> getSortedList(HashMap<String,Option> hashMap, List<Option> optionList, VitroRequest vreq){
+    public List<Option> getSortedList(HashMap<String, Option> hashMap, List<Option> optionList,
+                                      VitroRequest vreq) {
 
-        class ListComparator implements Comparator<String>{
+        class ListComparator implements Comparator<String> {
 
             Collator collator;
 
@@ -174,23 +174,23 @@ public class BaseEditController extends VitroHttpServlet {
 
         }
 
-       List<String> bodyVal = new ArrayList<String>();
-       List<Option> options = new ArrayList<Option>();
+        List<String> bodyVal = new ArrayList<String>();
+        List<Option> options = new ArrayList<Option>();
         for (Option option : optionList) {
             hashMap.put(option.getBody(), option);
             bodyVal.add(option.getBody());
         }
 
 
-       bodyVal.sort(new ListComparator(vreq.getCollator()));
+        bodyVal.sort(new ListComparator(vreq.getCollator()));
         for (String aBodyVal : bodyVal) {
             options.add(hashMap.get(aBodyVal));
         }
-       return options;
-   }
+        return options;
+    }
 
     protected WebappDaoFactory getWebappDaoFactory() {
-    	return ModelAccess.on(getServletContext()).getWebappDaoFactory(ASSERTIONS_ONLY);
+        return ModelAccess.on(getServletContext()).getWebappDaoFactory(ASSERTIONS_ONLY);
     }
 
     protected WebappDaoFactory getWebappDaoFactory(String userURI) {
@@ -198,7 +198,7 @@ public class BaseEditController extends VitroHttpServlet {
     }
 
     public String getDefaultLandingPage(HttpServletRequest request) {
-    	return(request.getContextPath() + DEFAULT_LANDING_PAGE);
+        return (request.getContextPath() + DEFAULT_LANDING_PAGE);
     }
 
 }

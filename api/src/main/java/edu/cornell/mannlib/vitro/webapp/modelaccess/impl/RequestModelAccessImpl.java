@@ -9,18 +9,11 @@ import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.APPLICATIO
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.DISPLAY;
 import static edu.cornell.mannlib.vitro.webapp.modelaccess.ModelNames.USER_ACCOUNTS;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.jena.ontology.OntModel;
-import org.apache.jena.query.Dataset;
 
 import edu.cornell.mannlib.vitro.webapp.auth.identifier.RequestIdentifiers;
 import edu.cornell.mannlib.vitro.webapp.auth.policy.ServletPolicyList;
@@ -53,29 +46,33 @@ import edu.cornell.mannlib.vitro.webapp.rdfservice.filter.LanguageFilteringRDFSe
 import edu.cornell.mannlib.vitro.webapp.rdfservice.filter.LanguageFilteringUtils;
 import edu.cornell.mannlib.vitro.webapp.triplesource.ShortTermCombinedTripleSource;
 import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.jena.ontology.OntModel;
+import org.apache.jena.query.Dataset;
 
 /**
  * For each category of data structure, the pattern is the same:
- *
+ * <p>
  * Build a key from the supplied options. If the cache contains a structure with
  * that key, return it.
- *
+ * <p>
  * Otherwise, create the requested structure, often from a simplified version.
  * For example, if the request was for a LANGUAGE_AWARE RDFService, get the
  * LANGUAGE_NEUTRAL RDFService and wrap it with langauge awareness.
- *
+ * <p>
  * This second step is a recursive call, so we check again to see if the cache
  * contains the new requested structure based on a modified key. If it does
  * contain the structure, use it. Otherwise, create it. Eventually, we reach a
  * request for the simplest structure, which we fetch from the
  * ShortTermDataStructuresFactory.
- *
+ * <p>
  * If the request includes language-awareness, the structure can be created from
  * the language-neutral version. If language-awareness is disabled, the
  * language-neutral structure will be cached under two different keys.
- *
+ * <p>
  * ----------------------------------------
- *
+ * <p>
  * There are two hacks here to support model switching: one in the OntModels and
  * one in the WebappDaoFactories. These are hacks for several reasons, not the
  * least of which is that the model switching will not be available on
@@ -83,266 +80,261 @@ import edu.cornell.mannlib.vitro.webapp.utils.logging.ToString;
  * for the OntModel.
  */
 public class RequestModelAccessImpl implements RequestModelAccess {
-	private static final Log log = LogFactory
-			.getLog(RequestModelAccessImpl.class);
+    private static final Log log = LogFactory
+        .getLog(RequestModelAccessImpl.class);
 
-	private final HttpServletRequest req;
-	private final ServletContext ctx;
-	private final ConfigurationProperties props;
-	private final ShortTermCombinedTripleSource source;
+    private final HttpServletRequest req;
+    private final ServletContext ctx;
+    private final ConfigurationProperties props;
+    private final ShortTermCombinedTripleSource source;
+    private final Map<RDFServiceKey, RDFService> rdfServiceMap = new HashMap<>();
+    private final Map<DatasetKey, Dataset> datasetMap = new HashMap<>();
+    private final Map<OntModelKey, OntModel> ontModelMap = new HashMap<>();
+    private final Map<OntModelSelectorKey, OntModelSelector> ontModelSelectorMap = new HashMap<>();
+    private final Map<WebappDaoFactoryKey, WebappDaoFactory> wadfMap = new HashMap<>();
 
-	public RequestModelAccessImpl(HttpServletRequest req,
-			ShortTermCombinedTripleSource source) {
-		this.req = req;
-		this.ctx = req.getSession().getServletContext();
-		this.props = ConfigurationProperties.getBean(req);
-		this.source = source;
-	}
+    // ----------------------------------------------------------------------
+    // RDFServices
+    // ----------------------------------------------------------------------
 
-	/**
-	 * Language awareness is disabled unless they explicitly enable it.
-	 */
-	private Boolean isLanguageAwarenessEnabled() {
-		return Boolean.valueOf(props.getProperty("RDFService.languageFilter",
-				"false"));
-	}
+    public RequestModelAccessImpl(HttpServletRequest req,
+                                  ShortTermCombinedTripleSource source) {
+        this.req = req;
+        this.ctx = req.getSession().getServletContext();
+        this.props = ConfigurationProperties.getBean(req);
+        this.source = source;
+    }
 
-	private List<String> getPreferredLanguages() {
-		return LanguageFilteringUtils.localesToLanguages(req.getLocales());
-	}
+    /**
+     * Language awareness is disabled unless they explicitly enable it.
+     */
+    private Boolean isLanguageAwarenessEnabled() {
+        return Boolean.valueOf(props.getProperty("RDFService.languageFilter",
+            "false"));
+    }
 
-	@Override
-	public void close() {
-		this.source.close();
-	}
+    private List<String> getPreferredLanguages() {
+        return LanguageFilteringUtils.localesToLanguages(req.getLocales());
+    }
 
-	@Override
-	public String toString() {
-		return "RequestModelAccessImpl[" + ToString.hashHex(this) + ", req="
-				+ ToString.hashHex(req) + ", source=" + source + "]";
-	}
+    @Override
+    public void close() {
+        this.source.close();
+    }
 
-	// ----------------------------------------------------------------------
-	// RDFServices
-	// ----------------------------------------------------------------------
+    @Override
+    public String toString() {
+        return "RequestModelAccessImpl[" + ToString.hashHex(this) + ", req="
+            + ToString.hashHex(req) + ", source=" + source + "]";
+    }
 
-	private final Map<RDFServiceKey, RDFService> rdfServiceMap = new HashMap<>();
+    // ----------------------------------------------------------------------
+    // Datasets
+    // ----------------------------------------------------------------------
 
-	@Override
-	public RDFService getRDFService(RdfServiceOption... options) {
-		return getRDFService(new RDFServiceKey(options));
-	}
+    @Override
+    public RDFService getRDFService(RdfServiceOption... options) {
+        return getRDFService(new RDFServiceKey(options));
+    }
 
-	private RDFService getRDFService(RDFServiceKey key) {
-		if (!rdfServiceMap.containsKey(key)) {
-			RDFService rdfService = createRDFService(key);
-			log.debug("Creating:   " + key + ", request=" + req.hashCode()
-					+ ", " + rdfService);
-			rdfServiceMap.put(key, rdfService);
-		}
-		RDFService rdfService = rdfServiceMap.get(key);
-		log.debug("getRDFService, " + key + ": " + rdfService);
-		return rdfService;
-	}
+    private RDFService getRDFService(RDFServiceKey key) {
+        if (!rdfServiceMap.containsKey(key)) {
+            RDFService rdfService = createRDFService(key);
+            log.debug("Creating:   " + key + ", request=" + req.hashCode()
+                + ", " + rdfService);
+            rdfServiceMap.put(key, rdfService);
+        }
+        RDFService rdfService = rdfServiceMap.get(key);
+        log.debug("getRDFService, " + key + ": " + rdfService);
+        return rdfService;
+    }
 
-	private RDFService createRDFService(RDFServiceKey key) {
-		if (key.getLanguageOption() == LANGUAGE_AWARE) {
-			return addLanguageAwareness(getRDFService(LANGUAGE_NEUTRAL));
-		} else {
-			return source.getRDFService(key.getWhichService());
-		}
-	}
+    private RDFService createRDFService(RDFServiceKey key) {
+        if (key.getLanguageOption() == LANGUAGE_AWARE) {
+            return addLanguageAwareness(getRDFService(LANGUAGE_NEUTRAL));
+        } else {
+            return source.getRDFService(key.getWhichService());
+        }
+    }
 
-	private RDFService addLanguageAwareness(RDFService unaware) {
-		if (isLanguageAwarenessEnabled()) {
-			return new LanguageFilteringRDFService(unaware,
-					getPreferredLanguages());
-		} else {
-			return unaware;
-		}
-	}
+    private RDFService addLanguageAwareness(RDFService unaware) {
+        if (isLanguageAwarenessEnabled()) {
+            return new LanguageFilteringRDFService(unaware,
+                getPreferredLanguages());
+        } else {
+            return unaware;
+        }
+    }
 
-	// ----------------------------------------------------------------------
-	// Datasets
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // OntModels
+    // ----------------------------------------------------------------------
 
-	private final Map<DatasetKey, Dataset> datasetMap = new HashMap<>();
+    @Override
+    public Dataset getDataset(DatasetOption... options) {
+        return getDataset(new DatasetKey(options));
+    }
 
-	@Override
-	public Dataset getDataset(DatasetOption... options) {
-		return getDataset(new DatasetKey(options));
-	}
+    private Dataset getDataset(DatasetKey key) {
+        if (!datasetMap.containsKey(key)) {
+            Dataset dataset = createDataset(key);
+            log.debug("Creating:   " + key + ", request=" + req.hashCode()
+                + ", " + dataset);
+            datasetMap.put(key, dataset);
+        }
+        Dataset dataset = datasetMap.get(key);
+        log.debug("getDataset, " + key + ": " + dataset);
+        return dataset;
+    }
 
-	private Dataset getDataset(DatasetKey key) {
-		if (!datasetMap.containsKey(key)) {
-			Dataset dataset = createDataset(key);
-			log.debug("Creating:   " + key + ", request=" + req.hashCode()
-					+ ", " + dataset);
-			datasetMap.put(key, dataset);
-		}
-		Dataset dataset = datasetMap.get(key);
-		log.debug("getDataset, " + key + ": " + dataset);
-		return dataset;
-	}
+    private Dataset createDataset(DatasetKey key) {
+        return new RDFServiceDataset(getRDFService(key.rdfServiceKey()));
+    }
 
-	private Dataset createDataset(DatasetKey key) {
-		return new RDFServiceDataset(getRDFService(key.rdfServiceKey()));
-	}
+    @Override
+    public OntModel getOntModel(LanguageOption... options) {
+        return getOntModel(ModelNames.FULL_UNION, options);
+    }
 
-	// ----------------------------------------------------------------------
-	// OntModels
-	// ----------------------------------------------------------------------
+    @Override
+    public OntModel getOntModel(String name, LanguageOption... options) {
+        return getOntModel(new OntModelKey(name, options));
+    }
 
-	private final Map<OntModelKey, OntModel> ontModelMap = new HashMap<>();
+    private OntModel getOntModel(OntModelKey key) {
+        if (!ontModelMap.containsKey(key)) {
+            OntModel ontModel = createOntModel(key);
+            if (log.isDebugEnabled()) {
+                String ontModelStr = ToString.ontModelToString(ontModel);
+                log.debug("Creating:   " + key + ", request=" + req.hashCode()
+                    + ", " + ontModelStr);
+            }
+            ontModelMap.put(key, ontModel);
+        }
+        OntModel ontModel = ontModelMap.get(key);
+        if (log.isDebugEnabled()) {
+            String ontModelStr = ToString.ontModelToString(ontModel);
+            log.debug("getOntModel, " + key + ": " + ontModelStr);
+        }
+        return ontModel;
+    }
 
-	@Override
-	public OntModel getOntModel(LanguageOption... options) {
-		return getOntModel(ModelNames.FULL_UNION, options);
-	}
+    private OntModel createOntModel(OntModelKey key) {
+        if (key.getLanguageOption() == LANGUAGE_AWARE) {
+            return addLanguageAwareness(getOntModel(key.getName(),
+                LANGUAGE_NEUTRAL));
+        } else {
+            return source.getOntModelCache().getOntModel(key.getName());
+        }
+    }
 
-	@Override
-	public OntModel getOntModel(String name, LanguageOption... options) {
-		return getOntModel(new OntModelKey(name, options));
-	}
+    // ----------------------------------------------------------------------
+    // OntModelSelectors
+    // ----------------------------------------------------------------------
 
-	private OntModel getOntModel(OntModelKey key) {
-		if (!ontModelMap.containsKey(key)) {
-			OntModel ontModel = createOntModel(key);
-			if ( log.isDebugEnabled() ) {
-				String ontModelStr = ToString.ontModelToString(ontModel);
-				log.debug("Creating:   " + key + ", request=" + req.hashCode()
-						+ ", " + ontModelStr);
-			}
-			ontModelMap.put(key, ontModel);
-		}
-		OntModel ontModel = ontModelMap.get(key);
-		if ( log.isDebugEnabled() ) {
-			String ontModelStr = ToString.ontModelToString(ontModel);
-			log.debug("getOntModel, " + key + ": " + ontModelStr);
-		}
-		return ontModel;
-	}
+    private OntModel addLanguageAwareness(OntModel unaware) {
+        if (isLanguageAwarenessEnabled()) {
+            return LanguageFilteringUtils.wrapOntModelInALanguageFilter(
+                unaware, req);
+        } else {
+            return unaware;
+        }
+    }
 
-	private OntModel createOntModel(OntModelKey key) {
-		if (key.getLanguageOption() == LANGUAGE_AWARE) {
-			return addLanguageAwareness(getOntModel(key.getName(),
-					LANGUAGE_NEUTRAL));
-		} else {
-			return source.getOntModelCache().getOntModel(key.getName());
-		}
-	}
+    /**
+     * TODO Hack for model switching.
+     */
+    public void setSpecialWriteModel(OntModel mainOntModel) {
+        ontModelMap.put(new OntModelKey(ModelNames.FULL_UNION), mainOntModel);
+    }
 
-	private OntModel addLanguageAwareness(OntModel unaware) {
-		if (isLanguageAwarenessEnabled()) {
-			return LanguageFilteringUtils.wrapOntModelInALanguageFilter(
-					unaware, req);
-		} else {
-			return unaware;
-		}
-	}
+    @Override
+    public OntModelSelector getOntModelSelector(
+        OntModelSelectorOption... options) {
+        return getOntModelSelector(new OntModelSelectorKey(options));
+    }
 
-	/**
-	 * TODO Hack for model switching.
-	 */
-	public void setSpecialWriteModel(OntModel mainOntModel) {
-		ontModelMap.put(new OntModelKey(ModelNames.FULL_UNION), mainOntModel);
-	}
+    private OntModelSelector getOntModelSelector(OntModelSelectorKey key) {
+        if (!ontModelSelectorMap.containsKey(key)) {
+            OntModelSelector oms = createOntModelSelector(key);
+            log.debug("Creating:   " + key + ", request=" + req.hashCode()
+                + ", " + oms);
+            ontModelSelectorMap.put(key, oms);
+        }
+        OntModelSelector ontModelSelector = ontModelSelectorMap.get(key);
+        log.debug("getOntModelSelector, " + key + ": " + ontModelSelector);
+        return ontModelSelector;
+    }
 
-	// ----------------------------------------------------------------------
-	// OntModelSelectors
-	// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // WebappDaoFactories
+    // ----------------------------------------------------------------------
 
-	private final Map<OntModelSelectorKey, OntModelSelector> ontModelSelectorMap = new HashMap<>();
+    private OntModelSelector createOntModelSelector(OntModelSelectorKey key) {
+        OntModelSelectorImpl oms = new OntModelSelectorImpl();
 
-	@Override
-	public OntModelSelector getOntModelSelector(
-			OntModelSelectorOption... options) {
-		return getOntModelSelector(new OntModelSelectorKey(options));
-	}
+        oms.setABoxModel(getOntModel(key.aboxKey()));
+        oms.setTBoxModel(getOntModel(key.tboxKey()));
+        oms.setFullModel(getOntModel(key.fullKey()));
 
-	private OntModelSelector getOntModelSelector(OntModelSelectorKey key) {
-		if (!ontModelSelectorMap.containsKey(key)) {
-			OntModelSelector oms = createOntModelSelector(key);
-			log.debug("Creating:   " + key + ", request=" + req.hashCode()
-					+ ", " + oms);
-			ontModelSelectorMap.put(key, oms);
-		}
-		OntModelSelector ontModelSelector = ontModelSelectorMap.get(key);
-		log.debug("getOntModelSelector, " + key + ": " + ontModelSelector);
-		return ontModelSelector;
-	}
+        oms.setApplicationMetadataModel(getOntModel(key
+            .ontModelKey(APPLICATION_METADATA)));
+        oms.setDisplayModel(getOntModel(key.ontModelKey(DISPLAY)));
+        oms.setUserAccountsModel(getOntModel(key.ontModelKey(USER_ACCOUNTS)));
 
-	private OntModelSelector createOntModelSelector(OntModelSelectorKey key) {
-		OntModelSelectorImpl oms = new OntModelSelectorImpl();
+        return oms;
+    }
 
-		oms.setABoxModel(getOntModel(key.aboxKey()));
-		oms.setTBoxModel(getOntModel(key.tboxKey()));
-		oms.setFullModel(getOntModel(key.fullKey()));
+    @Override
+    public WebappDaoFactory getWebappDaoFactory(
+        WebappDaoFactoryOption... options) {
+        return getWebappDaoFactory(new WebappDaoFactoryKey(options));
+    }
 
-		oms.setApplicationMetadataModel(getOntModel(key
-				.ontModelKey(APPLICATION_METADATA)));
-		oms.setDisplayModel(getOntModel(key.ontModelKey(DISPLAY)));
-		oms.setUserAccountsModel(getOntModel(key.ontModelKey(USER_ACCOUNTS)));
+    private WebappDaoFactory getWebappDaoFactory(WebappDaoFactoryKey key) {
+        if (!wadfMap.containsKey(key)) {
+            WebappDaoFactory wadf = createWebappDaoFactory(key);
+            log.debug("Creating:   " + key + ", request=" + req.hashCode()
+                + ", " + wadf);
+            wadfMap.put(key, wadf);
+        }
+        WebappDaoFactory wadf = wadfMap.get(key);
+        log.debug("getWebappDaoFactory, " + key + ": " + wadf);
+        return wadf;
+    }
 
-		return oms;
-	}
+    private WebappDaoFactory createWebappDaoFactory(WebappDaoFactoryKey key) {
+        if (key.getPolicyOption() == POLICY_AWARE) {
+            return addPolicyAwareness(getWebappDaoFactory(key.policyNeutral()));
+        }
 
-	// ----------------------------------------------------------------------
-	// WebappDaoFactories
-	// ----------------------------------------------------------------------
+        RDFService rdfService = getRDFService(key.rdfServiceKey());
+        OntModelSelector ontModelSelector = getOntModelSelector(key
+            .ontModelSelectorKey());
+        WebappDaoFactoryConfig config = source.getWebappDaoFactoryConfig();
 
-	private final Map<WebappDaoFactoryKey, WebappDaoFactory> wadfMap = new HashMap<>();
+        switch (key.getReasoningOption()) {
+            case ASSERTIONS_ONLY:
+                return new WebappDaoFactorySDB(rdfService, ontModelSelector,
+                    config, SDBDatasetMode.ASSERTIONS_ONLY);
+            case INFERENCES_ONLY:
+                return new WebappDaoFactorySDB(rdfService, ontModelSelector,
+                    config, SDBDatasetMode.INFERENCES_ONLY);
+            default: // ASSERTIONS_AND_INFERENCES
+                // TODO Do model switching and replace the WebappDaoFactory with
+                // a different version if requested by parameters
+                WebappDaoFactory unswitched = new WebappDaoFactorySDB(rdfService,
+                    ontModelSelector, config);
+                return new ModelSwitcher().checkForModelSwitching(new VitroRequest(
+                    req), unswitched);
+        }
+    }
 
-	@Override
-	public WebappDaoFactory getWebappDaoFactory(
-			WebappDaoFactoryOption... options) {
-		return getWebappDaoFactory(new WebappDaoFactoryKey(options));
-	}
-
-	private WebappDaoFactory getWebappDaoFactory(WebappDaoFactoryKey key) {
-		if (!wadfMap.containsKey(key)) {
-			WebappDaoFactory wadf = createWebappDaoFactory(key);
-			log.debug("Creating:   " + key + ", request=" + req.hashCode()
-					+ ", " + wadf);
-			wadfMap.put(key, wadf);
-		}
-		WebappDaoFactory wadf = wadfMap.get(key);
-		log.debug("getWebappDaoFactory, " + key + ": " + wadf);
-		return wadf;
-	}
-
-	private WebappDaoFactory createWebappDaoFactory(WebappDaoFactoryKey key) {
-		if (key.getPolicyOption() == POLICY_AWARE) {
-			return addPolicyAwareness(getWebappDaoFactory(key.policyNeutral()));
-		}
-
-		RDFService rdfService = getRDFService(key.rdfServiceKey());
-		OntModelSelector ontModelSelector = getOntModelSelector(key
-				.ontModelSelectorKey());
-		WebappDaoFactoryConfig config = source.getWebappDaoFactoryConfig();
-
-		switch (key.getReasoningOption()) {
-		case ASSERTIONS_ONLY:
-			return new WebappDaoFactorySDB(rdfService, ontModelSelector,
-					config, SDBDatasetMode.ASSERTIONS_ONLY);
-		case INFERENCES_ONLY:
-			return new WebappDaoFactorySDB(rdfService, ontModelSelector,
-					config, SDBDatasetMode.INFERENCES_ONLY);
-		default: // ASSERTIONS_AND_INFERENCES
-			// TODO Do model switching and replace the WebappDaoFactory with
-			// a different version if requested by parameters
-			WebappDaoFactory unswitched = new WebappDaoFactorySDB(rdfService,
-					ontModelSelector, config);
-			return new ModelSwitcher().checkForModelSwitching(new VitroRequest(
-					req), unswitched);
-		}
-	}
-
-	private WebappDaoFactory addPolicyAwareness(WebappDaoFactory unaware) {
-		HideFromDisplayByPolicyFilter filter = new HideFromDisplayByPolicyFilter(
-				RequestIdentifiers.getIdBundleForRequest(req),
-				ServletPolicyList.getPolicies(ctx));
-		return new WebappDaoFactoryFiltering(unaware, filter);
-	}
+    private WebappDaoFactory addPolicyAwareness(WebappDaoFactory unaware) {
+        HideFromDisplayByPolicyFilter filter = new HideFromDisplayByPolicyFilter(
+            RequestIdentifiers.getIdBundleForRequest(req),
+            ServletPolicyList.getPolicies(ctx));
+        return new WebappDaoFactoryFiltering(unaware, filter);
+    }
 
 }

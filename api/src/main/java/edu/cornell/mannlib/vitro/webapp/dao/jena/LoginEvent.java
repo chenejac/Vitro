@@ -4,7 +4,7 @@ package edu.cornell.mannlib.vitro.webapp.dao.jena;
 
 public class LoginEvent extends LoginLogoutEvent {
 
-    public LoginEvent( String loginUri ){
+    public LoginEvent(String loginUri) {
         this.loginUri = loginUri;
     }
 

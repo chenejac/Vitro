@@ -7,20 +7,20 @@ package edu.cornell.mannlib.vitro.webapp.modules.searchEngine;
  */
 public class SearchEngineException extends Exception {
 
-	public SearchEngineException() {
-		super();
-	}
+    public SearchEngineException() {
+        super();
+    }
 
-	public SearchEngineException(String message) {
-		super(message);
-	}
+    public SearchEngineException(String message) {
+        super(message);
+    }
 
-	public SearchEngineException(Throwable cause) {
-		super(cause);
-	}
+    public SearchEngineException(Throwable cause) {
+        super(cause);
+    }
 
-	public SearchEngineException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public SearchEngineException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }
