@@ -34,7 +34,7 @@ public abstract class AbstractYARGTemplateReport extends AbstractTemplateReport 
      * Generate the report
      */
     protected void generateReport(OutputStream outputStream, String name, ReportOutputType type,
-            RequestModelAccess request, UserAccount account) {
+                                  RequestModelAccess request, UserAccount account) {
         // Create a new report builder and template
         ReportBuilder reportBuilder = new ReportBuilder();
         ReportTemplateBuilder reportTemplateBuilder = new ReportTemplateBuilder();
@@ -43,8 +43,10 @@ public abstract class AbstractYARGTemplateReport extends AbstractTemplateReport 
         reportTemplateBuilder.documentPath("/");
         reportTemplateBuilder.documentName(name);
 
-        // Add the template as the document content
-        reportTemplateBuilder.documentContent(template);
+        // Sanitize modern M365 XLSX metadata before YARG/docx4j processes the template
+        byte[] templateContent = XlsxTemplateSanitizer.sanitize(template);
+
+        reportTemplateBuilder.documentContent(templateContent);
 
         // Set the output type according to the implementation
         reportTemplateBuilder.outputType(type);
@@ -65,7 +67,7 @@ public abstract class AbstractYARGTemplateReport extends AbstractTemplateReport 
                 BandBuilder headBand = new BandBuilder();
                 headBand.name(dataSource.getOutputName() + "_header");
                 headBand.query(dataSource.getOutputName() + "_header",
-                        "parameter=" + dataSource.getOutputName() + "_header $.head.vars[*]", "json");
+                               "parameter=" + dataSource.getOutputName() + "_header $.head.vars[*]", "json");
                 headBand.orientation(BandOrientation.HORIZONTAL);
                 reportBuilder.band(headBand.build());
 
@@ -74,7 +76,7 @@ public abstract class AbstractYARGTemplateReport extends AbstractTemplateReport 
                 BandBuilder resultsBand = new BandBuilder();
                 resultsBand.name(dataSource.getOutputName());
                 resultsBand.query(dataSource.getOutputName(),
-                        "parameter=" + dataSource.getOutputName() + " $.results.bindings[*]", "json");
+                                  "parameter=" + dataSource.getOutputName() + " $.results.bindings[*]", "json");
                 resultsBand.orientation(BandOrientation.HORIZONTAL);
                 reportBuilder.band(resultsBand.build());
 
@@ -82,7 +84,7 @@ public abstract class AbstractYARGTemplateReport extends AbstractTemplateReport 
                 BandBuilder footerBand = new BandBuilder();
                 footerBand.name(dataSource.getOutputName() + "_footer");
                 footerBand.query(dataSource.getOutputName() + "_footer",
-                        "parameter=" + dataSource.getOutputName() + "_footer $.head.vars[*]", "json");
+                                 "parameter=" + dataSource.getOutputName() + "_footer $.head.vars[*]", "json");
                 footerBand.orientation(BandOrientation.HORIZONTAL);
                 reportBuilder.band(footerBand.build());
                 addHtmlFields(reportBuilder, dataSource, body);
@@ -116,7 +118,7 @@ public abstract class AbstractYARGTemplateReport extends AbstractTemplateReport 
                     String varName = var.asText();
                     if (varName.endsWith("_html")) {
                         reportBuilder.format(new ReportFieldFormatImpl(dataSource.getOutputName() +
-                                "." + varName + ".value", "${html}"));
+                                                                           "." + varName + ".value", "${html}"));
                     }
                 }
             }
